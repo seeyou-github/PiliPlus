@@ -20,10 +20,19 @@ class PiliLogger extends Logger {
     StackTrace? stackTrace,
     DateTime? time,
   }) {
+    if (!_enableLog) return;
     if (level == Level.error || level == Level.fatal) {
       Catcher2.reportCheckedError(error, stackTrace);
     }
     super.log(level, message, error: error, stackTrace: stackTrace, time: time);
+  }
+
+  bool get _enableLog {
+    try {
+      return Pref.enableLog;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

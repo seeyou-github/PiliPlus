@@ -63,6 +63,7 @@ dependencies:
 
   # 存储
   path_provider: ^2.1.5
+  path_provider_platform_interface: ^2.1.2
   hive_ce: ^2.19.3
 
   # 设备信息
