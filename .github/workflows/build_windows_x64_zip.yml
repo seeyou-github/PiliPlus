@@ -1,0 +1,48 @@
+name: Build Windows x64 ZIP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows-x64-zip:
+    name: Build Windows x64 ZIP
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+
+      - name: Apply Patch
+        shell: pwsh
+        run: lib/scripts/patch.ps1 windows
+        continue-on-error: true
+
+      - name: Set and Extract version
+        shell: pwsh
+        run: lib/scripts/build.ps1
+
+      - name: Build Windows x64
+        run: flutter build windows --release --dart-define-from-file=pili_release.json --pub
+
+      - name: Package ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path Release/PiliPlus-Win | Out-Null
+          Copy-Item -Path build/windows/x64/runner/Release/* -Destination Release/PiliPlus-Win -Recurse -Force
+          Compress-Archive -Path Release/PiliPlus-Win -DestinationPath "PiliPlus_windows_${{ env.version }}_x64_portable.zip" -Force
+
+      - name: Upload Windows x64 ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          name: Windows-x64-ZIP
+          path: PiliPlus_windows_*_x64_portable.zip
