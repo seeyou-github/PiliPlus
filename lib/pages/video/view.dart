@@ -210,12 +210,16 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 播放器状态监听
   Future<void> playerListener(PlayerStatus status) async {
     final isPlaying = status.isPlaying;
-    if (Platform.isWindows && autoWindowFullscreen) {
-      if (isPlaying && !_lastPlayerWasPlaying && !isDesktopFullScreen) {
-        _autoWindowFullscreenEnteredByPlayback = true;
-        await enterDesktopFullScreen();
-      } else if (!isPlaying && !isDesktopFullScreen) {
-        _autoWindowFullscreenEnteredByPlayback = false;
+    final plPlayerController = this.plPlayerController;
+    if (Platform.isWindows &&
+        autoWindowFullscreen &&
+        plPlayerController != null) {
+      if (isPlaying &&
+          !_lastPlayerWasPlaying &&
+          !plPlayerController.isFullScreen.value) {
+        await plPlayerController.triggerFullScreen(inAppFullScreen: true);
+        _autoWindowFullscreenEnteredByPlayback =
+            plPlayerController.isFullScreen.value;
       }
       _lastPlayerWasPlaying = isPlaying;
     }
@@ -279,7 +283,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       if (exitFlag) {
         if (Platform.isWindows && _autoWindowFullscreenEnteredByPlayback) {
           _autoWindowFullscreenEnteredByPlayback = false;
-          await exitDesktopFullScreen();
+          await plPlayerController!.triggerFullScreen(
+            status: false,
+            inAppFullScreen: true,
+          );
         }
         // 结束播放退出全屏
         if (autoExitFullscreen) {
@@ -326,7 +333,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       ..addStatusLister(playerListener)
       ..addPositionListener(positionListener);
     if (plPlayerController.preInitPlayer) {
-      if (plPlayerController.autoEnterFullScreen) {
+      if (plPlayerController.autoEnterFullScreen &&
+          !plPlayerController.autoWindowFullscreen) {
         plPlayerController.triggerFullScreen();
       }
       return plPlayerController.play();
@@ -342,7 +350,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   void dispose() {
     if (Platform.isWindows && _autoWindowFullscreenEnteredByPlayback) {
       _autoWindowFullscreenEnteredByPlayback = false;
-      exitDesktopFullScreen();
+      plPlayerController?.triggerFullScreen(
+        status: false,
+        inAppFullScreen: true,
+      );
     }
     plPlayerController
       ?..removeStatusLister(playerListener)

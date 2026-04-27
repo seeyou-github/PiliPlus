@@ -693,7 +693,9 @@ class PlPlayerController with BlockConfigMixin {
       // 数据加载完成
       dataStatus.value = DataStatus.loaded;
 
-      if (autoFullScreenFlag && autoEnterFullScreen) {
+      if (autoFullScreenFlag &&
+          autoEnterFullScreen &&
+          !autoWindowFullscreen) {
         triggerFullScreen(status: true);
       }
 

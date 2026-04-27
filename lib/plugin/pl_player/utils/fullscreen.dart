@@ -7,8 +7,6 @@ import 'package:flutter/services.dart'
 
 bool _isDesktopFullScreen = false;
 
-bool get isDesktopFullScreen => _isDesktopFullScreen;
-
 @pragma('vm:notify-debugger-on-exception')
 Future<void> enterDesktopFullScreen({bool inAppFullScreen = false}) async {
   if (!inAppFullScreen && !_isDesktopFullScreen) {

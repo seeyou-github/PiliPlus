@@ -77,13 +77,18 @@ Future<WebViewEnvironment?> ensureWebViewEnvironment() {
 }
 
 Color _desktopStartupBackground() {
+  final (lightTheme, darkTheme) = MyApp.getAllTheme();
   final themeMode = Pref.themeMode;
   final platformBrightness =
       WidgetsBinding.instance.platformDispatcher.platformBrightness;
-  final isDark =
-      themeMode == ThemeMode.dark ||
-      (themeMode == ThemeMode.system && platformBrightness == Brightness.dark);
-  return isDark ? Colors.black : Colors.white;
+  final theme = switch (themeMode) {
+    ThemeMode.dark => darkTheme,
+    ThemeMode.light => lightTheme,
+    ThemeMode.system => platformBrightness == Brightness.dark
+        ? darkTheme
+        : lightTheme,
+  };
+  return theme.scaffoldBackgroundColor;
 }
 
 Future<void> _showDesktopWindow() async {
