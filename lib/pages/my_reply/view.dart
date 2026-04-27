@@ -29,16 +29,28 @@ class MyReply extends StatefulWidget {
 
 class _MyReplyState extends State<MyReply> with DynMixin {
   final List<ReplyInfo> _replies = <ReplyInfo>[];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    _loadReply();
+  }
+
+  Future<void> _loadReply() async {
+    await GStorage.ensureReply();
+    if (!mounted) return;
     _initReply();
+    setState(() {
+      _loading = false;
+    });
   }
 
   void _initReply() {
+    final reply = GStorage.reply;
+    if (reply == null) return;
     _replies
-      ..assignAll(GStorage.reply!.values.map(ReplyInfo.fromBuffer))
+      ..assignAll(reply.values.map(ReplyInfo.fromBuffer))
       ..sort((a, b) => b.ctime.compareTo(a.ctime)); // rpid not aligned;
   }
 
@@ -56,7 +68,7 @@ class _MyReplyState extends State<MyReply> with DynMixin {
                 context: context,
                 title: const Text('Clear Local Storage?'),
                 onConfirm: () {
-                  GStorage.reply!.clear();
+                  GStorage.reply?.clear();
                   _replies.clear();
                   setState(() {});
                 },
@@ -76,29 +88,31 @@ class _MyReplyState extends State<MyReply> with DynMixin {
           const SizedBox(width: 6),
         ],
       ),
-      body: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          _replies.isNotEmpty
-              ? ViewSliverSafeArea(
-                  sliver: SliverWaterfallFlow(
-                    gridDelegate: dynGridDelegate,
-                    delegate: SliverChildBuilderDelegate(
-                      childCount: _replies.length,
-                      (context, index) => ReplyItemGrpc(
-                        replyLevel: 0,
-                        needDivider: false,
-                        replyItem: _replies[index],
-                        replyReply: _replyReply,
-                        onDelete: (_, _) => _onDelete(index),
-                        onCheckReply: _onCheckReply,
-                      ),
-                    ),
-                  ),
-                )
-              : const HttpError(),
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                _replies.isNotEmpty
+                    ? ViewSliverSafeArea(
+                        sliver: SliverWaterfallFlow(
+                          gridDelegate: dynGridDelegate,
+                          delegate: SliverChildBuilderDelegate(
+                            childCount: _replies.length,
+                            (context, index) => ReplyItemGrpc(
+                              replyLevel: 0,
+                              needDivider: false,
+                              replyItem: _replies[index],
+                              replyReply: _replyReply,
+                              onDelete: (_, _) => _onDelete(index),
+                              onCheckReply: _onCheckReply,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const HttpError(),
+              ],
+            ),
     );
   }
 
@@ -182,7 +196,8 @@ class _MyReplyState extends State<MyReply> with DynMixin {
   }
 
   Future<void> _onImport(List<dynamic> list) async {
-    await GStorage.reply!.putAll({
+    final reply = await GStorage.ensureReply();
+    await reply?.putAll({
       for (var e in list)
         e['id'].toString(): (ReplyInfo.create()..mergeFromProto3Json(e))
             .writeToBuffer(),

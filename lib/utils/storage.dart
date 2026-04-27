@@ -22,7 +22,8 @@ abstract final class GStorage {
   static late final Box<dynamic> setting;
   static late final Box<dynamic> video;
   static late final Box<int> watchProgress;
-  static late final Box<Uint8List>? reply;
+  static Box<Uint8List>? reply;
+  static Future<Box<Uint8List>?>? _replyFuture;
 
   static Future<void> init() async {
     Hive.init(path.join(appSupportDirPath, 'hive'));
@@ -64,17 +65,32 @@ abstract final class GStorage {
       ).then((res) => watchProgress = res),
     ]);
 
-    if (Pref.saveReply) {
-      reply = await Hive.openBox<Uint8List>(
-        'reply',
-        keyComparator: _intStrDescKeyComparator,
-        compactionStrategy: (entries, deletedEntries) {
-          return deletedEntries > 10;
-        },
-      );
-    } else {
+    reply = null;
+  }
+
+  static Future<void> initDeferred() async {
+    await ensureReply();
+  }
+
+  static Future<Box<Uint8List>?> ensureReply() {
+    if (!Pref.saveReply) {
       reply = null;
+      return Future.value(null);
     }
+    final replyBox = reply;
+    if (replyBox != null) {
+      return Future.value(replyBox);
+    }
+    return _replyFuture ??= Hive.openBox<Uint8List>(
+      'reply',
+      keyComparator: _intStrDescKeyComparator,
+      compactionStrategy: (entries, deletedEntries) {
+        return deletedEntries > 10;
+      },
+    ).then((box) => reply = box).catchError((Object _) {
+      _replyFuture = null;
+      return null;
+    });
   }
 
   static String exportAllSettings() {

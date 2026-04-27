@@ -41,6 +41,7 @@ class _WebviewPageState extends State<WebviewPage> {
   final RxDouble progress = 1.0.obs;
   bool _inApp = false;
   bool _off = false;
+  bool _webViewReady = Platform.isLinux;
 
   InAppWebViewController? _webViewController;
 
@@ -62,6 +63,15 @@ class _WebviewPageState extends State<WebviewPage> {
     if (Get.arguments case final Map map) {
       _inApp = map['inApp'] ?? false;
       _off = map['off'] ?? false;
+    }
+    if (!_webViewReady) {
+      LoginUtils.setWebCookie().whenComplete(() {
+        if (mounted) {
+          setState(() {
+            _webViewReady = true;
+          });
+        }
+      });
     }
   }
 
@@ -169,7 +179,9 @@ class _WebviewPageState extends State<WebviewPage> {
               ],
             ),
       body: SafeArea(
-        child: InAppWebView(
+        child: !_webViewReady
+            ? const Center(child: CircularProgressIndicator())
+            : InAppWebView(
           webViewEnvironment: webViewEnvironment,
           initialSettings: InAppWebViewSettings(
             clearCache: true,

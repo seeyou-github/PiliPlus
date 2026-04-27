@@ -29,6 +29,7 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
   late final Future<LoadingState<String>> _future;
   Webview? _linuxWebview;
   late bool _linuxWebviewLoading = true;
+  bool _webViewEnvironmentReady = !Platform.isWindows;
 
   @override
   void initState() {
@@ -36,6 +37,14 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
     _future = _getConfig(widget.gt, widget.challenge);
     if (Platform.isLinux) {
       _initLinuxWebview();
+    } else if (!_webViewEnvironmentReady) {
+      ensureWebViewEnvironment().whenComplete(() {
+        if (mounted) {
+          setState(() {
+            _webViewEnvironmentReady = true;
+          });
+        }
+      });
     }
   }
 
@@ -207,57 +216,59 @@ class _GeetestWebviewDialogState extends State<GeetestWebviewDialog> {
       content: SizedBox(
         width: 300,
         height: 400,
-        child: InAppWebView(
-          webViewEnvironment: webViewEnvironment,
-          initialSettings: InAppWebViewSettings(
-            clearCache: true,
-            javaScriptEnabled: true,
-            forceDark: ForceDark.AUTO,
-            useHybridComposition: false,
-            algorithmicDarkeningAllowed: true,
-            useShouldOverrideUrlLoading: true,
-            userAgent: BrowserUa.mob,
-            mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
-          ),
-          initialData: InAppWebViewInitialData(
-            data:
-                '<!DOCTYPE html><html><head></head><body><script src="$_geetestJsUri"></script><script>function R(n,o){flutter_inappwebview.callHandler(n,o)}</script></body></html>',
-          ),
-          onWebViewCreated: (ctr) {
-            ctr
-              ..addJavaScriptHandler(
-                handlerName: 'success',
-                callback: (args) {
-                  if (args.isNotEmpty) {
-                    if (args[0] case Map<String, dynamic> data) {
-                      Get.back(result: data);
-                      return;
-                    }
+        child: !_webViewEnvironmentReady
+            ? const Center(child: CircularProgressIndicator())
+            : InAppWebView(
+                webViewEnvironment: webViewEnvironment,
+                initialSettings: InAppWebViewSettings(
+                  clearCache: true,
+                  javaScriptEnabled: true,
+                  forceDark: ForceDark.AUTO,
+                  useHybridComposition: false,
+                  algorithmicDarkeningAllowed: true,
+                  useShouldOverrideUrlLoading: true,
+                  userAgent: BrowserUa.mob,
+                  mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                ),
+                initialData: InAppWebViewInitialData(
+                  data:
+                      '<!DOCTYPE html><html><head></head><body><script src="$_geetestJsUri"></script><script>function R(n,o){flutter_inappwebview.callHandler(n,o)}</script></body></html>',
+                ),
+                onWebViewCreated: (ctr) {
+                  ctr
+                    ..addJavaScriptHandler(
+                      handlerName: 'success',
+                      callback: (args) {
+                        if (args.isNotEmpty) {
+                          if (args[0] case Map<String, dynamic> data) {
+                            Get.back(result: data);
+                            return;
+                          }
+                        }
+                        debugPrint('geetest invalid result: $args');
+                      },
+                    )
+                    ..addJavaScriptHandler(
+                      handlerName: 'error',
+                      callback: (args) {
+                        debugPrint('geetest error: $args');
+                      },
+                    );
+                },
+                onLoadStop: (ctr, _) async {
+                  final config = await _future;
+                  if (!mounted) return;
+                  if (config case Success(:final response)) {
+                    ctr.evaluateJavascript(
+                      source:
+                          'let t=Geetest($response).onSuccess(()=>R("success",t.getValidate())).onError((o)=>R("error",o));t.onReady(()=>t.verify());',
+                    );
+                  } else {
+                    config.toast();
+                    Get.back();
                   }
-                  debugPrint('geetest invalid result: $args');
                 },
-              )
-              ..addJavaScriptHandler(
-                handlerName: 'error',
-                callback: (args) {
-                  debugPrint('geetest error: $args');
-                },
-              );
-          },
-          onLoadStop: (ctr, _) async {
-            final config = await _future;
-            if (!mounted) return;
-            if (config case Success(:final response)) {
-              ctr.evaluateJavascript(
-                source:
-                    'let t=Geetest($response).onSuccess(()=>R("success",t.getValidate())).onError((o)=>R("error",o));t.onReady(()=>t.verify());',
-              );
-            } else {
-              config.toast();
-              Get.back();
-            }
-          },
-        ),
+              ),
       ),
       actions: [
         TextButton(

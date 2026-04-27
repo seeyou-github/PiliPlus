@@ -11,7 +11,6 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/accounts/account_manager/account_mgr.dart';
 import 'package:PiliPlus/utils/global_data.dart';
-import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:archive/archive.dart';
@@ -39,13 +38,15 @@ class Request {
   static void setCookie() {
     accountManager = AccountManager();
     dio.interceptors.add(accountManager);
-    Accounts.refresh();
-    LoginUtils.setWebCookie();
+    Accounts.refresh(activate: false);
+  }
 
+  static void startDeferredAccountTasks() {
+    unawaited(Accounts.refresh());
     if (Accounts.main.isLogin) {
       final coin = Pref.userInfoCache?.money;
       if (coin == null) {
-        setCoin();
+        unawaited(setCoin());
       } else {
         GlobalData().coins = coin;
       }

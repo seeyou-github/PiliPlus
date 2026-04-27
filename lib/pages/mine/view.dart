@@ -41,6 +41,18 @@ class _MediaPageState extends CommonPageState<MinePage>
   @override
   bool get wantKeepAlive => true;
 
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      GStorage.ensureReply().then((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      }),
+    );
+  }
+
   bool get checkPage =>
       _mainController.navigationBars[0] != NavigationBarType.mine &&
       _mainController.selectedIndex.value == 0;

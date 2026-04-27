@@ -72,11 +72,14 @@ abstract final class Accounts {
   //   }
   // }
 
-  static Future<void> refresh() {
+  static Future<void> refresh({bool activate = true}) {
     for (final a in account.values) {
       for (final t in a.type) {
         accountMode[t.index] = a;
       }
+    }
+    if (!activate) {
+      return Future.value();
     }
     return Future.wait(
       (accountMode.toSet()..removeWhere((i) => i.activated)).map(

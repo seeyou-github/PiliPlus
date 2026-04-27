@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:PiliPlus/build_config.dart';
@@ -47,6 +48,78 @@ import 'package:screen_brightness_platform_interface/screen_brightness_platform_
 import 'package:window_manager/window_manager.dart' hide calcWindowPosition;
 
 WebViewEnvironment? webViewEnvironment;
+Future<WebViewEnvironment?>? _webViewEnvironmentFuture;
+Future<void> _desktopWindowReady = Future.value();
+
+Future<WebViewEnvironment?> ensureWebViewEnvironment() {
+  if (!Platform.isWindows) {
+    return Future.value(null);
+  }
+  if (webViewEnvironment != null) {
+    return Future.value(webViewEnvironment);
+  }
+  return _webViewEnvironmentFuture ??= () async {
+    try {
+      if (await WebViewEnvironment.getAvailableVersion() == null) {
+        return null;
+      }
+      return webViewEnvironment = await WebViewEnvironment.create(
+        settings: WebViewEnvironmentSettings(
+          userDataFolder: path.join(appSupportDirPath, 'flutter_inappwebview'),
+        ),
+      );
+    } catch (e) {
+      _webViewEnvironmentFuture = null;
+      if (kDebugMode) debugPrint('WebViewEnvironment init error: $e');
+      return null;
+    }
+  }();
+}
+
+Color _desktopStartupBackground() {
+  final themeMode = Pref.themeMode;
+  final platformBrightness =
+      WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  final isDark =
+      themeMode == ThemeMode.dark ||
+      (themeMode == ThemeMode.system && platformBrightness == Brightness.dark);
+  return isDark ? Colors.black : Colors.white;
+}
+
+Future<void> _showDesktopWindow() async {
+  await _desktopWindowReady;
+  await windowManager.show();
+  await windowManager.focus();
+}
+
+void _schedulePostStartupTasks() {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (PlatformUtils.isDesktop) {
+      unawaited(_showDesktopWindow());
+    }
+    unawaited(_runPostStartupTasks());
+  });
+}
+
+Future<void> _runPostStartupTasks() async {
+  Request.startDeferredAccountTasks();
+  unawaited(RequestUtils.syncHistoryStatus());
+
+  if (Pref.dynamicColor) {
+    unawaited(
+      MyApp.initPlatformState().then((success) {
+        if (success) {
+          MyApp.updateTheme();
+        }
+      }),
+    );
+  }
+
+  unawaited(GStorage.initDeferred());
+
+  await Future.delayed(const Duration(seconds: 3));
+  unawaited(CacheManager.autoClearCache());
+}
 
 Future<void> _initDownPath() async {
   if (PlatformUtils.isDesktop) {
@@ -109,29 +182,18 @@ void main() async {
     ..lazyPut(DownloadService.new);
   HttpOverrides.global = _CustomHttpOverrides();
 
-  CacheManager.autoClearCache();
-
   if (PlatformUtils.isMobile) {
     await Future.wait([
       if (Platform.isAndroid) _initSdkInt(),
       if (Pref.horizontalScreen) ?fullMode() else ?portraitUpMode(),
       setupServiceLocator(),
     ]);
-  } else if (Platform.isWindows) {
-    if (await WebViewEnvironment.getAvailableVersion() != null) {
-      webViewEnvironment = await WebViewEnvironment.create(
-        settings: WebViewEnvironmentSettings(
-          userDataFolder: path.join(appSupportDirPath, 'flutter_inappwebview'),
-        ),
-      );
-    }
   } else if (Platform.isMacOS) {
     await setupServiceLocator();
   }
 
   Request();
   Request.setCookie();
-  RequestUtils.syncHistoryStatus();
 
   SmartDialog.config.toast = SmartConfigToast(displayType: .onlyRefresh);
 
@@ -166,26 +228,33 @@ void main() async {
 
     final windowOptions = WindowOptions(
       minimumSize: const Size(400, 720),
+      backgroundColor: _desktopStartupBackground(),
       skipTaskbar: false,
       titleBarStyle: Pref.showWindowTitleBar
           ? TitleBarStyle.normal
           : TitleBarStyle.hidden,
       title: Constants.appName,
     );
+    final readyCompleter = Completer<void>();
+    _desktopWindowReady = readyCompleter.future;
     windowManager.waitUntilReadyToShow(windowOptions, () async {
-      final windowSize = Pref.windowSize;
-      await windowManager.setBounds(
-        await calcWindowPosition(windowSize) & windowSize,
-      );
-      if (Pref.isWindowMaximized) await windowManager.maximize();
-      await windowManager.show();
-      await windowManager.focus();
+      try {
+        final windowSize = Pref.windowSize;
+        await windowManager.setBounds(
+          await calcWindowPosition(windowSize) & windowSize,
+        );
+        if (Pref.isWindowMaximized) await windowManager.maximize();
+      } catch (e) {
+        if (kDebugMode) debugPrint('window init error: $e');
+      } finally {
+        if (!readyCompleter.isCompleted) {
+          readyCompleter.complete();
+        }
+      }
     });
   }
 
-  if (Pref.dynamicColor) {
-    await MyApp.initPlatformState();
-  }
+  _schedulePostStartupTasks();
 
   if (Pref.enableLog) {
     // 异常捕获 logo记录
@@ -273,6 +342,14 @@ class MyApp extends StatelessWidget {
         isDynamic: dynamicColor,
       ),
     );
+  }
+
+  static void updateTheme() {
+    final (light, dark) = getAllTheme();
+    Get.rootController
+      ..theme = light
+      ..darkTheme = dark
+      ..update();
   }
 
   @override

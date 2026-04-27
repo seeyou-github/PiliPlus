@@ -26,6 +26,7 @@ class HomeController extends GetxController
   bool enableSearchWord = Pref.enableSearchWord;
   late final RxString defaultSearch = ''.obs;
   late int lateCheckSearchAt = 0;
+  static const _startupDelay = Duration(seconds: 2);
 
   ScrollOrRefreshMixin get controller => tabs[tabController.index].ctr();
 
@@ -51,7 +52,15 @@ class HomeController extends GetxController
 
     if (enableSearchWord) {
       lateCheckSearchAt = DateTime.now().millisecondsSinceEpoch;
-      querySearchDefault();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(
+          Future<void>.delayed(_startupDelay, () {
+            if (!isClosed) {
+              unawaited(querySearchDefault());
+            }
+          }),
+        );
+      });
     }
 
     setTabConfig();

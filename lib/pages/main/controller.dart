@@ -67,13 +67,26 @@ class MainController extends GetxController
   late bool isPlaying = false;
 
   static const _period = 5 * 60 * 1000;
+  static const _startupDelay = Duration(seconds: 2);
   late int _lastSelectTime = 0;
+
+  void _deferStartupTask(VoidCallback callback) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        Future<void>.delayed(_startupDelay, () {
+          if (!isClosed) {
+            callback();
+          }
+        }),
+      );
+    });
+  }
 
   @override
   void onInit() {
     super.onInit();
     if (Pref.autoUpdate) {
-      Update.checkUpdate();
+      _deferStartupTask(Update.checkUpdate);
     }
 
     setNavBarConfig();
@@ -105,7 +118,7 @@ class MainController extends GetxController
         if (checkDynamic) {
           _lastCheckDynamicAt = DateTime.now().millisecondsSinceEpoch;
         }
-        getUnreadDynamic();
+        _deferStartupTask(getUnreadDynamic);
       }
     }
 
@@ -113,7 +126,9 @@ class MainController extends GetxController
     if (msgBadgeMode != DynamicBadgeMode.hidden) {
       if (hasHome) {
         lastCheckUnreadAt = DateTime.now().millisecondsSinceEpoch;
-        queryUnreadMsg();
+        _deferStartupTask(() {
+          unawaited(queryUnreadMsg());
+        });
       }
     }
   }

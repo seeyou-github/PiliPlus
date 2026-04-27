@@ -1,4 +1,4 @@
-import 'dart:async' show FutureOr;
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
 import 'package:PiliPlus/http/loading_state.dart';
@@ -13,43 +13,48 @@ import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart' show Digest;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart' as web;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 abstract final class LoginUtils {
-  static FutureOr setWebCookie([Account? account]) {
+  static Future<void> setWebCookie([Account? account]) async {
     if (Platform.isLinux) {
-      return null;
+      return;
     }
     final cookies = (account ?? Accounts.main).cookieJar.toList();
     final webManager = web.CookieManager.instance(
-      webViewEnvironment: webViewEnvironment,
+      webViewEnvironment: await ensureWebViewEnvironment(),
     );
     final isWindows = Platform.isWindows;
-    return Future.wait(
-      cookies.map(
-        (cookie) => webManager.setCookie(
-          url: web.WebUri(
-            '${isWindows ? 'https://' : ''} ${cookie.domain}',
+    try {
+      await Future.wait(
+        cookies.map(
+          (cookie) => webManager.setCookie(
+            url: web.WebUri(
+              '${isWindows ? 'https://' : ''}${cookie.domain}',
+            ),
+            name: cookie.name,
+            value: cookie.value,
+            path: cookie.path ?? '/',
+            domain: cookie.domain,
+            isSecure: cookie.secure,
+            isHttpOnly: cookie.httpOnly,
           ),
-          name: cookie.name,
-          value: cookie.value,
-          path: cookie.path ?? '/',
-          domain: cookie.domain,
-          isSecure: cookie.secure,
-          isHttpOnly: cookie.httpOnly,
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('set web cookie error: $e');
+    }
   }
 
   static Future<void> onLoginMain() async {
     final account = Accounts.main;
     final res = await UserHttp.userInfo();
     if (res case Success(:final response)) {
-      setWebCookie(account);
-      RequestUtils.syncHistoryStatus();
+      unawaited(setWebCookie(account));
+      unawaited(RequestUtils.syncHistoryStatus());
       if (response.isLogin == true) {
         final accountService = Get.find<AccountService>()
           ..face.value = response.face!;
