@@ -459,7 +459,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.cdnSpeedTest, defaultValue: true);
 
   static bool get autoUpdate =>
-      _setting.get(SettingBoxKey.autoUpdate, defaultValue: true);
+      _setting.get(SettingBoxKey.autoUpdate, defaultValue: false);
 
   static bool get horizontalPreview =>
       _setting.get(SettingBoxKey.horizontalPreview, defaultValue: false);
@@ -652,7 +652,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.banWordForDyn, defaultValue: '');
 
   static bool get enableLog =>
-      _setting.get(SettingBoxKey.enableLog, defaultValue: true);
+      _setting.get(SettingBoxKey.enableLog, defaultValue: false);
 
   static bool get disableAudioCDN =>
       _setting.get(SettingBoxKey.disableAudioCDN, defaultValue: false);
