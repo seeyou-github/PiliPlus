@@ -7,6 +7,8 @@ import 'package:flutter/services.dart'
 
 bool _isDesktopFullScreen = false;
 
+bool get isDesktopFullScreen => _isDesktopFullScreen;
+
 @pragma('vm:notify-debugger-on-exception')
 Future<void> enterDesktopFullScreen({bool inAppFullScreen = false}) async {
   if (!inAppFullScreen && !_isDesktopFullScreen) {
@@ -57,9 +59,12 @@ Future<void>? landscapeRightMode() {
 }
 
 Future<void>? fullMode() {
-  return _setPreferredOrientations(
-    const [.portraitUp, .portraitDown, .landscapeLeft, .landscapeRight],
-  );
+  return _setPreferredOrientations(const [
+    .portraitUp,
+    .portraitDown,
+    .landscapeLeft,
+    .landscapeRight,
+  ]);
 }
 
 bool _showStatusBar = true;

@@ -159,6 +159,14 @@ List<SettingsModel> get playSettings => [
     setKey: SettingBoxKey.enableAutoEnter,
     defaultVal: false,
   ),
+  if (Platform.isWindows)
+    const SwitchModel(
+      title: '自动窗口全屏',
+      subtitle: '视频开始播放时进入播放页窗口全屏，播放完成退出窗口全屏',
+      leading: Icon(Icons.crop_free_outlined),
+      setKey: SettingBoxKey.enableAutoWindowFullscreen,
+      defaultVal: false,
+    ),
   const SwitchModel(
     title: '自动退出全屏',
     subtitle: '视频结束播放时退出全屏',
@@ -275,10 +283,7 @@ Future<void> _showSubtitleDialog(
     ),
   );
   if (res != null) {
-    await GStorage.setting.put(
-      SettingBoxKey.subtitlePreferenceV2,
-      res.index,
-    );
+    await GStorage.setting.put(SettingBoxKey.subtitlePreferenceV2, res.index);
     setState();
   }
 }
@@ -332,10 +337,7 @@ Future<void> _showProgressBehaviorDialog(
     ),
   );
   if (res != null) {
-    await GStorage.setting.put(
-      SettingBoxKey.btmProgressBehavior,
-      res.index,
-    );
+    await GStorage.setting.put(SettingBoxKey.btmProgressBehavior, res.index);
     setState();
   }
 }
