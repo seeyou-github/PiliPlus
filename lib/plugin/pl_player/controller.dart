@@ -1810,7 +1810,10 @@ class PlPlayerController with BlockConfigMixin {
       if (Platform.isWindows &&
           autoWindowFullscreen &&
           autoWindowFullscreenBackOnComplete) {
-        Get.back();
+        triggerFullScreen(
+          status: false,
+          inAppFullScreen: true,
+        ).whenComplete(Get.back);
         return;
       }
       triggerFullScreen(status: false);

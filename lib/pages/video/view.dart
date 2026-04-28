@@ -309,6 +309,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
           if (plPlayerController!.autoWindowFullscreenBackOnComplete &&
               (Get.key.currentState?.canPop() ?? false)) {
             _autoWindowFullscreenEnteredByPlayback = false;
+            await plPlayerController.triggerFullScreen(
+              status: false,
+              inAppFullScreen: true,
+            );
             Get.back();
             return;
           }
