@@ -1417,6 +1417,14 @@ class PlPlayerController with BlockConfigMixin {
     updateSubtitleStyle();
   }
 
+  // Used by Windows auto-window-fullscreen on startup to avoid visible switch animation.
+  void enterInAppFullScreenImmediately() {
+    if (PlatformUtils.isMobile || isDesktopPip || isFullScreen.value) {
+      return;
+    }
+    _setFullScreen(true);
+  }
+
   double screenRatio = 0.0;
   bool isManualFS = true;
   late final FullScreenMode mode = Pref.fullScreenMode;

@@ -185,6 +185,11 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   // 获取视频资源，初始化播放器
   void videoSourceInit() {
+    if (Platform.isWindows && autoWindowFullscreen) {
+      videoDetailController.plPlayerController.enterInAppFullScreenImmediately();
+      _autoWindowFullscreenEnteredByPlayback =
+          videoDetailController.plPlayerController.isFullScreen.value;
+    }
     videoDetailController.queryVideoUrl(autoFullScreenFlag: true);
     if (videoDetailController.autoPlay) {
       plPlayerController = videoDetailController.plPlayerController;
