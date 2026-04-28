@@ -24,8 +24,18 @@ class _BarSetPageState extends State<BarSetPage> {
     key = args['key'];
     title = args['title'];
     final List? cache = GStorage.setting.get(key);
+    final Set<int>? defaultEnabled = (args['defaultEnabledBars'] as List?)
+        ?.map((e) => (e as Enum).index)
+        .toSet();
     list = (args['defaultBars'] as List<EnumWithLabel>)
-        .map((e) => Pair(first: e, second: cache?.contains(e.index) ?? true))
+        .map(
+          (e) => Pair(
+            first: e,
+            second: cache?.contains(e.index) ??
+                defaultEnabled?.contains(e.index) ??
+                true,
+          ),
+        )
         .toList();
     if (cache != null && cache.isNotEmpty) {
       final cacheIndex = {for (final (k, v) in cache.indexed) v: k};

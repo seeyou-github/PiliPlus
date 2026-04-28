@@ -531,6 +531,9 @@ abstract final class Pref {
   static bool get showDynActionBar =>
       _setting.get(SettingBoxKey.showDynActionBar, defaultValue: true);
 
+  static bool get hideUpowerExclusiveVideo =>
+      _setting.get(SettingBoxKey.hideUpowerExclusiveVideo, defaultValue: false);
+
   static bool get darkVideoPage =>
       _setting.get(SettingBoxKey.darkVideoPage, defaultValue: false);
 

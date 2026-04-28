@@ -347,12 +347,13 @@ List<SettingsModel> get styleSettings => [
       '/barSetting',
       arguments: {
         'key': SettingBoxKey.tabBarSort,
-        'defaultBars': HomeTabType.values,
+        'defaultBars': HomeTabType.selectableTabs,
+        'defaultEnabledBars': HomeTabType.defaultTabs,
         'title': '首页标签页',
       },
     ),
     title: '首页标签页',
-    subtitle: '删除或调换首页标签页',
+    subtitle: '删除、调换或添加分区二级分类',
     leading: const Icon(Icons.toc_outlined),
   ),
   NormalModel(

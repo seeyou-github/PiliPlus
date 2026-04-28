@@ -45,6 +45,7 @@ class DynamicsDataModel {
   static bool enableFilter = banWordForDyn.pattern.isNotEmpty;
 
   static bool antiGoodsDyn = Pref.antiGoodsDyn;
+  static bool hideUpowerExclusiveVideo = Pref.hideUpowerExclusiveVideo;
 
   DynamicsDataModel.fromJson(
     Map<String, dynamic> json, {
@@ -65,6 +66,11 @@ class DynamicsDataModel {
                     'ADDITIONAL_TYPE_GOODS' ||
                 item.modules.moduleDynamic?.additional?.type ==
                     'ADDITIONAL_TYPE_GOODS')) {
+          continue;
+        }
+        if (hideUpowerExclusiveVideo &&
+            (item.isUpowerExclusive ||
+                item.orig?.isUpowerExclusive == true)) {
           continue;
         }
         if (enableFilter) {
@@ -105,6 +111,9 @@ class DynamicItemModel {
   bool? visible;
 
   late bool linkFolded = false;
+
+  bool get isUpowerExclusive =>
+      modules.moduleDynamic?.major?.isUpowerExclusive == true;
 
   // opus
   Fallback? fallback;
@@ -879,6 +888,13 @@ class DynamicMajorModel {
 
   SubscriptionNew? subscriptionNew;
 
+  bool get isUpowerExclusive =>
+      upowerCommon != null ||
+      archive?.isUpowerExclusive == true ||
+      ugcSeason?.isUpowerExclusive == true ||
+      pgc?.isUpowerExclusive == true ||
+      courses?.isUpowerExclusive == true;
+
   DynamicMajorModel.fromJson(Map<String, dynamic> json) {
     archive = json['archive'] != null
         ? DynamicArchiveModel.fromJson(json['archive'])
@@ -1070,6 +1086,8 @@ class DynamicArchiveModel {
   int? type;
   int? epid;
   int? seasonId;
+
+  bool get isUpowerExclusive => badge?.text?.contains('充电专属') == true;
 
   DynamicArchiveModel.fromJson(Map<String, dynamic> json) {
     id = Utils.safeToInt(json['id']);

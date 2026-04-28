@@ -51,7 +51,8 @@ class HotVideoItemModel extends BaseRcmdVideoItemModel with MultiSelectData {
     // uri = json['uri']; // 仅在稍后再看存在
     progress = json['progress'];
     isCooperation = json['rights']?['is_cooperation'];
-    isCharging = json['charging_pay']?['level'] != null;
+    isUpowerExclusive = isUpowerExclusiveFromJson(json);
+    isCharging = isUpowerExclusive;
   }
 
   // @override

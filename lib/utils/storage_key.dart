@@ -119,6 +119,7 @@ abstract final class SettingBoxKey {
       showFSActionItem = 'showFSActionItem',
       enableShrinkVideoSize = 'enableShrinkVideoSize',
       showDynActionBar = 'showDynActionBar',
+      hideUpowerExclusiveVideo = 'hideUpowerExclusiveVideo',
       darkVideoPage = 'darkVideoPage',
       enableSlideVolumeBrightness = 'enableSlideVolumeBrightness',
       enableSlideFS = 'enableSlideFS',

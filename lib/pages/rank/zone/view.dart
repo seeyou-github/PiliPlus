@@ -5,15 +5,17 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/rank/zone/controller.dart';
 import 'package:PiliPlus/pages/rank/zone/widget/pgc_rank_item.dart';
+import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ZonePage extends StatefulWidget {
-  const ZonePage({super.key, this.rid, this.seasonType});
+  const ZonePage({super.key, this.rid, this.seasonType, this.tag});
 
   final int? rid;
   final int? seasonType;
+  final String? tag;
 
   @override
   State<ZonePage> createState() => _ZonePageState();
@@ -25,9 +27,9 @@ class _ZonePageState extends State<ZonePage>
 
   @override
   void initState() {
-    controller = Get.put(
-      ZoneController(rid: widget.rid, seasonType: widget.seasonType),
-      tag: '${widget.rid}${widget.seasonType}',
+    controller = Get.putOrFind(
+      () => ZoneController(rid: widget.rid, seasonType: widget.seasonType),
+      tag: widget.tag ?? '${widget.rid}${widget.seasonType}',
     );
     super.initState();
   }

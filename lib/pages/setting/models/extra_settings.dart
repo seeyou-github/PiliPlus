@@ -444,6 +444,21 @@ List<SettingsModel> get extraSettings => [
     onChanged: (value) => ReplyGrpc.antiGoodsReply = value,
   ),
   SwitchModel(
+    title: '隐藏充电专属视频',
+    subtitle: '首页、动态页、热门和分区不显示充电专属视频',
+    leading: const Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        Icon(Icons.bolt_outlined, size: 18),
+        Icon(Icons.not_interested),
+      ],
+    ),
+    setKey: SettingBoxKey.hideUpowerExclusiveVideo,
+    defaultVal: false,
+    onChanged: (value) => DynamicsDataModel.hideUpowerExclusiveVideo = value,
+  ),
+  SwitchModel(
     title: '侧滑关闭二级页面',
     leading: Transform.rotate(
       angle: pi * 1.5,

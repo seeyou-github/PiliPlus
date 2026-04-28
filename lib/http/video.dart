@@ -73,7 +73,9 @@ abstract final class VideoHttp {
             (i['owner'] != null &&
                 !GlobalData().blackMids.contains(i['owner']['mid']))) {
           RcmdVideoItemModel videoItem = RcmdVideoItemModel.fromJson(i);
-          if (!RecommendFilter.filter(videoItem)) {
+          if ((!Pref.hideUpowerExclusiveVideo ||
+                  !videoItem.isUpowerExclusive) &&
+              !RecommendFilter.filter(videoItem)) {
             list.add(videoItem);
           }
         }
@@ -153,7 +155,9 @@ abstract final class VideoHttp {
             continue;
           }
           RcmdVideoItemAppModel videoItem = RcmdVideoItemAppModel.fromJson(i);
-          if (!RecommendFilter.filter(videoItem)) {
+          if ((!Pref.hideUpowerExclusiveVideo ||
+                  !videoItem.isUpowerExclusive) &&
+              !RecommendFilter.filter(videoItem)) {
             list.add(videoItem);
           }
         }
@@ -187,7 +191,10 @@ abstract final class VideoHttp {
               zoneRegExp.hasMatch(i['tname'])) {
             continue;
           }
-          list.add(HotVideoItemModel.fromJson(i));
+          final item = HotVideoItemModel.fromJson(i);
+          if (!Pref.hideUpowerExclusiveVideo || !item.isUpowerExclusive) {
+            list.add(item);
+          }
         }
       }
       return Success(list);
@@ -869,6 +876,10 @@ abstract final class VideoHttp {
       if (enableFilter &&
           i['tname'] != null &&
           zoneRegExp.hasMatch(i['tname'])) {
+        return false;
+      }
+      if (Pref.hideUpowerExclusiveVideo &&
+          isUpowerExclusiveFromJson(i.cast<String, dynamic>())) {
         return false;
       }
       return true;
