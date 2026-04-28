@@ -1,10 +1,11 @@
 import 'dart:math';
 
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart';
 import 'package:PiliPlus/common/widgets/sliver/sliver_floating_header.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
@@ -23,7 +24,8 @@ class PopularSeriesPage extends StatefulWidget {
   State<PopularSeriesPage> createState() => _PopularSeriesPageState();
 }
 
-class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
+class _PopularSeriesPageState extends State<PopularSeriesPage>
+    with VideoCardVGridMixin {
   final _controller = Get.put(PopularSeriesController());
 
   @override
@@ -44,8 +46,15 @@ class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
         child: CustomScrollView(
           physics: ReloadScrollPhysics(controller: _controller),
           slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+            SliverPadding(
+              padding: const EdgeInsets.only(
+                left: Style.safeSpace,
+                top: Style.cardSpace,
+                right: Style.safeSpace,
+              ),
+              sliver: ViewSliverSafeArea(
+                sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+              ),
             ),
           ],
         ),
@@ -65,7 +74,7 @@ class _PopularSeriesPageState extends State<PopularSeriesPage> with GridMixin {
             itemCount: response.length,
             itemBuilder: (context, index) {
               final item = response[index];
-              return VideoCardH(
+              return VideoCardV(
                 videoItem: item,
                 onTap: () {
                   final config = _controller.config.value;

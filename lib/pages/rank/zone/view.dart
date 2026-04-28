@@ -1,6 +1,7 @@
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/rank/zone/controller.dart';
@@ -22,8 +23,9 @@ class ZonePage extends StatefulWidget {
 }
 
 class _ZonePageState extends State<ZonePage>
-    with AutomaticKeepAliveClientMixin, GridMixin {
+    with AutomaticKeepAliveClientMixin, VideoCardVGridMixin {
   late final ZoneController controller;
+  late final pgcGridDelegate = Grid.videoCardHDelegate(context);
 
   @override
   void initState() {
@@ -47,7 +49,12 @@ class _ZonePageState extends State<ZonePage>
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.only(top: 7, bottom: 100),
+            padding: const EdgeInsets.only(
+              left: Style.safeSpace,
+              top: Style.cardSpace,
+              right: Style.safeSpace,
+              bottom: 100,
+            ),
             sliver: Obx(() => _buildBody(controller.loadingState.value)),
           ),
         ],
@@ -61,11 +68,13 @@ class _ZonePageState extends State<ZonePage>
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
-                gridDelegate: gridDelegate,
+                gridDelegate: response.first is HotVideoItemModel
+                    ? gridDelegate
+                    : pgcGridDelegate,
                 itemBuilder: (context, index) {
                   final item = response[index];
                   if (item is HotVideoItemModel) {
-                    return VideoCardH(
+                    return VideoCardV(
                       videoItem: item,
                       onRemove: () => controller.loadingState
                         ..value.data!.removeAt(index)

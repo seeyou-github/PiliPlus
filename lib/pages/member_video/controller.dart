@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:get/get.dart';
 
@@ -82,6 +83,9 @@ class MemberVideoCtr
     Success<SpaceArchiveData> response,
   ) {
     final data = response.response;
+    if (Pref.hideUpowerExclusiveVideo && type != ContributeType.charging) {
+      data.item?.removeWhere((item) => item.isUpowerExclusive);
+    }
     episodicButton = data.episodicButton;
     next = data.next;
     if (page == 0 || isLoadPrevious) {

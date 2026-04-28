@@ -70,6 +70,11 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
   @override
   bool customHandleResponse(bool isRefresh, Success<SpaceData> response) {
     final data = response.response;
+    if (Pref.hideUpowerExclusiveVideo) {
+      data.archive?.item?.removeWhere((item) => item.isUpowerExclusive);
+      data.coinArchive?.item?.removeWhere((item) => item.isUpowerExclusive);
+      data.likeArchive?.item?.removeWhere((item) => item.isUpowerExclusive);
+    }
     final card = data.card;
     username = card?.name ?? '';
     userAvatar = card?.face;

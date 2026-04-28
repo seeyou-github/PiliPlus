@@ -1,4 +1,5 @@
 import 'package:PiliPlus/models/model_owner.dart';
+import 'package:PiliPlus/models/model_rec_video_item.dart';
 import 'package:PiliPlus/models/model_video.dart';
 import 'package:PiliPlus/models_new/space/space_archive/badge.dart';
 import 'package:PiliPlus/models_new/space/space_archive/history.dart';
@@ -19,6 +20,7 @@ class SpaceArchiveItem extends BaseSimpleVideoItemModel {
   History? history;
   String? styles;
   String? label;
+  bool isUpowerExclusive = false;
 
   SpaceArchiveItem.fromJson(Map<String, dynamic> json) {
     title = json['title'];
@@ -48,5 +50,6 @@ class SpaceArchiveItem extends BaseSimpleVideoItemModel {
     owner = Owner(mid: 0, name: json['author']);
     styles = json['styles'];
     label = json['label'];
+    isUpowerExclusive = isUpowerExclusiveFromJson(json);
   }
 }

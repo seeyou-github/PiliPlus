@@ -7,6 +7,7 @@ import 'package:PiliPlus/models_new/space/space_archive/item.dart';
 import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 
 class HorizontalMemberPageController
@@ -55,6 +56,9 @@ class HorizontalMemberPageController
   @override
   bool customHandleResponse(bool isRefresh, Success response) {
     SpaceArchiveData data = response.response;
+    if (Pref.hideUpowerExclusiveVideo) {
+      data.item?.removeWhere((item) => item.isUpowerExclusive);
+    }
     count = data.count;
     if (isRefresh) {
       if (isLoadPrevious) {

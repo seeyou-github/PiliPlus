@@ -35,9 +35,12 @@ bool isUpowerExclusiveFromJson(Map<String, dynamic> json) {
       hasBadgeText(json['badge']) ||
       hasBadgeText(json['badges']) ||
       hasBadgeText(json['badge_info']) ||
+      hasBadgeText(json['badge_text']) ||
       hasBadgeText(json['cover_badge']) ||
       hasBadgeText(json['cover_left_text_3']) ||
-      hasBadgeText(json['cover_right_text']);
+      hasBadgeText(json['cover_right_text']) ||
+      hasBadgeText(json['label']) ||
+      hasBadgeText(json['styles']);
 }
 
 class RcmdVideoItemModel extends BaseRcmdVideoItemModel {

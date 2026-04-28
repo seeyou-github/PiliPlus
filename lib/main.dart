@@ -93,7 +93,9 @@ Color _desktopStartupBackground() {
 
 Future<void> _showDesktopWindow() async {
   await _desktopWindowReady;
-  await windowManager.show();
+  if (!Platform.isWindows) {
+    await windowManager.show();
+  }
   await windowManager.focus();
 }
 

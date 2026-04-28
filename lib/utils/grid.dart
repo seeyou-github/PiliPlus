@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:PiliPlus/common/skeleton/video_card_h.dart';
+import 'package:PiliPlus/common/skeleton/video_card_v.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,16 @@ mixin GridMixin<T extends StatefulWidget> on State<T> {
   );
 }
 
+mixin VideoCardVGridMixin<T extends StatefulWidget> on State<T> {
+  late final gridDelegate = Grid.videoCardVDelegate(context);
+
+  Widget get gridSkeleton => SliverGrid.builder(
+    gridDelegate: gridDelegate,
+    itemBuilder: (_, _) => const VideoCardVSkeleton(),
+    itemCount: 10,
+  );
+}
+
 abstract final class Grid {
   static final double smallCardWidth = Pref.smallCardWidth;
 
@@ -27,6 +38,16 @@ abstract final class Grid {
     maxCrossAxisExtent: Grid.smallCardWidth * 2,
     childAspectRatio: Style.aspectRatio * 2.2,
     minHeight: MediaQuery.textScalerOf(context).scale(minHeight),
+  );
+
+  static SliverGridDelegateWithExtentAndRatio videoCardVDelegate(
+    BuildContext context,
+  ) => SliverGridDelegateWithExtentAndRatio(
+    mainAxisSpacing: Style.cardSpace,
+    crossAxisSpacing: Style.cardSpace,
+    maxCrossAxisExtent: Pref.recommendCardWidth,
+    childAspectRatio: Style.aspectRatio,
+    mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
   );
 }
 

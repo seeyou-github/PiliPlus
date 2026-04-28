@@ -1,6 +1,7 @@
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
@@ -19,7 +20,7 @@ class PopularPreciousPage extends StatefulWidget {
 }
 
 class _PopularPreciousPageState extends State<PopularPreciousPage>
-    with GridMixin {
+    with VideoCardVGridMixin {
   final _controller = Get.put(PopularPreciousController());
 
   @override
@@ -32,8 +33,15 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+            SliverPadding(
+              padding: const EdgeInsets.only(
+                left: Style.safeSpace,
+                top: Style.cardSpace,
+                right: Style.safeSpace,
+              ),
+              sliver: ViewSliverSafeArea(
+                sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+              ),
             ),
           ],
         ),
@@ -51,7 +59,7 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
           itemCount: response!.length,
           itemBuilder: (context, index) {
             final item = response[index];
-            return VideoCardH(
+            return VideoCardV(
               videoItem: item,
               onTap: () {
                 PageUtils.toVideoPage(

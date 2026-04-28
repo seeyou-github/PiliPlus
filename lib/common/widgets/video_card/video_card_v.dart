@@ -8,6 +8,7 @@ import 'package:PiliPlus/common/widgets/video_popup_menu.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/stat_type.dart';
 import 'package:PiliPlus/models/home/rcmd/result.dart';
+import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/models/model_rec_video_item.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
@@ -24,16 +25,24 @@ import 'package:intl/intl.dart';
 // 视频卡片 - 垂直布局
 class VideoCardV extends StatelessWidget {
   final BaseRcmdVideoItemModel videoItem;
+  final VoidCallback? onTap;
   final VoidCallback? onRemove;
 
   const VideoCardV({
     super.key,
     required this.videoItem,
+    this.onTap,
     this.onRemove,
   });
 
+  bool get isVideo =>
+      videoItem.goto == 'av' ||
+      (videoItem.goto == null &&
+          (videoItem.aid != null || videoItem.bvid != null));
+
   Future<void> onPushDetail() async {
-    switch (videoItem.goto) {
+    final goto = videoItem.goto ?? (isVideo ? 'av' : null);
+    switch (goto) {
       case 'bangumi':
         PageUtils.viewPgc(epId: videoItem.param!);
         break;
@@ -46,6 +55,12 @@ class VideoCardV extends StatelessWidget {
           if (videoItem.uri case final uri?) {
             isVertical = Utils.getDimensionFromUri(uri);
           }
+        } else if (videoItem case final HotVideoItemModel item) {
+          if (item.redirectUrl?.isNotEmpty == true &&
+              PageUtils.viewPgcFromUri(item.redirectUrl!)) {
+            return;
+          }
+          dimension = item.dimension;
         }
         if (cid == null) {
           if (await SearchHttp.ab2cWithDimension(aid: videoItem.aid, bvid: bvid)
@@ -94,7 +109,7 @@ class VideoCardV extends StatelessWidget {
         Card(
           clipBehavior: Clip.hardEdge,
           child: InkWell(
-            onTap: onPushDetail,
+            onTap: onTap ?? onPushDetail,
             onLongPress: onLongPress,
             onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
             child: Column(
@@ -135,7 +150,7 @@ class VideoCardV extends StatelessWidget {
             ),
           ),
         ),
-        if (videoItem.goto == 'av')
+        if (isVideo)
           Positioned(
             right: -5,
             bottom: -2,
@@ -217,7 +232,7 @@ class VideoCardV extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (videoItem.goto == 'av') const SizedBox(width: 10),
+                if (isVideo) const SizedBox(width: 10),
               ],
             ),
           ],
