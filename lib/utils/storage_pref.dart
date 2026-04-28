@@ -655,6 +655,13 @@ abstract final class Pref {
         defaultValue: false,
       );
 
+  static bool get autoWindowFullscreenBackOnComplete =>
+      Platform.isWindows &&
+      _setting.get(
+        SettingBoxKey.autoWindowFullscreenBackOnComplete,
+        defaultValue: false,
+      );
+
   static bool get autoPlayEnable =>
       _setting.get(SettingBoxKey.autoPlayEnable, defaultValue: false);
 

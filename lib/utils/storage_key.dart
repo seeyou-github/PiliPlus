@@ -21,6 +21,7 @@ abstract final class SettingBoxKey {
       p1080 = 'p1080',
       enableAutoEnter = 'enableAutoEnter',
       enableAutoWindowFullscreen = 'enableAutoWindowFullscreen',
+      autoWindowFullscreenBackOnComplete = 'autoWindowFullscreenBackOnComplete',
       enableAutoExit = 'enableAutoExit',
       enableOnlineTotal = 'enableOnlineTotal',
       superChatType = 'superChatType',

@@ -167,6 +167,14 @@ List<SettingsModel> get playSettings => [
       setKey: SettingBoxKey.enableAutoWindowFullscreen,
       defaultVal: false,
     ),
+  if (Platform.isWindows)
+    const SwitchModel(
+      title: '播放完成自动返回上一级页面',
+      subtitle: '播放完成或鼠标返回键直接返回上一页；鼠标右键仍切换窗口全屏',
+      leading: Icon(Icons.keyboard_return_outlined),
+      setKey: SettingBoxKey.autoWindowFullscreenBackOnComplete,
+      defaultVal: false,
+    ),
   const SwitchModel(
     title: '自动退出全屏',
     subtitle: '视频结束播放时退出全屏',

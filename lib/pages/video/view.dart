@@ -118,11 +118,15 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   bool isShowing = true;
   bool _lastPlayerWasPlaying = false;
   bool _autoWindowFullscreenEnteredByPlayback = false;
+  StreamSubscription<bool>? _fullScreenSubscription;
 
   bool get isFullScreen =>
       videoDetailController.plPlayerController.isFullScreen.value;
 
   bool get _shouldShowSeasonPanel {
+    if (!videoDetailController.loadNonVideoNetwork.value) {
+      return false;
+    }
     if (videoDetailController.isFileSource ||
         isPortrait ||
         !videoDetailController.isUgc) {
@@ -169,6 +173,12 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
 
     videoSourceInit();
+    if (Platform.isWindows && autoWindowFullscreen) {
+      _fullScreenSubscription = videoDetailController
+          .plPlayerController
+          .isFullScreen
+          .listen(_onFullScreenChanged);
+    }
 
     addObserverMobile(this);
   }
@@ -188,13 +198,22 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     videoDetailController.playedTime = position;
   }
 
+  void _onFullScreenChanged(bool isFullScreen) {
+    if (!isFullScreen && _autoWindowFullscreenEnteredByPlayback) {
+      _autoWindowFullscreenEnteredByPlayback = false;
+      videoDetailController.loadDeferredNonVideoNetwork();
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final isResume = state == .resumed;
     final ctr = videoDetailController.plPlayerController..visible = isResume;
     if (isResume) {
       if (!ctr.showDanmaku) {
-        introController.startTimer();
+        if (!videoDetailController.isNonVideoNetworkDeferred) {
+          introController.startTimer();
+        }
         ctr.showDanmaku = true;
       }
     } else if (state == .paused) {
@@ -282,11 +301,18 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
       if (exitFlag) {
         if (Platform.isWindows && _autoWindowFullscreenEnteredByPlayback) {
+          if (plPlayerController!.autoWindowFullscreenBackOnComplete &&
+              (Get.key.currentState?.canPop() ?? false)) {
+            _autoWindowFullscreenEnteredByPlayback = false;
+            Get.back();
+            return;
+          }
           _autoWindowFullscreenEnteredByPlayback = false;
           await plPlayerController!.triggerFullScreen(
             status: false,
             inAppFullScreen: true,
           );
+          videoDetailController.loadDeferredNonVideoNetwork();
         }
         // 结束播放退出全屏
         if (autoExitFullscreen) {
@@ -358,6 +384,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     plPlayerController
       ?..removeStatusLister(playerListener)
       ..removePositionListener(positionListener);
+    _fullScreenSubscription?.cancel();
 
     Get.delete<HorizontalMemberPageController>(
       tag: videoDetailController.heroTag,
@@ -447,7 +474,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     PlPlayerController.setPlayCallBack(playCallBack);
 
-    introController.startTimer();
+    if (!videoDetailController.isNonVideoNetworkDeferred) {
+      introController.startTimer();
+    }
 
     if (mounted &&
         Platform.isAndroid &&
@@ -933,7 +962,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
     final introHeight = maxHeight - height - padding.top;
     final showIntro =
-        videoDetailController.isUgc && videoDetailController.showRelatedVideo;
+        videoDetailController.loadNonVideoNetwork.value &&
+        videoDetailController.isUgc &&
+        videoDetailController.showRelatedVideo;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1641,6 +1672,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     if (videoDetailController.isFileSource) {
       return localIntroPanel(needCtr: needCtr);
     }
+    if (!videoDetailController.loadNonVideoNetwork.value) {
+      return const SizedBox.shrink();
+    }
     Widget introPanel() {
       Widget child = CustomScrollView(
         key: const PageStorageKey(CommonIntroController),
@@ -1856,11 +1890,14 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     );
   }
 
-  Widget videoReplyPanel({bool isNested = false}) => VideoReplyPanel(
-    key: videoReplyPanelKey,
-    isNested: isNested,
-    heroTag: heroTag,
-  );
+  Widget videoReplyPanel({bool isNested = false}) =>
+      videoDetailController.loadNonVideoNetwork.value
+      ? VideoReplyPanel(
+          key: videoReplyPanelKey,
+          isNested: isNested,
+          heroTag: heroTag,
+        )
+      : const SizedBox.shrink();
 
   // ai总结
   void showAiBottomSheet() {

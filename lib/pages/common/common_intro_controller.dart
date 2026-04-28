@@ -80,6 +80,26 @@ abstract class CommonIntroController extends GetxController
     cid = RxInt(args['cid']);
     hasLater.value = args['sourceType'] == SourceType.watchLater;
 
+    if (videoDetailCtr.isNonVideoNetworkDeferred) {
+      return;
+    }
+    loadInitialData();
+  }
+
+  bool _initialDataLoaded = false;
+
+  bool markInitialDataLoaded() {
+    if (_initialDataLoaded) {
+      return false;
+    }
+    _initialDataLoaded = true;
+    return true;
+  }
+
+  void loadInitialData() {
+    if (!markInitialDataLoaded()) {
+      return;
+    }
     queryVideoIntro();
     startTimer();
   }

@@ -156,6 +156,9 @@ class VideoDetailController extends GetxController
   bool get showRelatedVideo =>
       isFileSource ? false : plPlayerController.showRelatedVideo;
 
+  final RxBool loadNonVideoNetwork = true.obs;
+  bool get isNonVideoNetworkDeferred => !loadNonVideoNetwork.value;
+
   ScrollController? introScrollCtr;
   ScrollController get effectiveIntroScrollCtr =>
       introScrollCtr ??= ScrollController();
@@ -246,15 +249,20 @@ class VideoDetailController extends GetxController
       var height = firstVideo.height;
       if (width == null || height == null) {
         if (isUgc && !isFileSource) {
-          final ugcIntroCtr = Get.find<UgcIntroController>(tag: heroTag);
-          final data = ugcIntroCtr.videoDetail.value;
-          if (data.cid == cid.value) {
-            final dimension = data.dimension!;
-            width = dimension.width!;
-            height = dimension.height!;
+          if (isNonVideoNetworkDeferred) {
+            width = isVertical.value ? 9 : 16;
+            height = isVertical.value ? 16 : 9;
           } else {
-            ugcIntroCtr.queryVideoIntro().whenComplete(_setVideoHeight);
-            return;
+            final ugcIntroCtr = Get.find<UgcIntroController>(tag: heroTag);
+            final data = ugcIntroCtr.videoDetail.value;
+            if (data.cid == cid.value) {
+              final dimension = data.dimension!;
+              width = dimension.width!;
+              height = dimension.height!;
+            } else {
+              ugcIntroCtr.queryVideoIntro().whenComplete(_setVideoHeight);
+              return;
+            }
           }
         } else {
           return;
@@ -397,12 +405,17 @@ class VideoDetailController extends GetxController
     sourceType = args['sourceType'] ?? SourceType.normal;
     isFileSource = sourceType == SourceType.file;
     isPlayAll = sourceType != SourceType.normal && !isFileSource;
+    loadNonVideoNetwork.value =
+        !(Platform.isWindows && plPlayerController.autoWindowFullscreen) ||
+        isFileSource;
     if (isFileSource) {
       initFileSource(args['entry']);
     } else if (isPlayAll) {
       watchLaterTitle = args['favTitle'];
       _mediaDesc = args['desc'];
-      getMediaList();
+      if (!isNonVideoNetworkDeferred) {
+        getMediaList();
+      }
     }
 
     tabCtr = TabController(
@@ -410,6 +423,45 @@ class VideoDetailController extends GetxController
       vsync: this,
       initialIndex: Pref.defaultShowComment ? 1 : 0,
     );
+  }
+
+  void loadDeferredNonVideoNetwork() {
+    if (!isNonVideoNetworkDeferred || isClosed) {
+      return;
+    }
+    loadNonVideoNetwork.value = true;
+
+    if (isPlayAll && mediaList.isEmpty) {
+      getMediaList();
+    }
+
+    try {
+      if (isUgc) {
+        Get.find<UgcIntroController>(tag: heroTag).loadInitialData();
+      } else {
+        Get.find<PgcIntroController>(tag: heroTag).loadInitialData();
+      }
+    } catch (_) {}
+
+    loadPostVideoNetworkFeatures();
+  }
+
+  void loadPostVideoNetworkFeatures() {
+    if (isFileSource || isClosed) {
+      return;
+    }
+
+    if (plPlayerController.enableBlock) {
+      initSkip();
+    }
+
+    if (vttSubtitlesIndex.value == -1) {
+      _queryPlayInfo();
+    }
+
+    if (plPlayerController.showDmChart && dmTrend.value == null) {
+      _getDmTrend();
+    }
   }
 
   Future<void> getMediaList({
@@ -788,18 +840,8 @@ class VideoDetailController extends GetxController
 
     if (isClosed) return;
 
-    if (!isFileSource) {
-      if (plPlayerController.enableBlock) {
-        initSkip();
-      }
-
-      if (vttSubtitlesIndex.value == -1) {
-        _queryPlayInfo();
-      }
-
-      if (plPlayerController.showDmChart && dmTrend.value == null) {
-        _getDmTrend();
-      }
+    if (!isNonVideoNetworkDeferred) {
+      loadPostVideoNetworkFeatures();
     }
 
     defaultST = null;
@@ -834,7 +876,10 @@ class VideoDetailController extends GetxController
       return;
     }
     isQuerying = true;
-    if (plPlayerController.enableSponsorBlock && isBlock && !fromReset) {
+    if (!isNonVideoNetworkDeferred &&
+        plPlayerController.enableSponsorBlock &&
+        isBlock &&
+        !fromReset) {
       querySponsorBlock(bvid: bvid, cid: cid.value);
     }
     if (plPlayerController.cacheVideoQa == null) {

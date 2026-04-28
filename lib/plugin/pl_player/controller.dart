@@ -370,6 +370,8 @@ class PlPlayerController with BlockConfigMixin {
 
   late final bool autoEnterFullScreen = Pref.autoEnterFullScreen;
   late final bool autoWindowFullscreen = Pref.autoWindowFullscreen;
+  late final bool autoWindowFullscreenBackOnComplete =
+      Pref.autoWindowFullscreenBackOnComplete;
   late final bool autoExitFullscreen = Pref.autoExitFullscreen;
   late final bool autoPlayEnable = Pref.autoPlayEnable;
   late final bool enableVerticalExpand = Pref.enableVerticalExpand;
@@ -1797,6 +1799,12 @@ class PlPlayerController with BlockConfigMixin {
       return;
     }
     if (isFullScreen.value) {
+      if (Platform.isWindows &&
+          autoWindowFullscreen &&
+          autoWindowFullscreenBackOnComplete) {
+        Get.back();
+        return;
+      }
       triggerFullScreen(status: false);
       return;
     }

@@ -62,7 +62,15 @@ class PgcIntroController extends CommonIntroController {
     pgcItem = args['pgcItem'];
 
     super.onInit();
+  }
 
+  @override
+  void loadInitialData() {
+    if (!markInitialDataLoaded()) {
+      return;
+    }
+    queryVideoIntro();
+    startTimer();
     if (isPgc) {
       if (isLogin) {
         queryIsFollowed();

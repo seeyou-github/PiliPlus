@@ -1664,7 +1664,10 @@ class HeaderControlState extends State<HeaderControl>
     final isFullScreen = this.isFullScreen;
     final isFSOrPip = isFullScreen || plPlayerController.isDesktopPip;
     final showFSActionItem =
-        !isFileSource && plPlayerController.showFSActionItem && isFSOrPip;
+        !isFileSource &&
+        videoDetailCtr.loadNonVideoNetwork.value &&
+        plPlayerController.showFSActionItem &&
+        isFSOrPip;
     showCurrTimeIfNeeded(isFullScreen);
     Widget title;
     if (introController.videoDetail.value.title != null &&
@@ -1704,7 +1707,8 @@ class HeaderControlState extends State<HeaderControl>
           },
         ),
       );
-      if (introController.isShowOnlineTotal) {
+      if (introController.isShowOnlineTotal &&
+          videoDetailCtr.loadNonVideoNetwork.value) {
         title = Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
