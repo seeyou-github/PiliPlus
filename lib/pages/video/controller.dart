@@ -268,19 +268,19 @@ class VideoDetailController extends GetxController
           return;
         }
       }
-      final isVertical = height > width;
+      final isVideoVertical = height > width;
       if (_scrollCtr?.hasClients != true) {
-        videoHeight = isVertical ? maxVideoHeight : minVideoHeight;
-        this.isVertical.value = isVertical;
+        videoHeight = isVideoVertical ? maxVideoHeight : minVideoHeight;
+        this.isVertical.value = isVideoVertical;
         return;
       }
-      if (this.isVertical.value != isVertical) {
-        this.isVertical.value = isVertical;
-        double videoHeight = isVertical ? maxVideoHeight : minVideoHeight;
+      if (this.isVertical.value != isVideoVertical) {
+        this.isVertical.value = isVideoVertical;
+        double videoHeight = isVideoVertical ? maxVideoHeight : minVideoHeight;
         if (this.videoHeight != videoHeight) {
           if (videoHeight > this.videoHeight) {
             // current minVideoHeight
-            if (_needAnimOnDimensionChanged(isVertical)) {
+            if (_needAnimOnDimensionChanged(isVideoVertical)) {
               isExpanding = true;
               animationController.forward(
                 from: (minVideoHeight - scrollCtr.offset) / maxVideoHeight,
@@ -293,14 +293,14 @@ class VideoDetailController extends GetxController
                 .toPrecision(2);
             double minVideoHeightPrecise = minVideoHeight.toPrecision(2);
             if (currentHeight == minVideoHeightPrecise) {
-              if (_needAnimOnDimensionChanged(isVertical)) {
+              if (_needAnimOnDimensionChanged(isVideoVertical)) {
                 isExpanding = true;
                 this.videoHeight = minVideoHeight;
               }
               animationController.forward(from: 1);
             } else if (currentHeight < minVideoHeightPrecise) {
               // expand
-              if (_needAnimOnDimensionChanged(isVertical)) {
+              if (_needAnimOnDimensionChanged(isVideoVertical)) {
                 isExpanding = true;
                 animationController.forward(
                   from: currentHeight / minVideoHeight,
@@ -309,7 +309,7 @@ class VideoDetailController extends GetxController
               this.videoHeight = minVideoHeight;
             } else {
               // collapse
-              if (_needAnimOnDimensionChanged(isVertical)) {
+              if (_needAnimOnDimensionChanged(isVideoVertical)) {
                 isCollapsing = true;
                 animationController.forward(
                   from: scrollCtr.offset / (maxVideoHeight - minVideoHeight),
