@@ -876,10 +876,7 @@ class VideoDetailController extends GetxController
       return;
     }
     isQuerying = true;
-    if (!isNonVideoNetworkDeferred &&
-        plPlayerController.enableSponsorBlock &&
-        isBlock &&
-        !fromReset) {
+    if (plPlayerController.enableSponsorBlock && isBlock && !fromReset) {
       querySponsorBlock(bvid: bvid, cid: cid.value);
     }
     if (plPlayerController.cacheVideoQa == null) {
