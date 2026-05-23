@@ -125,6 +125,8 @@ class PlPlayerController with BlockConfigMixin {
 
   /// 屏幕锁 为true时，关闭控制栏
   final RxBool controlsLock = false.obs;
+  // Windows 窗口播放时，鼠标停留在播放器内不自动隐藏控制栏。
+  bool keepControlsVisible = false;
 
   /// 全屏状态
   final RxBool isFullScreen = false.obs;
@@ -695,9 +697,7 @@ class PlPlayerController with BlockConfigMixin {
       // 数据加载完成
       dataStatus.value = DataStatus.loaded;
 
-      if (autoFullScreenFlag &&
-          autoEnterFullScreen &&
-          !autoWindowFullscreen) {
+      if (autoFullScreenFlag && autoEnterFullScreen && !autoWindowFullscreen) {
         triggerFullScreen(status: true);
       }
 
@@ -1205,8 +1205,12 @@ class PlPlayerController with BlockConfigMixin {
   /// 隐藏控制条
   void hideTaskControls() {
     _timer?.cancel();
+    if (keepControlsVisible) {
+      _timer = null;
+      return;
+    }
     _timer = Timer(showControlDuration, () {
-      if (!isSliderMoving.value && !tripling) {
+      if (!keepControlsVisible && !isSliderMoving.value && !tripling) {
         controls = false;
       }
       _timer = null;
