@@ -228,8 +228,8 @@ dependencies:
   # file_picker: ^10.3.3
   file_picker:
     git:
-      url: https://github.com/bggRGjQaUbCoE/flutter_file_picker.git
-      ref: mod
+      url: https://github.com/miguelpruivo/flutter_file_picker.git
+      ref: 2e170b1c91c8b454ddc2770eb97d2b371c253c11
   super_sliver_list:
     git:
       url: https://github.com/bggRGjQaUbCoE/super_sliver_list.git
@@ -264,32 +264,32 @@ dependency_overrides:
     git:
       url: https://github.com/My-Responsitories/media-kit.git
       path: media_kit
-      ref: version_1.2.5
+      ref: 4f0f72e5bf21349bc251bf52761628faeae3f233
   media_kit_video:
     git:
       url: https://github.com/My-Responsitories/media-kit.git
       path: media_kit_video
-      ref: version_1.2.5
+      ref: 4f0f72e5bf21349bc251bf52761628faeae3f233
   media_kit_libs_video:
     git:
       url: https://github.com/My-Responsitories/media-kit.git
       path: libs/universal/media_kit_libs_video
-      ref: version_1.2.5
+      ref: 4f0f72e5bf21349bc251bf52761628faeae3f233
   media_kit_native_event_loop:
     git:
       url: https://github.com/My-Responsitories/media-kit.git
       path: media_kit_native_event_loop
-      ref: version_1.2.5
+      ref: 4f0f72e5bf21349bc251bf52761628faeae3f233
   media_kit_libs_android_video:
     git:
       url: https://github.com/My-Responsitories/media-kit.git
       path: libs/android/media_kit_libs_android_video
-      ref: version_1.2.5
+      ref: 4f0f72e5bf21349bc251bf52761628faeae3f233
   media_kit_libs_windows_video:
     git:
       url: https://github.com/My-Responsitories/media-kit.git
       path: libs/windows/media_kit_libs_windows_video
-      ref: version_1.2.5
+      ref: 4f0f72e5bf21349bc251bf52761628faeae3f233
   media_kit_libs_ios_video:
     git:
       url: https://github.com/bggRGjQaUbCoE/media-kit.git
