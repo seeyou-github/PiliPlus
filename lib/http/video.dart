@@ -1040,6 +1040,37 @@ abstract final class VideoHttp {
     }
   }
 
+  static List<HotVideoItemModel>? _filterPopularBlackMids(
+    String source,
+    List<HotVideoItemModel>? list,
+  ) {
+    if (list == null || list.isEmpty) {
+      logger.i('PopularFilter source=$source raw=${list?.length ?? 0}');
+      return list;
+    }
+
+    final blackMids = GlobalData().blackMids;
+    var filtered = 0;
+    final result = <HotVideoItemModel>[];
+    for (final item in list) {
+      final mid = item.owner.mid;
+      if (blackMids.contains(mid)) {
+        filtered++;
+        logger.i(
+          'PopularFilter source=$source black_mid mid=$mid '
+          'bvid=${item.bvid} title=${item.title}',
+        );
+      } else {
+        result.add(item);
+      }
+    }
+    logger.i(
+      'PopularFilter source=$source raw=${list.length} kept=${result.length} '
+      'filteredBlack=$filtered localBlackMids=${blackMids.length}',
+    );
+    return result;
+  }
+
   static Future<LoadingState<PopularSeriesOneData>> popularSeriesOne({
     required int number,
   }) async {
@@ -1051,8 +1082,14 @@ abstract final class VideoHttp {
       }),
     );
     if (res.data['code'] == 0) {
-      return Success(PopularSeriesOneData.fromJson(res.data['data']));
+      final data = PopularSeriesOneData.fromJson(res.data['data']);
+      data.list = _filterPopularBlackMids('popularSeries:$number', data.list);
+      return Success(data);
     } else {
+      logger.w(
+        'PopularSeries failed number=$number code=${res.data['code']} '
+        'message=${res.data['message']}',
+      );
       return Error(res.data['message']);
     }
   }
@@ -1069,8 +1106,14 @@ abstract final class VideoHttp {
       }),
     );
     if (res.data['code'] == 0) {
-      return Success(PopularPreciousData.fromJson(res.data['data']));
+      final data = PopularPreciousData.fromJson(res.data['data']);
+      data.list = _filterPopularBlackMids('popularPrecious:$page', data.list);
+      return Success(data);
     } else {
+      logger.w(
+        'PopularPrecious failed page=$page code=${res.data['code']} '
+        'message=${res.data['message']}',
+      );
       return Error(res.data['message']);
     }
   }
