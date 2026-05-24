@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
+import 'package:PiliPlus/http/black.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/main.dart';
@@ -32,9 +33,7 @@ abstract final class LoginUtils {
       await Future.wait(
         cookies.map(
           (cookie) => webManager.setCookie(
-            url: web.WebUri(
-              '${isWindows ? 'https://' : ''}${cookie.domain}',
-            ),
+            url: web.WebUri('${isWindows ? 'https://' : ''}${cookie.domain}'),
             name: cookie.name,
             value: cookie.value,
             path: cookie.path ?? '/',
@@ -69,6 +68,7 @@ abstract final class LoginUtils {
         if (response != Pref.userInfoCache) {
           await GStorage.userInfo.put('userInfoCache', response);
         }
+        unawaited(BlackHttp.syncBlackMids(source: 'login'));
       }
     } else {
       // 获取用户信息失败

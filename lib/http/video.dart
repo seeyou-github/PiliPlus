@@ -28,6 +28,7 @@ import 'package:PiliPlus/models_new/video/video_note_list/data.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/data.dart';
 import 'package:PiliPlus/models_new/video/video_relation/data.dart';
 import 'package:PiliPlus/models_new/video/video_shot/data.dart';
+import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
@@ -646,12 +647,22 @@ abstract final class VideoHttp {
       if (act == 5) {
         // block
         Pref.setBlackMid(mid);
+        logger.i(
+          'BlackMidRelation block mid=$mid localTotal=${GlobalData().blackMids.length}',
+        );
       } else if (act == 6) {
         // unblock
         Pref.removeBlackMid(mid);
+        logger.i(
+          'BlackMidRelation unblock mid=$mid localTotal=${GlobalData().blackMids.length}',
+        );
       }
       return const Success(null);
     } else {
+      logger.w(
+        'BlackMidRelation failed mid=$mid act=$act code=${res.data['code']} '
+        'message=${res.data['message']}',
+      );
       return Error(res.data['message']);
     }
   }
@@ -867,7 +878,8 @@ abstract final class VideoHttp {
   }
 
   static bool _canAddRank(Map i) {
-    if (!GlobalData().blackMids.contains(i['owner']['mid']) &&
+    final ownerMid = i['owner']?['mid'];
+    if (!GlobalData().blackMids.contains(ownerMid) &&
         !RecommendFilter.filterTitle(i['title']) &&
         !RecommendFilter.filterLikeRatio(
           i['stat']['like'],
@@ -891,13 +903,26 @@ abstract final class VideoHttp {
   static Future<LoadingState<List<HotVideoItemModel>>> getRankVideoList(
     int rid,
   ) async {
+    final blackMids = GlobalData().blackMids;
+    logger.i('RankZone request rid=$rid localBlackMids=${blackMids.length}');
     final res = await Request().get(
       Api.getRankApi,
       queryParameters: await WbiSign.makSign({'rid': rid, 'type': 'all'}),
     );
     if (res.data['code'] == 0) {
       List<HotVideoItemModel> list = <HotVideoItemModel>[];
+      var filteredByBlackMid = 0;
+      var filteredByOtherRules = 0;
       for (final i in res.data['data']['list']) {
+        final ownerMid = i['owner']?['mid'];
+        if (blackMids.contains(ownerMid)) {
+          filteredByBlackMid++;
+          logger.i(
+            'RankZone filter black_mid rid=$rid mid=$ownerMid '
+            'bvid=${i['bvid']} title=${i['title']}',
+          );
+          continue;
+        }
         if (_canAddRank(i)) {
           list.add(HotVideoItemModel.fromJson(i));
           // final List? others = i['others'];
@@ -908,10 +933,21 @@ abstract final class VideoHttp {
           //     }
           //   }
           // }
+        } else {
+          filteredByOtherRules++;
         }
       }
+      logger.i(
+        'RankZone response rid=$rid raw=${res.data['data']['list'].length} '
+        'kept=${list.length} filteredBlack=$filteredByBlackMid '
+        'filteredOther=$filteredByOtherRules localBlackMids=${blackMids.length}',
+      );
       return Success(list);
     } else {
+      logger.w(
+        'RankZone failed rid=$rid code=${res.data['code']} '
+        'message=${res.data['message']}',
+      );
       return Error(res.data['message']);
     }
   }

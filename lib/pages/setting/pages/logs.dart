@@ -75,10 +75,7 @@ class _LogsPageState extends State<LogsPage> {
   }
 
   void copyLogs() {
-    Utils.copyText(
-      '```\n${logsContent.join('\n\n')}```',
-      needToast: false,
-    );
+    Utils.copyText('```\n${logsContent.join('\n\n')}```', needToast: false);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -132,14 +129,16 @@ class _LogsPageState extends State<LogsPage> {
                 onTap: () {
                   enableLog = !enableLog;
                   GStorage.setting.put(SettingBoxKey.enableLog, enableLog);
-                  SmartDialog.showToast('已${enableLog ? '开启' : '关闭'}，重启生效');
+                  SmartDialog.showToast('已${enableLog ? '开启' : '关闭'}');
+                  if (enableLog) {
+                    logger.i('Debug log enabled from LogsPage');
+                  } else {
+                    LoggerUtils.clearLogs();
+                  }
                 },
                 child: Text('${enableLog ? '关闭' : '开启'}日志'),
               ),
-              PopupMenuItem(
-                onTap: copyLogs,
-                child: const Text('复制日志'),
-              ),
+              PopupMenuItem(onTap: copyLogs, child: const Text('复制日志')),
               PopupMenuItem(
                 onTap: () =>
                     PageUtils.launchURL('${Constants.sourceCodeUrl}/issues'),
@@ -194,11 +193,7 @@ class InfoCard extends StatelessWidget {
 
   const InfoCard({super.key, required this.report});
 
-  Widget _buildMapSection(
-    Color color,
-    String title,
-    Map<String, dynamic> map,
-  ) {
+  Widget _buildMapSection(Color color, String title, Map<String, dynamic> map) {
     if (map.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -224,9 +219,7 @@ class InfoCard extends StatelessWidget {
                   text: '• ${entry.key}: ',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
-                TextSpan(
-                  text: entry.value.toString(),
-                ),
+                TextSpan(text: entry.value.toString()),
               ],
             ),
           ),
@@ -242,18 +235,11 @@ class InfoCard extends StatelessWidget {
       Row(
         spacing: 8,
         children: [
-          Icon(
-            Icons.info_outline,
-            size: 22,
-            color: colorScheme.primary,
-          ),
+          Icon(Icons.info_outline, size: 22, color: colorScheme.primary),
           const Expanded(
             child: Text(
               '相关信息',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -272,21 +258,13 @@ class InfoCard extends StatelessWidget {
         ],
       ),
       if (report.isExpanded) ...[
-        _buildMapSection(
-          colorScheme.primary,
-          '设备信息',
-          report.deviceParameters,
-        ),
+        _buildMapSection(colorScheme.primary, '设备信息', report.deviceParameters),
         _buildMapSection(
           colorScheme.primary,
           '应用信息',
           report.applicationParameters,
         ),
-        _buildMapSection(
-          colorScheme.primary,
-          '编译信息',
-          report.customParameters,
-        ),
+        _buildMapSection(colorScheme.primary, '编译信息', report.customParameters),
       ],
     ]);
   }
@@ -343,10 +321,7 @@ class ReportCard extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(
-              Icons.copy_outlined,
-              size: 16,
-            ),
+            icon: const Icon(Icons.copy_outlined, size: 16),
           ),
           iconButton(
             size: 34,
@@ -429,10 +404,7 @@ Widget _card(List<Widget> contents) {
   return Card(
     child: Padding(
       padding: const .all(12),
-      child: Column(
-        crossAxisAlignment: .stretch,
-        children: contents,
-      ),
+      child: Column(crossAxisAlignment: .stretch, children: contents),
     ),
   );
 }

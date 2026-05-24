@@ -20,6 +20,8 @@ import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/update.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart' hide ListTile;
@@ -42,6 +44,7 @@ class _AboutPageState extends State<AboutPage> {
   RxString cacheSize = ''.obs;
 
   late int _pressCount = 0;
+  late bool _enableLog = Pref.enableLog;
 
   @override
   void initState() {
@@ -143,10 +146,7 @@ class _AboutPageState extends State<AboutPage> {
                 : () => Utils.copyText(currentVersion),
             title: const Text('当前版本'),
             leading: const Icon(Icons.commit_outlined),
-            trailing: Text(
-              currentVersion,
-              style: subTitleStyle,
-            ),
+            trailing: Text(currentVersion, style: subTitleStyle),
           ),
           ListTile(
             title: Text(
@@ -180,22 +180,14 @@ Commit Hash: ${BuildConfig.commitHash}''',
               onTap: () => Utils.channel.invokeMethod('linkVerifySettings'),
               leading: const Icon(MdiIcons.linkBoxOutline),
               title: const Text('打开受支持的链接'),
-              trailing: Icon(
-                Icons.arrow_forward,
-                size: 16,
-                color: outline,
-              ),
+              trailing: Icon(Icons.arrow_forward, size: 16, color: outline),
             ),
           ListTile(
             onTap: () =>
                 PageUtils.launchURL('${Constants.sourceCodeUrl}/issues'),
             leading: const Icon(Icons.feedback_outlined),
             title: const Text('问题反馈'),
-            trailing: Icon(
-              Icons.arrow_forward,
-              size: 16,
-              color: outline,
-            ),
+            trailing: Icon(Icons.arrow_forward, size: 16, color: outline),
           ),
           ListTile(
             onTap: () => Get.toNamed('/logs'),
@@ -207,6 +199,26 @@ Commit Hash: ${BuildConfig.commitHash}''',
             title: const Text('错误日志'),
             subtitle: Text('长按清除日志', style: subTitleStyle),
             trailing: Icon(Icons.arrow_forward, size: 16, color: outline),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.receipt_long_outlined),
+            title: const Text('输出调试日志'),
+            subtitle: Text(
+              PlatformUtils.isDesktop
+                  ? '开启后输出到控制台和 exe 同目录 pili_debug.log'
+                  : '开启后输出到控制台和日志文件',
+              style: subTitleStyle,
+            ),
+            value: _enableLog,
+            onChanged: (value) async {
+              setState(() => _enableLog = value);
+              await GStorage.setting.put(SettingBoxKey.enableLog, value);
+              if (!value) {
+                await LoggerUtils.clearLogs();
+              } else {
+                logger.i('Debug log enabled from AboutPage');
+              }
+            },
           ),
           ListTile(
             onTap: () {
@@ -233,10 +245,7 @@ Commit Hash: ${BuildConfig.commitHash}''',
             leading: const Icon(Icons.delete_outline),
             title: const Text('清除缓存'),
             subtitle: Obx(
-              () => Text(
-                '图片及网络缓存 ${cacheSize.value}',
-                style: subTitleStyle,
-              ),
+              () => Text('图片及网络缓存 ${cacheSize.value}', style: subTitleStyle),
             ),
           ),
           ListTile(

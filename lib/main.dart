@@ -8,6 +8,7 @@ import 'package:PiliPlus/common/widgets/custom_toast.dart';
 import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/common/widgets/scale_app.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
+import 'package:PiliPlus/http/black.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
@@ -24,6 +25,7 @@ import 'package:PiliPlus/utils/json_file_handler.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
+import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -84,9 +86,8 @@ Color _desktopStartupBackground() {
   final theme = switch (themeMode) {
     ThemeMode.dark => darkTheme,
     ThemeMode.light => lightTheme,
-    ThemeMode.system => platformBrightness == Brightness.dark
-        ? darkTheme
-        : lightTheme,
+    ThemeMode.system =>
+      platformBrightness == Brightness.dark ? darkTheme : lightTheme,
   };
   return theme.scaffoldBackgroundColor;
 }
@@ -111,6 +112,9 @@ void _schedulePostStartupTasks() {
 Future<void> _runPostStartupTasks() async {
   Request.startDeferredAccountTasks();
   unawaited(RequestUtils.syncHistoryStatus());
+  if (Accounts.main.isLogin) {
+    unawaited(BlackHttp.syncBlackMids(source: 'startup'));
+  }
 
   if (Pref.dynamicColor) {
     unawaited(
@@ -271,27 +275,19 @@ void main() async {
           'Commit Hash: ${BuildConfig.commitHash}',
     };
     final fileHandler = await JsonFileHandler.init();
-    final Catcher2Options debugConfig = Catcher2Options(
-      SilentReportMode(),
-      [
-        ?fileHandler,
-        ConsoleHandler(
-          enableDeviceParameters: false,
-          enableApplicationParameters: false,
-          enableCustomParameters: true,
-        ),
-      ],
-      customParameters: customParameters,
-    );
+    final Catcher2Options debugConfig = Catcher2Options(SilentReportMode(), [
+      ?fileHandler,
+      ConsoleHandler(
+        enableDeviceParameters: false,
+        enableApplicationParameters: false,
+        enableCustomParameters: true,
+      ),
+    ], customParameters: customParameters);
 
-    final Catcher2Options releaseConfig = Catcher2Options(
-      SilentReportMode(),
-      [
-        ?fileHandler,
-        ConsoleHandler(enableCustomParameters: true),
-      ],
-      customParameters: customParameters,
-    );
+    final Catcher2Options releaseConfig = Catcher2Options(SilentReportMode(), [
+      ?fileHandler,
+      ConsoleHandler(enableCustomParameters: true),
+    ], customParameters: customParameters);
 
     Catcher2(
       debugConfig: debugConfig,
@@ -383,10 +379,7 @@ class MyApp extends StatelessWidget {
         loadingBuilder: (msg) => LoadingWidget(msg: msg),
         builder: _builder,
       ),
-      navigatorObservers: [
-        routeObserver,
-        FlutterSmartDialog.observer,
-      ],
+      navigatorObservers: [routeObserver, FlutterSmartDialog.observer],
       scrollBehavior: PlatformUtils.isDesktop
           ? const CustomScrollBehavior(desktopDragDevices)
           : null,
@@ -416,10 +409,7 @@ class MyApp extends StatelessWidget {
       );
     }
     if (PlatformUtils.isDesktop) {
-      return BackDetector(
-        onBack: _onBack,
-        child: child,
-      );
+      return BackDetector(onBack: _onBack, child: child);
     }
     return child;
   }
