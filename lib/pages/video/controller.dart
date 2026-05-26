@@ -455,7 +455,7 @@ class VideoDetailController extends GetxController
       initSkip();
     }
 
-    if (vttSubtitlesIndex.value == -1) {
+    if (!_playInfoRequested) {
       _queryPlayInfo();
     }
 
@@ -842,6 +842,8 @@ class VideoDetailController extends GetxController
 
     if (!isNonVideoNetworkDeferred) {
       loadPostVideoNetworkFeatures();
+    } else if (vttSubtitlesIndex.value == -1) {
+      _queryPlayInfo(loadSubtitleOnly: true);
     }
 
     defaultST = null;
@@ -1103,6 +1105,7 @@ class VideoDetailController extends GetxController
   RxList<Subtitle> subtitles = RxList<Subtitle>();
   final Map<int, ({bool isData, String id})> vttSubtitles = {};
   late final RxInt vttSubtitlesIndex = (-1).obs;
+  bool _playInfoRequested = false;
   late final RxBool showVP = true.obs;
   late final RxList<ViewPointSegment> viewPointList = <ViewPointSegment>[].obs;
 
@@ -1185,10 +1188,17 @@ class VideoDetailController extends GetxController
 
   late bool continuePlayingPart = Pref.continuePlayingPart;
 
-  Future<void> _queryPlayInfo() async {
-    vttSubtitles.clear();
-    vttSubtitlesIndex.value = 0;
-    if (plPlayerController.showViewPoints) {
+  Future<void> _queryPlayInfo({bool loadSubtitleOnly = false}) async {
+    if (!loadSubtitleOnly) {
+      _playInfoRequested = true;
+    }
+    final shouldLoadSubtitles =
+        vttSubtitlesIndex.value == -1 || subtitles.isEmpty;
+    if (shouldLoadSubtitles) {
+      vttSubtitles.clear();
+      vttSubtitlesIndex.value = 0;
+    }
+    if (!loadSubtitleOnly && plPlayerController.showViewPoints) {
       viewPointList.clear();
     }
     final res = await VideoHttp.playInfo(
@@ -1198,56 +1208,61 @@ class VideoDetailController extends GetxController
       epId: epId,
     );
     if (res case Success(:final response)) {
-      // interactive video
-      if (isUgc && graphVersion == null) {
-        try {
-          final introCtr = Get.find<UgcIntroController>(tag: heroTag);
-          if (introCtr.videoDetail.value.rights?.isSteinGate == 1) {
-            graphVersion = response.interaction?.graphVersion;
-            getSteinEdgeInfo();
+      if (!loadSubtitleOnly) {
+        // interactive video
+        if (isUgc && graphVersion == null) {
+          try {
+            final introCtr = Get.find<UgcIntroController>(tag: heroTag);
+            if (introCtr.videoDetail.value.rights?.isSteinGate == 1) {
+              graphVersion = response.interaction?.graphVersion;
+              getSteinEdgeInfo();
+            }
+          } catch (e) {
+            if (kDebugMode) debugPrint('handle stein: $e');
           }
-        } catch (e) {
-          if (kDebugMode) debugPrint('handle stein: $e');
+        }
+
+        if (isUgc && continuePlayingPart) {
+          continuePlayingPart = false;
+          try {
+            UgcIntroController ugcIntroController =
+                Get.find<UgcIntroController>(tag: heroTag);
+            if ((ugcIntroController.videoDetail.value.pages?.length ?? 0) > 1 &&
+                response.lastPlayCid != null &&
+                response.lastPlayCid != 0) {
+              if (response.lastPlayCid != cid.value) {
+                int index = ugcIntroController.videoDetail.value.pages!
+                    .indexWhere((item) => item.cid == response.lastPlayCid);
+                if (index != -1) {
+                  onAddItem(index);
+                }
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (plPlayerController.showViewPoints &&
+            response.viewPoints?.firstOrNull?.type == 2) {
+          try {
+            viewPointList.value = response.viewPoints!.map((item) {
+              final end = (item.to! / (data.timeLength! / 1000)).clamp(
+                0.0,
+                1.0,
+              );
+              return ViewPointSegment(
+                end: end,
+                title: item.content,
+                url: item.imgUrl,
+                from: item.from,
+                to: item.to,
+              );
+            }).toList();
+          } catch (_) {}
         }
       }
 
-      if (isUgc && continuePlayingPart) {
-        continuePlayingPart = false;
-        try {
-          UgcIntroController ugcIntroController = Get.find<UgcIntroController>(
-            tag: heroTag,
-          );
-          if ((ugcIntroController.videoDetail.value.pages?.length ?? 0) > 1 &&
-              response.lastPlayCid != null &&
-              response.lastPlayCid != 0) {
-            if (response.lastPlayCid != cid.value) {
-              int index = ugcIntroController.videoDetail.value.pages!
-                  .indexWhere((item) => item.cid == response.lastPlayCid);
-              if (index != -1) {
-                onAddItem(index);
-              }
-            }
-          }
-        } catch (_) {}
-      }
-
-      if (plPlayerController.showViewPoints &&
-          response.viewPoints?.firstOrNull?.type == 2) {
-        try {
-          viewPointList.value = response.viewPoints!.map((item) {
-            final end = (item.to! / (data.timeLength! / 1000)).clamp(0.0, 1.0);
-            return ViewPointSegment(
-              end: end,
-              title: item.content,
-              url: item.imgUrl,
-              from: item.from,
-              to: item.to,
-            );
-          }).toList();
-        } catch (_) {}
-      }
-
-      if (response.subtitle?.subtitles?.isNotEmpty == true) {
+      if (shouldLoadSubtitles &&
+          response.subtitle?.subtitles?.isNotEmpty == true) {
         subtitles.value = response.subtitle!.subtitles!;
 
         final idx = switch (Pref.subtitlePreferenceV2) {
@@ -1320,6 +1335,7 @@ class VideoDetailController extends GetxController
       ..dispose();
     subtitles.clear();
     vttSubtitles.clear();
+    _playInfoRequested = false;
     super.onClose();
   }
 
@@ -1344,6 +1360,7 @@ class VideoDetailController extends GetxController
     subtitles.clear();
     vttSubtitlesIndex.value = -1;
     vttSubtitles.clear();
+    _playInfoRequested = false;
 
     if (!isFileSource) {
       // language
