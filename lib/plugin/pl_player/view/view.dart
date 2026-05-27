@@ -358,499 +358,528 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     VideoDetailController videoDetailController,
     bool isLandscape,
   ) {
-    final videoDetail = introController.videoDetail.value;
-    final isSeason = videoDetail.ugcSeason != null;
-    final isPart = videoDetail.pages != null && videoDetail.pages!.length > 1;
-    final isPgc = !videoDetailController.isUgc;
-    final isPlayAll = videoDetailController.isPlayAll;
-    final anySeason = isSeason || isPart || isPgc || isPlayAll;
-    final isFullScreen = this.isFullScreen;
-    final double widgetWidth = isLandscape && isFullScreen ? 42 : 35;
+    return Obx(() {
+      final videoDetail = introController.videoDetail.value;
+      final isSeason = videoDetail.ugcSeason != null;
+      final isPart = videoDetail.pages != null && videoDetail.pages!.length > 1;
+      final isPgc = !videoDetailController.isUgc;
+      final isPlayAll = videoDetailController.isPlayAll;
+      final anySeason = isSeason || isPart || isPgc || isPlayAll;
+      final isFullScreen = this.isFullScreen;
+      final double widgetWidth = isLandscape && isFullScreen ? 42 : 35;
 
-    Widget progressWidget(
-      BottomControlType bottomControl,
-    ) => switch (bottomControl) {
-      /// 播放暂停
-      BottomControlType.playOrPause => PlayOrPauseButton(
-        plPlayerController: plPlayerController,
-      ),
+      Widget progressWidget(
+        BottomControlType bottomControl,
+      ) => switch (bottomControl) {
+        /// 播放暂停
+        BottomControlType.playOrPause => PlayOrPauseButton(
+          plPlayerController: plPlayerController,
+        ),
 
-      /// 上一集
-      BottomControlType.pre => ComBtn(
-        width: widgetWidth,
-        height: 30,
-        tooltip: '上一集',
-        icon: const Icon(Icons.skip_previous, size: 22, color: Colors.white),
-        onTap: () {
-          if (!introController.prevPlay()) {
-            SmartDialog.showToast('已经是第一集了');
-          }
-        },
-      ),
+        /// 上一集
+        BottomControlType.pre => ComBtn(
+          width: widgetWidth,
+          height: 30,
+          tooltip: '上一集',
+          icon: const Icon(Icons.skip_previous, size: 22, color: Colors.white),
+          onTap: () {
+            if (!introController.prevPlay()) {
+              SmartDialog.showToast('已经是第一集了');
+            }
+          },
+        ),
 
-      /// 下一集
-      BottomControlType.next => ComBtn(
-        width: widgetWidth,
-        height: 30,
-        tooltip: '下一集',
-        icon: const Icon(Icons.skip_next, size: 22, color: Colors.white),
-        onTap: () {
-          if (!introController.nextPlay()) {
-            SmartDialog.showToast('已经是最后一集了');
-          }
-        },
-      ),
+        /// 下一集
+        BottomControlType.next => ComBtn(
+          width: widgetWidth,
+          height: 30,
+          tooltip: '下一集',
+          icon: const Icon(Icons.skip_next, size: 22, color: Colors.white),
+          onTap: () {
+            if (!introController.nextPlay()) {
+              SmartDialog.showToast('已经是最后一集了');
+            }
+          },
+        ),
 
-      /// 时间进度
-      BottomControlType.time => Obx(
-        () => _VideoTime(
-          position: DurationUtils.formatDuration(
-            plPlayerController.positionSeconds.value,
-          ),
-          duration: DurationUtils.formatDuration(
-            plPlayerController.duration.value.inSeconds,
+        /// 时间进度
+        BottomControlType.time => Obx(
+          () => _VideoTime(
+            position: DurationUtils.formatDuration(
+              plPlayerController.positionSeconds.value,
+            ),
+            duration: DurationUtils.formatDuration(
+              plPlayerController.duration.value.inSeconds,
+            ),
           ),
         ),
-      ),
 
-      /// 高能进度条
-      BottomControlType.dmChart => Obx(() {
-        final list = videoDetailController.dmTrend.value?.dataOrNull;
-        if (list != null && list.isNotEmpty) {
-          final show = videoDetailController.showDmTrendChart.value;
-          return ComBtn(
-            width: widgetWidth,
-            height: 30,
-            tooltip: '高能进度条',
-            icon: DisabledIcon(
-              disable: !show,
-              child: const Icon(
-                Icons.show_chart,
-                size: 22,
-                color: Colors.white,
+        /// 高能进度条
+        BottomControlType.dmChart => Obx(() {
+          final list = videoDetailController.dmTrend.value?.dataOrNull;
+          if (list != null && list.isNotEmpty) {
+            final show = videoDetailController.showDmTrendChart.value;
+            return ComBtn(
+              width: widgetWidth,
+              height: 30,
+              tooltip: '高能进度条',
+              icon: DisabledIcon(
+                disable: !show,
+                child: const Icon(
+                  Icons.show_chart,
+                  size: 22,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            onTap: () => videoDetailController.showDmTrendChart.value = !show,
-          );
-        }
-        return const SizedBox.shrink();
-      }),
+              onTap: () => videoDetailController.showDmTrendChart.value = !show,
+            );
+          }
+          return const SizedBox.shrink();
+        }),
 
-      /// 超分辨率
-      BottomControlType.superResolution => Obx(() {
-        final type = plPlayerController.superResolutionType.value;
-        return PopupMenuButton<SuperResolutionType>(
-          tooltip: '超分辨率',
-          requestFocus: false,
-          initialValue: type,
-          color: Colors.black.withValues(alpha: 0.8),
-          itemBuilder: (context) {
-            return SuperResolutionType.values
-                .map(
-                  (type) => PopupMenuItem<SuperResolutionType>(
-                    height: 35,
-                    padding: const EdgeInsets.only(left: 30),
-                    value: type,
-                    onTap: () => plPlayerController.setShader(type),
-                    child: Text(
-                      type.label,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
+        /// 超分辨率
+        BottomControlType.superResolution => Obx(() {
+          final type = plPlayerController.superResolutionType.value;
+          return PopupMenuButton<SuperResolutionType>(
+            tooltip: '超分辨率',
+            requestFocus: false,
+            initialValue: type,
+            color: Colors.black.withValues(alpha: 0.8),
+            itemBuilder: (context) {
+              return SuperResolutionType.values
+                  .map(
+                    (type) => PopupMenuItem<SuperResolutionType>(
+                      height: 35,
+                      padding: const EdgeInsets.only(left: 30),
+                      value: type,
+                      onTap: () => plPlayerController.setShader(type),
+                      child: Text(
+                        type.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
-                  ),
-                )
-                .toList();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              type.label,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ),
-        );
-      }),
-
-      /// 分段信息
-      BottomControlType.viewPoints => Obx(() {
-        if (videoDetailController.viewPointList.isNotEmpty) {
-          final show = videoDetailController.showVP.value;
-          return ComBtn(
-            width: widgetWidth,
-            height: 30,
-            tooltip: '分段信息',
-            icon: DisabledIcon(
-              iconSize: 22,
-              color: Colors.white,
-              disable: !show,
-              child: Transform.rotate(
-                angle: math.pi / 2,
-                child: const Icon(Icons.reorder, size: 22, color: Colors.white),
+                  )
+                  .toList();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                type.label,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
               ),
             ),
-            onTap: widget.showViewPoints,
-            onLongPress: () {
-              Feedback.forLongPress(context);
-              videoDetailController.showVP.value = !show;
-            },
-            onSecondaryTap: PlatformUtils.isMobile
-                ? null
-                : () => videoDetailController.showVP.value = !show,
           );
-        }
-        return const SizedBox.shrink();
-      }),
+        }),
 
-      /// 选集
-      BottomControlType.episode => ComBtn(
-        width: widgetWidth,
-        height: 30,
-        tooltip: '选集',
-        icon: const Icon(Icons.list, size: 22, color: Colors.white),
-        onTap: () {
-          if (videoDetailController.isFileSource) {
-            // TODO
-            return;
+        /// 分段信息
+        BottomControlType.viewPoints => Obx(() {
+          if (videoDetailController.viewPointList.isNotEmpty) {
+            final show = videoDetailController.showVP.value;
+            return ComBtn(
+              width: widgetWidth,
+              height: 30,
+              tooltip: '分段信息',
+              icon: DisabledIcon(
+                iconSize: 22,
+                color: Colors.white,
+                disable: !show,
+                child: Transform.rotate(
+                  angle: math.pi / 2,
+                  child: const Icon(
+                    Icons.reorder,
+                    size: 22,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              onTap: widget.showViewPoints,
+              onLongPress: () {
+                Feedback.forLongPress(context);
+                videoDetailController.showVP.value = !show;
+              },
+              onSecondaryTap: PlatformUtils.isMobile
+                  ? null
+                  : () => videoDetailController.showVP.value = !show,
+            );
           }
-          // part -> playAll -> season(pgc)
-          if (isPlayAll && !isPart) {
-            widget.showEpisodes?.call();
-            return;
-          }
-          int? index;
-          int currentCid = plPlayerController.cid!;
-          String bvid = plPlayerController.bvid;
-          List<ugc.BaseEpisodeItem> episodes = [];
-          if (isSeason) {
-            final List<SectionItem> sections = videoDetail.ugcSeason!.sections!;
-            for (int i = 0; i < sections.length; i++) {
-              final List<EpisodeItem> episodesList = sections[i].episodes!;
-              for (final item in episodesList) {
-                if (item.cid == currentCid) {
-                  index = i;
-                  episodes = episodesList;
-                  break;
+          return const SizedBox.shrink();
+        }),
+
+        /// 选集
+        BottomControlType.episode => ComBtn(
+          width: widgetWidth,
+          height: 30,
+          tooltip: '选集',
+          icon: const Icon(Icons.list, size: 22, color: Colors.white),
+          onTap: () {
+            if (videoDetailController.isFileSource) {
+              // TODO
+              return;
+            }
+            // part -> playAll -> season(pgc)
+            if (isPlayAll && !isPart) {
+              widget.showEpisodes?.call();
+              return;
+            }
+            int? index;
+            int currentCid = plPlayerController.cid!;
+            String bvid = plPlayerController.bvid;
+            List<ugc.BaseEpisodeItem> episodes = [];
+            if (isSeason) {
+              final List<SectionItem> sections =
+                  videoDetail.ugcSeason!.sections!;
+              for (int i = 0; i < sections.length; i++) {
+                final List<EpisodeItem> episodesList = sections[i].episodes!;
+                for (final item in episodesList) {
+                  if (item.cid == currentCid) {
+                    index = i;
+                    episodes = episodesList;
+                    break;
+                  }
                 }
               }
+            } else if (isPart) {
+              episodes = videoDetail.pages!;
+            } else if (isPgc) {
+              episodes =
+                  (introController as PgcIntroController).pgcItem.episodes!;
             }
-          } else if (isPart) {
-            episodes = videoDetail.pages!;
-          } else if (isPgc) {
-            episodes =
-                (introController as PgcIntroController).pgcItem.episodes!;
-          }
-          widget.showEpisodes?.call(
-            index,
-            isSeason ? videoDetail.ugcSeason! : null,
-            isSeason ? null : episodes,
-            bvid,
-            IdUtils.bv2av(bvid),
-            isSeason && isPart
-                ? videoDetailController.seasonCid ?? currentCid
-                : currentCid,
-          );
-        },
-      ),
-
-      /// 画面比例
-      BottomControlType.fit => Obx(() {
-        final fit = plPlayerController.videoFit.value;
-        return PopupMenuButton<VideoFitType>(
-          tooltip: '画面比例',
-          requestFocus: false,
-          initialValue: fit,
-          color: Colors.black.withValues(alpha: 0.8),
-          itemBuilder: (context) {
-            return VideoFitType.values
-                .map(
-                  (boxFit) => PopupMenuItem<VideoFitType>(
-                    height: 35,
-                    padding: const EdgeInsets.only(left: 30),
-                    value: boxFit,
-                    onTap: () => plPlayerController.toggleVideoFit(boxFit),
-                    child: Text(
-                      boxFit.desc,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ),
-                )
-                .toList();
+            widget.showEpisodes?.call(
+              index,
+              isSeason ? videoDetail.ugcSeason! : null,
+              isSeason ? null : episodes,
+              bvid,
+              IdUtils.bv2av(bvid),
+              isSeason && isPart
+                  ? videoDetailController.seasonCid ?? currentCid
+                  : currentCid,
+            );
           },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              fit.desc,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ),
-        );
-      }),
-
-      BottomControlType.aiTranslate => Obx(() {
-        final list = videoDetailController.languages.value;
-        if (list != null && list.isNotEmpty) {
-          return PopupMenuButton<String>(
-            tooltip: '翻译',
-            requestFocus: false,
-            initialValue: videoDetailController.currLang.value,
-            color: Colors.black.withValues(alpha: 0.8),
-            itemBuilder: (context) {
-              return [
-                PopupMenuItem<String>(
-                  height: 35,
-                  value: '',
-                  onTap: () => videoDetailController.setLanguage(''),
-                  child: const Text(
-                    "关闭翻译",
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ),
-                ...list.map((e) {
-                  return PopupMenuItem<String>(
-                    height: 35,
-                    value: e.lang,
-                    onTap: () => videoDetailController.setLanguage(e.lang!),
-                    child: Text(
-                      e.title!,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  );
-                }),
-              ];
-            },
-            child: SizedBox(
-              width: widgetWidth,
-              height: 30,
-              child: const Icon(Icons.translate, size: 18, color: Colors.white),
-            ),
-          );
-        }
-        return const SizedBox.shrink();
-      }),
-
-      /// 字幕
-      BottomControlType.subtitle => Obx(() {
-        if (videoDetailController.subtitles.isNotEmpty) {
-          final val = videoDetailController.vttSubtitlesIndex.value;
-          return PopupMenuButton<int>(
-            tooltip: '字幕',
-            requestFocus: false,
-            initialValue: val,
-            color: Colors.black.withValues(alpha: 0.8),
-            itemBuilder: (context) {
-              return [
-                PopupMenuItem<int>(
-                  value: 0,
-                  height: 35,
-                  onTap: () => videoDetailController.setSubtitle(0),
-                  child: const Text(
-                    "关闭字幕",
-                    style: TextStyle(color: Colors.white, fontSize: 13),
-                  ),
-                ),
-                ...videoDetailController.subtitles.indexed.map((e) {
-                  return PopupMenuItem<int>(
-                    value: e.$1 + 1,
-                    height: 35,
-                    onTap: () => videoDetailController.setSubtitle(e.$1 + 1),
-                    child: Text(
-                      "${e.$2.lanDoc}",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  );
-                }),
-              ];
-            },
-            child: SizedBox(
-              width: widgetWidth,
-              height: 30,
-              child: val == 0
-                  ? const Icon(
-                      Icons.closed_caption_off_outlined,
-                      size: 22,
-                      color: Colors.white,
-                    )
-                  : const Icon(
-                      Icons.closed_caption_off_rounded,
-                      size: 22,
-                      color: Colors.white,
-                    ),
-            ),
-          );
-        }
-        return const SizedBox.shrink();
-      }),
-
-      /// 播放速度
-      BottomControlType.speed => Obx(
-        () => PopupMenuButton<double>(
-          tooltip: '倍速',
-          requestFocus: false,
-          initialValue: plPlayerController.playbackSpeed,
-          color: Colors.black.withValues(alpha: 0.8),
-          itemBuilder: (context) {
-            return plPlayerController.speedList
-                .map(
-                  (double speed) => PopupMenuItem<double>(
-                    height: 35,
-                    padding: const EdgeInsets.only(left: 30),
-                    value: speed,
-                    onTap: () => plPlayerController.setPlaybackSpeed(speed),
-                    child: Text(
-                      "${speed}X",
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                      semanticsLabel: "$speed倍速",
-                    ),
-                  ),
-                )
-                .toList();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              "${plPlayerController.playbackSpeed}X",
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              semanticsLabel: "${plPlayerController.playbackSpeed}倍速",
-            ),
-          ),
         ),
-      ),
 
-      BottomControlType.qa => Obx(() {
-        final VideoQuality? currentVideoQa =
-            videoDetailController.currentVideoQa.value;
-        if (currentVideoQa == null) {
-          return const SizedBox.shrink();
-        }
-        final PlayUrlModel videoInfo = videoDetailController.data;
-        if (videoInfo.dash == null) {
-          return const SizedBox.shrink();
-        }
-        final List<FormatItem> videoFormat = videoInfo.supportFormats!;
-        final int totalQaSam = videoFormat.length;
-        int usefulQaSam = 0;
-        final List<VideoItem> video = videoInfo.dash!.video!;
-        final Set<int> idSet = {};
-        for (final VideoItem item in video) {
-          final int id = item.id!;
-          if (!idSet.contains(id)) {
-            idSet.add(id);
-            usefulQaSam++;
-          }
-        }
-        return PopupMenuButton<int>(
-          tooltip: '画质',
-          requestFocus: false,
-          initialValue: currentVideoQa.code,
-          color: Colors.black.withValues(alpha: 0.8),
-          itemBuilder: (context) {
-            return List.generate(totalQaSam, (index) {
-              final item = videoFormat[index];
-              final enabled = index >= totalQaSam - usefulQaSam;
-              return PopupMenuItem<int>(
-                enabled: enabled,
-                height: 35,
-                padding: const EdgeInsets.only(left: 15, right: 10),
-                value: item.quality,
-                onTap: () async {
-                  if (currentVideoQa.code == item.quality) {
-                    return;
-                  }
-                  final int quality = item.quality!;
-                  final newQa = VideoQuality.fromCode(quality);
-                  videoDetailController
-                    ..plPlayerController.cacheVideoQa = newQa.code
-                    ..currentVideoQa.value = newQa
-                    ..updatePlayer();
+        /// 画面比例
+        BottomControlType.fit => Obx(() {
+          final fit = plPlayerController.videoFit.value;
+          return PopupMenuButton<VideoFitType>(
+            tooltip: '画面比例',
+            requestFocus: false,
+            initialValue: fit,
+            color: Colors.black.withValues(alpha: 0.8),
+            itemBuilder: (context) {
+              return VideoFitType.values
+                  .map(
+                    (boxFit) => PopupMenuItem<VideoFitType>(
+                      height: 35,
+                      padding: const EdgeInsets.only(left: 30),
+                      value: boxFit,
+                      onTap: () => plPlayerController.toggleVideoFit(boxFit),
+                      child: Text(
+                        boxFit.desc,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                fit.desc,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ),
+          );
+        }),
 
-                  SmartDialog.showToast("画质已变为：${newQa.desc}");
-
-                  // update
-                  if (!plPlayerController.tempPlayerConf) {
-                    GStorage.setting.put(
-                      await Utils.isWiFi
-                          ? SettingBoxKey.defaultVideoQa
-                          : SettingBoxKey.defaultVideoQaCellular,
-                      quality,
+        BottomControlType.aiTranslate => Obx(() {
+          final list = videoDetailController.languages.value;
+          if (list != null && list.isNotEmpty) {
+            return PopupMenuButton<String>(
+              tooltip: '翻译',
+              requestFocus: false,
+              initialValue: videoDetailController.currLang.value,
+              color: Colors.black.withValues(alpha: 0.8),
+              itemBuilder: (context) {
+                return [
+                  PopupMenuItem<String>(
+                    height: 35,
+                    value: '',
+                    onTap: () => videoDetailController.setLanguage(''),
+                    child: const Text(
+                      "关闭翻译",
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                  ...list.map((e) {
+                    return PopupMenuItem<String>(
+                      height: 35,
+                      value: e.lang,
+                      onTap: () => videoDetailController.setLanguage(e.lang!),
+                      child: Text(
+                        e.title!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
                     );
-                  }
-                },
-                child: Text(
-                  item.newDesc ?? '',
-                  style: enabled
-                      ? const TextStyle(color: Colors.white, fontSize: 13)
-                      : const TextStyle(color: Color(0x62FFFFFF), fontSize: 13),
+                  }),
+                ];
+              },
+              child: SizedBox(
+                width: widgetWidth,
+                height: 30,
+                child: const Icon(
+                  Icons.translate,
+                  size: 18,
+                  color: Colors.white,
                 ),
-              );
-            });
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              currentVideoQa.shortDesc,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+
+        /// 字幕
+        BottomControlType.subtitle => Obx(() {
+          if (videoDetailController.subtitles.isNotEmpty) {
+            final val = videoDetailController.vttSubtitlesIndex.value;
+            return PopupMenuButton<int>(
+              tooltip: '字幕',
+              requestFocus: false,
+              initialValue: val,
+              color: Colors.black.withValues(alpha: 0.8),
+              itemBuilder: (context) {
+                return [
+                  PopupMenuItem<int>(
+                    value: 0,
+                    height: 35,
+                    onTap: () => videoDetailController.setSubtitle(0),
+                    child: const Text(
+                      "关闭字幕",
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                  ...videoDetailController.subtitles.indexed.map((e) {
+                    return PopupMenuItem<int>(
+                      value: e.$1 + 1,
+                      height: 35,
+                      onTap: () => videoDetailController.setSubtitle(e.$1 + 1),
+                      child: Text(
+                        "${e.$2.lanDoc}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    );
+                  }),
+                ];
+              },
+              child: SizedBox(
+                width: widgetWidth,
+                height: 30,
+                child: val == 0
+                    ? const Icon(
+                        Icons.closed_caption_off_outlined,
+                        size: 22,
+                        color: Colors.white,
+                      )
+                    : const Icon(
+                        Icons.closed_caption_off_rounded,
+                        size: 22,
+                        color: Colors.white,
+                      ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+
+        /// 播放速度
+        BottomControlType.speed => Obx(
+          () => PopupMenuButton<double>(
+            tooltip: '倍速',
+            requestFocus: false,
+            initialValue: plPlayerController.playbackSpeed,
+            color: Colors.black.withValues(alpha: 0.8),
+            itemBuilder: (context) {
+              return plPlayerController.speedList
+                  .map(
+                    (double speed) => PopupMenuItem<double>(
+                      height: 35,
+                      padding: const EdgeInsets.only(left: 30),
+                      value: speed,
+                      onTap: () => plPlayerController.setPlaybackSpeed(speed),
+                      child: Text(
+                        "${speed}X",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                        semanticsLabel: "$speed倍速",
+                      ),
+                    ),
+                  )
+                  .toList();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                "${plPlayerController.playbackSpeed}X",
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+                semanticsLabel: "${plPlayerController.playbackSpeed}倍速",
+              ),
             ),
           ),
-        );
-      }),
-
-      /// 全屏
-      BottomControlType.fullscreen => ComBtn(
-        width: widgetWidth,
-        height: 30,
-        tooltip: isFullScreen ? '退出全屏' : '全屏',
-        icon: isFullScreen
-            ? const Icon(Icons.fullscreen_exit, size: 24, color: Colors.white)
-            : const Icon(Icons.fullscreen, size: 24, color: Colors.white),
-        onTap: () =>
-            plPlayerController.triggerFullScreen(status: !isFullScreen),
-        onSecondaryTap: () => plPlayerController.triggerFullScreen(
-          status: !isFullScreen,
-          inAppFullScreen: true,
         ),
-      ),
-    };
 
-    final isNotFileSource = !plPlayerController.isFileSource;
+        BottomControlType.qa => Obx(() {
+          final VideoQuality? currentVideoQa =
+              videoDetailController.currentVideoQa.value;
+          if (currentVideoQa == null) {
+            return const SizedBox.shrink();
+          }
+          final PlayUrlModel videoInfo = videoDetailController.data;
+          if (videoInfo.dash == null) {
+            return const SizedBox.shrink();
+          }
+          final List<FormatItem> videoFormat = videoInfo.supportFormats!;
+          final int totalQaSam = videoFormat.length;
+          int usefulQaSam = 0;
+          final List<VideoItem> video = videoInfo.dash!.video!;
+          final Set<int> idSet = {};
+          for (final VideoItem item in video) {
+            final int id = item.id!;
+            if (!idSet.contains(id)) {
+              idSet.add(id);
+              usefulQaSam++;
+            }
+          }
+          return PopupMenuButton<int>(
+            tooltip: '画质',
+            requestFocus: false,
+            initialValue: currentVideoQa.code,
+            color: Colors.black.withValues(alpha: 0.8),
+            itemBuilder: (context) {
+              return List.generate(totalQaSam, (index) {
+                final item = videoFormat[index];
+                final enabled = index >= totalQaSam - usefulQaSam;
+                return PopupMenuItem<int>(
+                  enabled: enabled,
+                  height: 35,
+                  padding: const EdgeInsets.only(left: 15, right: 10),
+                  value: item.quality,
+                  onTap: () async {
+                    if (currentVideoQa.code == item.quality) {
+                      return;
+                    }
+                    final int quality = item.quality!;
+                    final newQa = VideoQuality.fromCode(quality);
+                    videoDetailController
+                      ..plPlayerController.cacheVideoQa = newQa.code
+                      ..currentVideoQa.value = newQa
+                      ..updatePlayer();
 
-    List<BottomControlType> userSpecifyItemLeft = [
-      BottomControlType.playOrPause,
-      BottomControlType.time,
-      if (!isNotFileSource || anySeason) ...[
-        BottomControlType.pre,
-        BottomControlType.next,
-      ],
-    ];
+                    SmartDialog.showToast("画质已变为：${newQa.desc}");
 
-    final flag =
-        isFullScreen || plPlayerController.isDesktopPip || maxWidth >= 500;
-    List<BottomControlType> userSpecifyItemRight = [
-      if (isNotFileSource && plPlayerController.showDmChart)
-        BottomControlType.dmChart,
-      if (plPlayerController.isAnim) BottomControlType.superResolution,
-      if (isNotFileSource && plPlayerController.showViewPoints)
-        BottomControlType.viewPoints,
-      if (isNotFileSource && anySeason) BottomControlType.episode,
-      if (flag) BottomControlType.fit,
-      if (isNotFileSource) BottomControlType.aiTranslate,
-      BottomControlType.subtitle,
-      BottomControlType.speed,
-      if (isNotFileSource && flag) BottomControlType.qa,
-      if (!plPlayerController.isDesktopPip) BottomControlType.fullscreen,
-    ];
-    return PlayerBar(
-      children: [
-        Row(
-          mainAxisSize: .min,
-          children: userSpecifyItemLeft.map(progressWidget).toList(),
+                    // update
+                    if (!plPlayerController.tempPlayerConf) {
+                      GStorage.setting.put(
+                        await Utils.isWiFi
+                            ? SettingBoxKey.defaultVideoQa
+                            : SettingBoxKey.defaultVideoQaCellular,
+                        quality,
+                      );
+                    }
+                  },
+                  child: Text(
+                    item.newDesc ?? '',
+                    style: enabled
+                        ? const TextStyle(color: Colors.white, fontSize: 13)
+                        : const TextStyle(
+                            color: Color(0x62FFFFFF),
+                            fontSize: 13,
+                          ),
+                  ),
+                );
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                currentVideoQa.shortDesc,
+                style: const TextStyle(color: Colors.white, fontSize: 13),
+              ),
+            ),
+          );
+        }),
+
+        /// 全屏
+        BottomControlType.fullscreen => ComBtn(
+          width: widgetWidth,
+          height: 30,
+          tooltip: isFullScreen ? '退出全屏' : '全屏',
+          icon: isFullScreen
+              ? const Icon(Icons.fullscreen_exit, size: 24, color: Colors.white)
+              : const Icon(Icons.fullscreen, size: 24, color: Colors.white),
+          onTap: () =>
+              plPlayerController.triggerFullScreen(status: !isFullScreen),
+          onSecondaryTap: () => plPlayerController.triggerFullScreen(
+            status: !isFullScreen,
+            inAppFullScreen: true,
+          ),
         ),
-        Row(
-          mainAxisSize: .min,
-          children: userSpecifyItemRight.map(progressWidget).toList(),
-        ),
-      ],
-    );
+      };
+
+      final isNotFileSource = !plPlayerController.isFileSource;
+
+      List<BottomControlType> userSpecifyItemLeft = [
+        BottomControlType.playOrPause,
+        BottomControlType.time,
+        if (!isNotFileSource || anySeason) ...[
+          BottomControlType.pre,
+          BottomControlType.next,
+        ],
+      ];
+
+      final flag =
+          isFullScreen || plPlayerController.isDesktopPip || maxWidth >= 500;
+      List<BottomControlType> userSpecifyItemRight = [
+        if (isNotFileSource && plPlayerController.showDmChart)
+          BottomControlType.dmChart,
+        if (plPlayerController.isAnim) BottomControlType.superResolution,
+        if (isNotFileSource && plPlayerController.showViewPoints)
+          BottomControlType.viewPoints,
+        if (isNotFileSource && anySeason) BottomControlType.episode,
+        if (flag) BottomControlType.fit,
+        if (isNotFileSource) BottomControlType.aiTranslate,
+        BottomControlType.subtitle,
+        BottomControlType.speed,
+        if (isNotFileSource && flag) BottomControlType.qa,
+        if (!plPlayerController.isDesktopPip) BottomControlType.fullscreen,
+      ];
+      return PlayerBar(
+        children: [
+          Row(
+            mainAxisSize: .min,
+            children: userSpecifyItemLeft.map(progressWidget).toList(),
+          ),
+          Row(
+            mainAxisSize: .min,
+            children: userSpecifyItemRight.map(progressWidget).toList(),
+          ),
+        ],
+      );
+    });
   }
 
   PlPlayerController get plPlayerController => widget.plPlayerController;

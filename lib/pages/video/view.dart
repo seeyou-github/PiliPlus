@@ -54,6 +54,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/mobile_observer.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
@@ -186,11 +187,15 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 获取视频资源，初始化播放器
   void videoSourceInit() {
     if (Platform.isWindows && autoWindowFullscreen) {
-      videoDetailController.plPlayerController.enterInAppFullScreenImmediately();
+      videoDetailController.plPlayerController
+          .enterInAppFullScreenImmediately();
       _autoWindowFullscreenEnteredByPlayback =
           videoDetailController.plPlayerController.isFullScreen.value;
     }
     videoDetailController.queryVideoUrl(autoFullScreenFlag: true);
+    if (Platform.isWindows && autoWindowFullscreen) {
+      videoDetailController.loadDeferredEpisodeData();
+    }
     if (videoDetailController.autoPlay) {
       plPlayerController = videoDetailController.plPlayerController;
       plPlayerController!
@@ -308,6 +313,9 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         if (Platform.isWindows && _autoWindowFullscreenEnteredByPlayback) {
           if (plPlayerController!.autoWindowFullscreenBackOnComplete &&
               (Get.key.currentState?.canPop() ?? false)) {
+            if (await _showEpisodesOnCompleteIfAvailable()) {
+              return;
+            }
             _autoWindowFullscreenEnteredByPlayback = false;
             await plPlayerController.triggerFullScreen(
               status: false,
@@ -338,6 +346,69 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
         }
       }
     }
+  }
+
+  Future<bool> _showEpisodesOnCompleteIfAvailable() async {
+    if (videoDetailController.isFileSource) {
+      return false;
+    }
+    await videoDetailController.loadDeferredEpisodeData();
+    if (videoDetailController.isPlayAll) {
+      if (videoDetailController.mediaList.isNotEmpty) {
+        showEpisodes();
+        return true;
+      }
+      return false;
+    }
+    if (videoDetailController.isUgc) {
+      final videoDetail = ugcIntroController.videoDetail.value;
+      final isSeason = videoDetail.ugcSeason != null;
+      final isPart = (videoDetail.pages?.length ?? 0) > 1;
+      if (!isSeason && !isPart) {
+        return false;
+      }
+      int? index;
+      List<ugc.BaseEpisodeItem> episodes = [];
+      final currentCid = plPlayerController!.cid!;
+      final bvid = plPlayerController!.bvid;
+      if (isSeason) {
+        final sections = videoDetail.ugcSeason!.sections!;
+        for (int i = 0; i < sections.length; i++) {
+          final episodesList = sections[i].episodes!;
+          for (final item in episodesList) {
+            if (item.cid == currentCid) {
+              index = i;
+              episodes = episodesList;
+              break;
+            }
+          }
+        }
+      } else {
+        episodes = videoDetail.pages!;
+      }
+      showEpisodes(
+        index,
+        isSeason ? videoDetail.ugcSeason! : null,
+        isSeason ? null : episodes,
+        bvid,
+        IdUtils.bv2av(bvid),
+        isSeason && isPart
+            ? videoDetailController.seasonCid ?? currentCid
+            : currentCid,
+      );
+      return true;
+    }
+    final episodes = pgcIntroController.pgcItem.episodes;
+    if (episodes?.isNotEmpty == true) {
+      final bvid = plPlayerController!.bvid;
+      final cid = plPlayerController!.cid;
+      if (cid == null) {
+        return false;
+      }
+      showEpisodes(null, null, episodes, bvid, IdUtils.bv2av(bvid), cid);
+      return true;
+    }
+    return false;
   }
 
   // 继续播放或重新播放

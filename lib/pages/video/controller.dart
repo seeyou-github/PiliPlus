@@ -446,6 +446,24 @@ class VideoDetailController extends GetxController
     loadPostVideoNetworkFeatures();
   }
 
+  Future<void> loadDeferredEpisodeData() async {
+    if (!isNonVideoNetworkDeferred || isClosed) {
+      return;
+    }
+
+    if (isPlayAll && mediaList.isEmpty) {
+      await getMediaList();
+    }
+
+    try {
+      if (isUgc) {
+        await Get.find<UgcIntroController>(tag: heroTag).queryVideoIntro();
+      } else {
+        Get.find<PgcIntroController>(tag: heroTag).queryVideoIntro();
+      }
+    } catch (_) {}
+  }
+
   void loadPostVideoNetworkFeatures() {
     if (isFileSource || isClosed) {
       return;
