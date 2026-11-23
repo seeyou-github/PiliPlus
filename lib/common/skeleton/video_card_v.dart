@@ -56,7 +56,7 @@ class VideoCardVSkeleton extends StatelessWidget {
                   height: 11,
                   width: 75,
                   color: color,
-                  margin: const .only(top: 5),
+                  margin: const .only(top: 2),
                 ),
               ],
             ),

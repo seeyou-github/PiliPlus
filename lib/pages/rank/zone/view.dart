@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/skeleton/video_card_h.dart';
+import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
@@ -26,6 +28,14 @@ class _ZonePageState extends State<ZonePage>
 
   /// PGC 排行沿用原有水平卡片布局
   late final pgcGridDelegate = Grid.videoCardHDelegate();
+
+  Widget get _pgcGridSkeleton => SliverGrid(
+    gridDelegate: pgcGridDelegate,
+    delegate: const SliverSingleChildDelegate(
+      count: 10,
+      child: VideoCardHSkeleton(),
+    ),
+  );
 
   @override
   void initState() {
@@ -65,7 +75,7 @@ class _ZonePageState extends State<ZonePage>
 
   Widget _buildBody(LoadingState<List<dynamic>?> loadingState) {
     return switch (loadingState) {
-      Loading() => gridSkeleton,
+      Loading() => widget.rid == null ? _pgcGridSkeleton : gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
