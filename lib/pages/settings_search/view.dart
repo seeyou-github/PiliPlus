@@ -2,17 +2,9 @@ import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
+import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/search/controller.dart' show DebounceStreamState;
-import 'package:PiliPlus/pages/setting/models/dm_settings.dart';
-import 'package:PiliPlus/pages/setting/models/dyn_settings.dart';
-import 'package:PiliPlus/pages/setting/models/extra_settings.dart';
-import 'package:PiliPlus/pages/setting/models/model.dart';
-import 'package:PiliPlus/pages/setting/models/play_settings.dart';
-import 'package:PiliPlus/pages/setting/models/privacy_settings.dart';
-import 'package:PiliPlus/pages/setting/models/recommend_settings.dart';
-import 'package:PiliPlus/pages/setting/models/reply_settings.dart';
-import 'package:PiliPlus/pages/setting/models/style_settings.dart';
-import 'package:PiliPlus/pages/setting/models/video_settings.dart';
+import 'package:PiliPlus/pages/settings_search/tagged_setting.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -29,18 +21,22 @@ class SettingsSearchPage extends StatefulWidget {
 class _SettingsSearchPageState
     extends DebounceStreamState<SettingsSearchPage, String> {
   final _textEditingController = TextEditingController();
-  final RxList<SettingsModel> _list = <SettingsModel>[].obs;
+  final RxList<TaggedSetting> _list = <TaggedSetting>[].obs;
   late final _settings = [
-    ...extraSettings,
-    ...dmSettings,
-    ...replySettings,
-    ...dynSettings,
-    ...privacySettings,
-    ...recommendSettings,
-    ...videoSettings,
-    ...playSettings,
-    ...styleSettings,
+    ..._tagSettings(SettingType.extraSetting),
+    ..._tagSettings(SettingType.dmSetting),
+    ..._tagSettings(SettingType.replySetting),
+    ..._tagSettings(SettingType.dynSetting),
+    ..._tagSettings(SettingType.privacySetting),
+    ..._tagSettings(SettingType.recommendSetting),
+    ..._tagSettings(SettingType.videoSetting),
+    ..._tagSettings(SettingType.playSetting),
+    ..._tagSettings(SettingType.styleSetting),
   ];
+
+  /// 把某一分类下的设置项包装成带分类名的结果项
+  static Iterable<TaggedSetting> _tagSettings(SettingType type) =>
+      type.settings.map((e) => TaggedSetting(type: type, model: e));
 
   @override
   void onValueChanged(String value) {
@@ -51,8 +47,9 @@ class _SettingsSearchPageState
       _list.value = _settings
           .where(
             (item) =>
-                item.effectiveTitle.toLowerCase().contains(value) ||
-                item.effectiveSubtitle?.toLowerCase().contains(value) == true,
+                item.model.effectiveTitle.toLowerCase().contains(value) ||
+                item.model.effectiveSubtitle?.toLowerCase().contains(value) ==
+                    true,
           )
           .toList();
     }
@@ -105,7 +102,27 @@ class _SettingsSearchPageState
                     : SliverMasonryGrid(
                         gridDelegate: gridDelegate,
                         delegate: SliverChildBuilderDelegate(
-                          (context, index) => _list[index].widget,
+                          (context, index) {
+                            final item = _list[index];
+                            return Column(
+                              mainAxisSize: .min,
+                              crossAxisAlignment: .start,
+                              children: [
+                                Padding(
+                                  padding: const .only(left: 6, bottom: 6),
+                                  child: Text(
+                                    item.category,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: ColorScheme.of(context).primary,
+                                    ),
+                                  ),
+                                ),
+                                item.model.widget,
+                              ],
+                            );
+                          },
                           childCount: _list.length,
                         ),
                       ),
