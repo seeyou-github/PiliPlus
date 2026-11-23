@@ -46,4 +46,4 @@ jobs:
           archive: false
           name: Windows-x64-ZIP
           path: PiliPlus_windows_*_x64_portable.zip
-          retention-days: 2
+          retention-days: 1
