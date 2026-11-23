@@ -154,6 +154,8 @@ switch ($platform.ToLower()) {
     "macos" {
     }
     "windows" {
+        # flutter-action 缓存的 SDK 可能已带补丁，先还原再重新应用
+        git reset --hard HEAD
     }
     default {}
 }
