@@ -38,7 +38,6 @@ import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/subtitle_utils.dart';
-import 'package:PiliPlus/utils/upower_exclusive.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
@@ -226,10 +225,6 @@ abstract final class VideoHttp {
     if (enableFilter && i['tname'] != null && zoneRegExp.hasMatch(i['tname'])) {
       return false;
     }
-    if (Pref.hideUpowerExclusiveVideo &&
-        UpowerExclusive.fromJson(i.cast<String, dynamic>())) {
-      return false;
-    }
     return true;
   }
 
@@ -247,6 +242,9 @@ abstract final class VideoHttp {
         (res.data['data']['list'] as List)
             .where(_filterHotAndRank)
             .map((e) => HotVideoItemModel.fromJson(e))
+            .where(
+              (e) => !Pref.hideUpowerExclusiveVideo || !e.isUpowerExclusive,
+            )
             .toList(),
       );
     } else {
@@ -982,6 +980,9 @@ abstract final class VideoHttp {
         (res.data['data']['list'] as List)
             .where(_filterHotAndRank)
             .map((e) => HotVideoItemModel.fromJson(e))
+            .where(
+              (e) => !Pref.hideUpowerExclusiveVideo || !e.isUpowerExclusive,
+            )
             .toList(),
       );
     } else {
@@ -1108,6 +1109,9 @@ abstract final class VideoHttp {
         (e) => e.owner?.mid,
         (e) => e.owner?.name,
       );
+      if (Pref.hideUpowerExclusiveVideo) {
+        data.list?.removeWhere((e) => e.isUpowerExclusive);
+      }
       return Success(data);
     } else {
       return Error(res.data['message']);
@@ -1139,6 +1143,9 @@ abstract final class VideoHttp {
         (e) => e.owner?.mid,
         (e) => e.owner?.name,
       );
+      if (Pref.hideUpowerExclusiveVideo) {
+        data.list?.removeWhere((e) => e.isUpowerExclusive);
+      }
       return Success(data);
     } else {
       return Error(res.data['message']);
