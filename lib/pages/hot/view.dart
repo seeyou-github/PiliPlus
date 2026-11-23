@@ -1,8 +1,9 @@
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/home_tab_type.dart';
@@ -10,7 +11,6 @@ import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/hot/controller.dart';
 import 'package:PiliPlus/pages/rank/view.dart';
-import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -23,7 +23,7 @@ class HotPage extends StatefulWidget {
 }
 
 class _HotPageState extends State<HotPage>
-    with AutomaticKeepAliveClientMixin, GridMixin {
+    with AutomaticKeepAliveClientMixin, VideoCardVCompactGridMixin {
   final HotController controller = Get.put(HotController());
 
   @override
@@ -110,7 +110,12 @@ class _HotPageState extends State<HotPage>
               ),
             ),
           SliverPadding(
-            padding: const EdgeInsets.only(top: 7, bottom: 100),
+            padding: const EdgeInsets.only(
+              left: Style.safeSpace,
+              top: Style.cardSpace,
+              right: Style.safeSpace,
+              bottom: 100,
+            ),
             sliver: Obx(
               () => _buildBody(controller.loadingState.value),
             ),
@@ -131,7 +136,7 @@ class _HotPageState extends State<HotPage>
                   if (index == response.length - 1) {
                     controller.onLoadMore();
                   }
-                  return VideoCardH(
+                  return VideoCardVCompact(
                     videoItem: response[index],
                     onRemove: () => controller.loadingState
                       ..value.data!.removeAt(index)

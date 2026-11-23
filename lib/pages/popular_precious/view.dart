@@ -1,13 +1,13 @@
+import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
 import 'package:PiliPlus/common/widgets/view_sliver_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
 import 'package:PiliPlus/models/model_hot_video_item.dart';
 import 'package:PiliPlus/pages/popular_precious/controller.dart';
-import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -20,7 +20,7 @@ class PopularPreciousPage extends StatefulWidget {
 }
 
 class _PopularPreciousPageState extends State<PopularPreciousPage>
-    with GridMixin {
+    with VideoCardVCompactGridMixin {
   final _controller = Get.put(PopularPreciousController());
 
   @override
@@ -32,8 +32,15 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            ViewSliverSafeArea(
-              sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+            SliverPadding(
+              padding: const EdgeInsets.only(
+                left: Style.safeSpace,
+                top: Style.cardSpace,
+                right: Style.safeSpace,
+              ),
+              sliver: ViewSliverSafeArea(
+                sliver: Obx(() => _buildBody(_controller.loadingState.value)),
+              ),
             ),
           ],
         ),
@@ -51,7 +58,7 @@ class _PopularPreciousPageState extends State<PopularPreciousPage>
           itemCount: response!.length,
           itemBuilder: (context, index) {
             final item = response[index];
-            return VideoCardH(
+            return VideoCardVCompact(
               videoItem: item,
               onTap: () {
                 PageUtils.toVideoPage(

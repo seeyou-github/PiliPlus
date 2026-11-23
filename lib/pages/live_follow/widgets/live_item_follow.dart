@@ -67,29 +67,32 @@ class LiveCardVFollow extends StatelessWidget {
     final theme = Theme.of(context);
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(5, 8, 5, 4),
+        padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              liveItem.title.toString(),
-              textAlign: TextAlign.start,
-              style: const TextStyle(
-                letterSpacing: 0.3,
+            Expanded(
+              child: Text(
+                liveItem.title.toString(),
+                textAlign: TextAlign.start,
+                style: const TextStyle(height: 1.38, letterSpacing: 0.3),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-            Text(
-              liveItem.uname.toString(),
-              textAlign: TextAlign.start,
-              style: TextStyle(
-                fontSize: theme.textTheme.labelMedium!.fontSize,
-                color: theme.colorScheme.outline,
+            Padding(
+              padding: const EdgeInsets.only(right: 18),
+              child: Text(
+                liveItem.uname.toString(),
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  height: 1.5,
+                  fontSize: theme.textTheme.labelMedium!.fontSize,
+                  color: theme.colorScheme.outline,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

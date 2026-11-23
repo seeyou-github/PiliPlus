@@ -58,7 +58,7 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
     crossAxisSpacing: Style.cardSpace,
     maxCrossAxisExtent: Grid.smallCardWidth,
     childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
+    mainAxisExtent: MediaQuery.textScalerOf(context).scale(68),
   );
 
   Widget _buildBody(LoadingState<List<LiveFollowItem>?> loadingState) {

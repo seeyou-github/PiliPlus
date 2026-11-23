@@ -77,7 +77,7 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
     crossAxisSpacing: Style.cardSpace,
     maxCrossAxisExtent: Grid.smallCardWidth,
     childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
+    mainAxisExtent: MediaQuery.textScalerOf(context).scale(68),
   );
 
   Widget _buildBody(LoadingState<List<CardLiveItem>?> loadingState) {
