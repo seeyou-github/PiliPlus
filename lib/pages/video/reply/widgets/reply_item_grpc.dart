@@ -27,7 +27,6 @@ import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/save_panel/view.dart';
 import 'package:PiliPlus/pages/video/controller.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_threaded_indent_box.dart';
-import 'package:PiliPlus/pages/video/reply/widgets/zan_grpc.dart';
 import 'package:PiliPlus/pages/video/reply_reply/tree.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
@@ -844,7 +843,7 @@ class ReplyItemGrpc extends StatelessWidget {
           ),
         ?dialogBtn,
       ],
-      rightButton: ZanButtonGrpc(replyItem: replyItem),
+      // 已隐藏：评论点赞/点踩
     );
   }
 

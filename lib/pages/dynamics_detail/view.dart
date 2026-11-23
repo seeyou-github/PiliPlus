@@ -36,8 +36,8 @@ import 'package:PiliPlus/pages/dynamics_repost/view.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
+import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/reply_scheme_helper.dart';
-import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -605,27 +605,7 @@ class _DynamicDetailPageState extends CommonDynPageMultiState<DynamicDetailPage>
                     onPressed: _jumpToComment,
                   ),
                 ),
-                Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      return textIconButton(
-                        icon: FontAwesomeIcons.thumbsUp,
-                        activatedIcon: FontAwesomeIcons.solidThumbsUp,
-                        text: '点赞',
-                        stat: moduleStat?.like,
-                        onPressed: (iconColor) => RequestUtils.onLikeDynamic(
-                          dynItem,
-                          iconColor == primary,
-                          () {
-                            if (context.mounted) {
-                              (context as Element).markNeedsBuild();
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                // 已隐藏：动态点赞
               ],
             ),
           ),

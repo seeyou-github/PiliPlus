@@ -2,7 +2,6 @@ import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics_repost/view.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
-import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -16,12 +15,10 @@ class ActionPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
     final outline = theme.colorScheme.outline;
     final moduleStat = item.modules.moduleStat!;
     final forward = moduleStat.forward!;
     final comment = moduleStat.comment!;
-    final like = moduleStat.like!;
     final btnStyle = TextButton.styleFrom(
       tapTargetSize: .padded,
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -86,53 +83,7 @@ class ActionPanel extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(
-          child: Builder(
-            builder: (context) {
-              final IconData icon;
-              final Color color;
-              final String label;
-              if (like.status ?? false) {
-                icon = FontAwesomeIcons.solidThumbsUp;
-                color = primary;
-                label = '已赞';
-              } else {
-                icon = FontAwesomeIcons.thumbsUp;
-                color = outline;
-                label = '点赞';
-              }
-              final likeIcon = Icon(
-                icon,
-                size: 16,
-                color: color,
-                semanticLabel: label,
-              );
-              return TextButton.icon(
-                onPressed: () => RequestUtils.onLikeDynamic(
-                  item,
-                  likeIcon.color == primary,
-                  () {
-                    if (context.mounted) {
-                      (context as Element?)?.markNeedsBuild();
-                    }
-                  },
-                ),
-                icon: likeIcon,
-                style: btnStyle,
-                label: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  transitionBuilder: (child, animation) =>
-                      ScaleTransition(scale: animation, child: child),
-                  child: Text(
-                    like.count != null ? NumUtils.numFormat(like.count) : '点赞',
-                    key: ValueKey<int?>(like.count),
-                    style: TextStyle(color: like.status! ? primary : outline),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+        // 已隐藏：动态点赞
       ],
     );
   }

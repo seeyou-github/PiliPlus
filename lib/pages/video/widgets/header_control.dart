@@ -1926,73 +1926,7 @@ class HeaderControlState extends State<HeaderControl>
               mainAxisAlignment: .end,
               crossAxisAlignment: .start,
               children: [
-                SizedBox(
-                  width: btnWidth,
-                  height: btnHeight,
-                  child: Obx(
-                    () => ActionItem(
-                      expand: false,
-                      icon: const Icon(
-                        FontAwesomeIcons.thumbsUp,
-                        color: Colors.white,
-                      ),
-                      selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
-                      selectStatus: introController.hasLike.value,
-                      semanticsLabel: '点赞',
-                      animation: introController.tripleAnimation,
-                      onStartTriple: () {
-                        plPlayerController.tripling = true;
-                        introController.onStartTriple();
-                      },
-                      onCancelTriple: ([bool isTapUp = false]) {
-                        plPlayerController
-                          ..tripling = false
-                          ..hideTaskControls();
-                        introController.onCancelTriple(isTapUp);
-                      },
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: btnWidth,
-                  height: btnHeight,
-                  child: Obx(
-                    () => ActionItem(
-                      expand: false,
-                      animation: introController.tripleAnimation,
-                      icon: const Icon(
-                        FontAwesomeIcons.b,
-                        color: Colors.white,
-                      ),
-                      selectIcon: const Icon(FontAwesomeIcons.b),
-                      onTap: introController.actionCoinVideo,
-                      selectStatus: introController.hasCoin,
-                      semanticsLabel: '投币',
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: btnWidth,
-                  height: btnHeight,
-                  child: Obx(
-                    () => ActionItem(
-                      expand: false,
-                      animation: introController.tripleAnimation,
-                      icon: const Icon(
-                        FontAwesomeIcons.star,
-                        color: Colors.white,
-                      ),
-                      selectIcon: const Icon(FontAwesomeIcons.solidStar),
-                      onTap: () => introController.showFavBottomSheet(context),
-                      onLongPress: () => introController.showFavBottomSheet(
-                        context,
-                        isLongPress: true,
-                      ),
-                      selectStatus: introController.hasFav.value,
-                      semanticsLabel: '收藏',
-                    ),
-                  ),
-                ),
+                // 已隐藏：点赞、投币、收藏
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,

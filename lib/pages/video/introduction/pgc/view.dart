@@ -409,44 +409,7 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(
-            () => ActionItem(
-              animation: introController.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.thumbsUp),
-              selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
-              selectStatus: introController.hasLike.value,
-              semanticsLabel: '点赞',
-              text: NumUtils.numFormat(stat.like),
-              onStartTriple: introController.onStartTriple,
-              onCancelTriple: introController.onCancelTriple,
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              animation: introController.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.b),
-              selectIcon: const Icon(FontAwesomeIcons.b),
-              onTap: introController.actionCoinVideo,
-              selectStatus: introController.hasCoin,
-              semanticsLabel: '投币',
-              text: NumUtils.numFormat(stat.coin),
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              animation: introController.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.star),
-              selectIcon: const Icon(FontAwesomeIcons.solidStar),
-              onTap: () => introController.showFavBottomSheet(context),
-              onLongPress: () => introController.showFavBottomSheet(
-                context,
-                isLongPress: true,
-              ),
-              selectStatus: introController.hasFav.value,
-              semanticsLabel: '收藏',
-              text: NumUtils.numFormat(stat.favorite),
-            ),
-          ),
+          // 已隐藏：点赞、投币、收藏
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),

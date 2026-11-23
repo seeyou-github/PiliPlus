@@ -477,56 +477,8 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
       child: Row(
         crossAxisAlignment: .start,
         children: [
-          Obx(
-            () => ActionItem(
-              animation: introController.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.thumbsUp),
-              selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
-              selectStatus: introController.hasLike.value,
-              semanticsLabel: '点赞',
-              text: !isLoading ? NumUtils.numFormat(stat!.like) : null,
-              onStartTriple: introController.onStartTriple,
-              onCancelTriple: introController.onCancelTriple,
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              icon: const Icon(FontAwesomeIcons.thumbsDown),
-              selectIcon: const Icon(FontAwesomeIcons.solidThumbsDown),
-              onTap: () => introController.handleAction(
-                introController.actionDislikeVideo,
-              ),
-              selectStatus: introController.hasDislike.value,
-              semanticsLabel: '点踩',
-              text: "点踩",
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              animation: introController.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.b),
-              selectIcon: const Icon(FontAwesomeIcons.b),
-              onTap: introController.actionCoinVideo,
-              selectStatus: introController.hasCoin,
-              semanticsLabel: '投币',
-              text: !isLoading ? NumUtils.numFormat(stat!.coin) : null,
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              animation: introController.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.star),
-              selectIcon: const Icon(FontAwesomeIcons.solidStar),
-              onTap: () => introController.showFavBottomSheet(context),
-              onLongPress: () => introController.showFavBottomSheet(
-                context,
-                isLongPress: true,
-              ),
-              selectStatus: introController.hasFav.value,
-              semanticsLabel: '收藏',
-              text: !isLoading ? NumUtils.numFormat(stat!.favorite) : null,
-            ),
-          ),
+          // 已隐藏：点赞、点踩、投币、收藏
+          followButton(context),
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),
@@ -753,7 +705,6 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
               ),
             ),
           ),
-          followButton(context),
         ],
         if (isHorizontal) ...[
           const SizedBox(width: 10),

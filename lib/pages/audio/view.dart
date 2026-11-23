@@ -668,52 +668,7 @@ class _AudioPageState extends State<AudioPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Obx(
-            () => ActionItem(
-              animation: _controller.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.thumbsUp),
-              selectIcon: const Icon(
-                FontAwesomeIcons.solidThumbsUp,
-              ),
-              selectStatus: _controller.hasLike.value,
-              semanticsLabel: '点赞',
-              text: NumUtils.numFormat(audioItem.stat.like),
-              onStartTriple: _controller.onStartTriple,
-              onCancelTriple: _controller.onCancelTriple,
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              animation: _controller.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.b),
-              selectIcon: const Icon(FontAwesomeIcons.b),
-              onTap: _controller.actionCoinVideo,
-              selectStatus: _controller.hasCoin,
-              semanticsLabel: '投币',
-              text: NumUtils.numFormat(
-                audioItem.stat.coin,
-              ),
-            ),
-          ),
-          Obx(
-            () => ActionItem(
-              animation: _controller.tripleAnimation,
-              icon: const Icon(FontAwesomeIcons.star),
-              selectIcon: const Icon(
-                FontAwesomeIcons.solidStar,
-              ),
-              onTap: () => _controller.showFavBottomSheet(context),
-              onLongPress: () => _controller.showFavBottomSheet(
-                context,
-                isLongPress: true,
-              ),
-              selectStatus: _controller.hasFav.value,
-              semanticsLabel: '收藏',
-              text: NumUtils.numFormat(
-                audioItem.stat.favourite,
-              ),
-            ),
-          ),
+          // 已隐藏：点赞、投币、收藏
           ActionItem(
             icon: const Icon(FontAwesomeIcons.comment),
             onTap: _controller.showReply,

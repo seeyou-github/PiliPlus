@@ -586,15 +586,7 @@ class _ArticlePageState extends CommonDynPageState<ArticlePage>
                       onPressed: _jumpToComment,
                     ),
                   ),
-                  Expanded(
-                    child: textIconButton(
-                      icon: FontAwesomeIcons.thumbsUp,
-                      activatedIcon: FontAwesomeIcons.solidThumbsUp,
-                      text: '点赞',
-                      stat: stats.like,
-                      onPressed: controller.onLike,
-                    ),
-                  ),
+                  // 已隐藏：文章点赞
                 ],
               ),
             ),
