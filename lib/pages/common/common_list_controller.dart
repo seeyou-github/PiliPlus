@@ -8,6 +8,13 @@ abstract class CommonListController<R, T> extends CommonController<R, T> {
   bool get endIfNullOrEmpty => true;
   bool get hasFooter => false;
 
+  /// 过滤导致整页为空时，是否继续请求下一页（避免上拉提前结束）
+  bool get continueWhenEmpty => false;
+
+  /// 连续跳过的空页上限，防止接口真正结束时反复请求
+  static const _maxEmptySkip = 3;
+  int _emptyCount = 0;
+
   @override
   Rx<LoadingState<List<T>?>> loadingState =
       LoadingState<List<T>?>.loading().obs;
@@ -29,6 +36,13 @@ abstract class CommonListController<R, T> extends CommonController<R, T> {
       if (!customHandleResponse(isRefresh, res)) {
         final dataList = getDataList(response);
         if (dataList == null || dataList.isEmpty) {
+          if (continueWhenEmpty && !isRefresh && _emptyCount < _maxEmptySkip) {
+            _emptyCount++;
+            page++;
+            isLoading = false;
+            return queryData(false);
+          }
+          _emptyCount = 0;
           if (endIfNullOrEmpty) isEnd = true;
           if (isRefresh) {
             loadingState.value = Success(dataList);
@@ -38,6 +52,7 @@ abstract class CommonListController<R, T> extends CommonController<R, T> {
           isLoading = false;
           return;
         }
+        _emptyCount = 0;
         handleListResponse(dataList);
         if (isRefresh) {
           checkIsEnd(dataList.length);
@@ -61,6 +76,7 @@ abstract class CommonListController<R, T> extends CommonController<R, T> {
   Future<void> onRefresh() {
     page = 1;
     isEnd = false;
+    _emptyCount = 0;
     return super.onRefresh();
   }
 

@@ -15,6 +15,9 @@ class HotController
   }
 
   @override
+  bool get continueWhenEmpty => true;
+
+  @override
   Future<LoadingState<List<HotVideoItemModel>>> customGetData() =>
       VideoHttp.hotVideoList(
         pn: page,
