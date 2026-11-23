@@ -420,6 +420,12 @@ List<SettingsModel> get styleSettings => [
     subtitle: '删除或调换Navbar',
     leading: const Icon(Icons.toc_outlined),
   ),
+  NormalModel(
+    onTap: (context, setState) => Get.toNamed('/zoneSetting'),
+    title: '隐藏指定分区',
+    subtitle: '在分区tab隐藏或调换分区',
+    leading: const Icon(Icons.category_outlined),
+  ),
   SwitchModel(
     title: '返回时直接退出',
     subtitle: '开启后在主页任意tab按返回键都直接退出，关闭则先回到Navbar的第一个tab',

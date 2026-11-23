@@ -1,5 +1,4 @@
 import 'package:PiliPlus/common/widgets/flutter/vertical_tabs.dart';
-import 'package:PiliPlus/models/common/rank_type.dart';
 import 'package:PiliPlus/pages/rank/controller.dart';
 import 'package:PiliPlus/pages/rank/zone/view.dart';
 import 'package:get/get.dart';
@@ -30,7 +29,7 @@ class _RankPageState extends State<RankPage>
           child: TabBarView(
             physics: const NeverScrollableScrollPhysics(),
             controller: _rankController.tabController,
-            children: RankType.values
+            children: _rankController.types
                 .map(
                   (item) => ZonePage(
                     rid: item.rid,
@@ -52,7 +51,9 @@ class _RankPageState extends State<RankPage>
       indicatorSize: .tab,
       controller: _rankController.tabController,
       padding: .only(bottom: MediaQuery.paddingOf(context).bottom + 105),
-      tabs: RankType.values.map((e) => VerticalTab(text: e.label)).toList(),
+      tabs: _rankController.types
+          .map((e) => VerticalTab(text: e.label))
+          .toList(),
       onTap: (index) {
         if (!_rankController.tabController.indexIsChanging) {
           _rankController.animateToTop();
