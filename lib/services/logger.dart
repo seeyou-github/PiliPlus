@@ -23,7 +23,7 @@ class PiliLogger extends Logger {
   }) {
     if (!_enableLog) return;
     if (level == Level.error || level == Level.fatal) {
-      Catcher2.reportCheckedError(error, stackTrace);
+      Catcher2.reportCheckedError(error ?? message ?? 'Unknown error', stackTrace);
     }
     super.log(level, message, error: error, stackTrace: stackTrace, time: time);
   }
