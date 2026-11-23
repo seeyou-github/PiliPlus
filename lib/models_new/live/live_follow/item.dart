@@ -19,7 +19,11 @@ class LiveFollowItem {
 
   factory LiveFollowItem.fromJson(Map<String, dynamic> json) => LiveFollowItem(
     roomid: json['roomid'] as int?,
-    uid: (json['uid'] as num?)?.toInt(),
+    uid: switch (json['uid']) {
+      final num v => v.toInt(),
+      final String v => int.tryParse(v),
+      _ => null,
+    },
     uname: json['uname'] as String?,
     title: json['title'] as String?,
     areaName: json['area_name'] as String?,
