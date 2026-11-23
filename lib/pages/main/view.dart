@@ -292,6 +292,11 @@ class _MainAppState extends PopScopeState<MainApp>
           groupAlignment: 0.5,
           labelType: _mainController.hideSideBarLabel ? .none : .selected,
           leading: userAndSearchVertical(),
+          trailing: IconButton(
+            tooltip: '设置',
+            onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
+            icon: const Icon(Icons.settings_outlined),
+          ),
           backgroundColor: Colors.transparent,
           onDestinationSelected: _mainController.setIndex,
           selectedIndex: _mainController.selectedIndex.value,
@@ -406,9 +411,6 @@ class _MainAppState extends PopScopeState<MainApp>
   Widget userAndSearchVertical() {
     return Column(
       children: [
-        userAvatar(colorScheme: _colorScheme, mainController: _mainController),
-        const SizedBox(height: 8),
-        msgBadge(_mainController),
         IconButton(
           tooltip: '搜索',
           icon: const Icon(
@@ -417,6 +419,8 @@ class _MainAppState extends PopScopeState<MainApp>
           ),
           onPressed: () => Get.toNamed('/search'),
         ),
+        const SizedBox(height: 8),
+        msgBadge(_mainController),
       ],
     );
   }
