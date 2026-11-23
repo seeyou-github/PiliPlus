@@ -512,7 +512,11 @@ class SearchArticleData extends SearchNumData<SearchArticleItemModel> {
   SearchArticleData.fromJson(Map<String, dynamic> json) {
     numResults = (json['numResults'] as num?)?.toInt();
     list = (json['result'] as List?)
-        ?.whereNotBlocked((e) => e['mid'])
+        ?.whereNotBlocked(
+          (e) => e['mid'],
+          // 专栏接口若附带作者昵称，一并按昵称规则过滤
+          (e) => e['author'],
+        )
         .map((e) => SearchArticleItemModel.fromJson(e))
         .toList();
   }
