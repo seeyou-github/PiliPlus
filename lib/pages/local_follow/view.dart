@@ -18,7 +18,7 @@ class LocalFollowPage extends StatelessWidget {
   /// 本地关注 + 本地收藏一起导入/导出（同一份本地数据）
   void _showImportExport(BuildContext context) {
     showImportExportDialog<Map>(
-      context: context,
+      context,
       title: '本地数据',
       localFileName: () => 'local',
       onExport: () => Utils.jsonEncoder.convert(LocalLibrary.exportJson()),
