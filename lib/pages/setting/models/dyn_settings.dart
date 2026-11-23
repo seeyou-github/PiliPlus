@@ -56,6 +56,13 @@ List<SettingsModel> get dynSettings => [
     onChanged: (value) => DynamicsDataModel.antiGoodsDyn = value,
   ),
   const SwitchModel(
+    title: '隐藏充电专属视频',
+    subtitle: 'UP主页、投稿列表、视频页、首页、动态页、热门和分区不显示充电专属视频',
+    leading: Icon(Icons.bolt_outlined),
+    setKey: SettingBoxKey.hideUpowerExclusiveVideo,
+    defaultVal: true,
+  ),
+  const SwitchModel(
     title: '动态/专栏详情页展示底部操作栏',
     leading: Icon(Icons.more_horiz),
     setKey: SettingBoxKey.showDynActionBar,

@@ -37,6 +37,7 @@ import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/subtitle_utils.dart';
+import 'package:PiliPlus/utils/upower_exclusive.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
@@ -95,7 +96,9 @@ abstract final class VideoHttp {
         //过滤掉live与ad，以及拉黑用户
         if (_filterWebRcmd(i)) continue;
         final videoItem = RcmdVideoItemModel.fromJson(i);
-        if (!RecommendFilter.filterWithExempt(videoItem)) {
+        if ((!Pref.hideUpowerExclusiveVideo ||
+                !videoItem.isUpowerExclusive) &&
+            !RecommendFilter.filterWithExempt(videoItem)) {
           list.add(videoItem);
         }
       }
@@ -191,7 +194,9 @@ abstract final class VideoHttp {
         // 屏蔽推广和拉黑用户
         if (_filterAppRcmd(i)) continue;
         final videoItem = RcmdVideoItemAppModel.fromJson(i);
-        if (!RecommendFilter.filterWithExempt(videoItem)) {
+        if ((!Pref.hideUpowerExclusiveVideo ||
+                !videoItem.isUpowerExclusive) &&
+            !RecommendFilter.filterWithExempt(videoItem)) {
           list.add(videoItem);
         }
       }
@@ -208,6 +213,10 @@ abstract final class VideoHttp {
       return false;
     }
     if (enableFilter && i['tname'] != null && zoneRegExp.hasMatch(i['tname'])) {
+      return false;
+    }
+    if (Pref.hideUpowerExclusiveVideo &&
+        UpowerExclusive.fromJson(i.cast<String, dynamic>())) {
       return false;
     }
     return true;
@@ -411,7 +420,10 @@ abstract final class VideoHttp {
     if (res.data['code'] == 0) {
       final items = (res.data['data'] as List?)
           ?.whereNotBlocked((e) => e['owner']?['mid'])
-          .map((i) => HotVideoItemModel.fromJson(i));
+          .map((i) => HotVideoItemModel.fromJson(i))
+          .where(
+            (i) => !Pref.hideUpowerExclusiveVideo || !i.isUpowerExclusive,
+          );
       final list = RecommendFilter.applyFilterToRelatedVideos
           ? items?.where((i) => !RecommendFilter.filterAll(i)).toList()
           : items?.toList();

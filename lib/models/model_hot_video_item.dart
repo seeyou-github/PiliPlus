@@ -3,9 +3,11 @@ import 'package:PiliPlus/models/model_owner.dart';
 import 'package:PiliPlus/models/model_video.dart';
 import 'package:PiliPlus/models_new/video/video_detail/dimension.dart';
 import 'package:PiliPlus/pages/common/multi_select/base.dart';
+import 'package:PiliPlus/utils/upower_exclusive.dart';
 
 // 稍后再看, 排行榜等网页返回也使用该类
 class HotVideoItemModel extends HorizontalVideoModel with MultiSelectData {
+  bool isUpowerExclusive = false;
   int? videos;
   int? tid;
   String? tname;
@@ -39,6 +41,7 @@ class HotVideoItemModel extends HorizontalVideoModel with MultiSelectData {
     pubLocation = json["pub_location"];
     redirectUrl = json['redirect_url'];
     progress = json['progress'];
+    isUpowerExclusive = UpowerExclusive.fromJson(json);
     if (json['charging_pay']?['level'] != null) {
       badge = '充电专属';
     } else if (json['rights']?['is_cooperation'] == 1) {

@@ -1,10 +1,12 @@
 import 'package:PiliPlus/models/model_owner.dart';
 import 'package:PiliPlus/models/model_video.dart';
+import 'package:PiliPlus/utils/upower_exclusive.dart';
 
 abstract class BaseRcmdVideoItemModel extends BaseVideoItemModel {
   String? goto;
   String? uri;
   String? rcmdReason;
+  bool isUpowerExclusive = false;
 
   // app推荐专属
   int? param;
@@ -25,6 +27,7 @@ class RcmdVideoItemModel extends BaseRcmdVideoItemModel {
     owner = Owner.fromJson(json["owner"]);
     stat = Stat.fromJson(json["stat"]);
     isFollowed = json["is_followed"] == 1;
+    isUpowerExclusive = UpowerExclusive.fromJson(json);
     // rcmdReason = json["rcmd_reason"] != null
     //     ? RcmdReason.fromJson(json["rcmd_reason"])
     //     : RcmdReason(content: '');

@@ -68,6 +68,10 @@ class DynamicsDataModel {
                     'ADDITIONAL_TYPE_GOODS')) {
           continue;
         }
+        if (Pref.hideUpowerExclusiveVideo &&
+            (item.isUpowerExclusive || item.orig?.isUpowerExclusive == true)) {
+          continue;
+        }
         if (enableFilter) {
           if (item.orig case final orig?) {
             if (banWordForDyn.hasMatch(_getMatchText(orig))) {
@@ -106,6 +110,9 @@ class DynamicItemModel {
   bool? visible;
 
   late bool linkFolded = false;
+
+  bool get isUpowerExclusive =>
+      modules.moduleDynamic?.major?.isUpowerExclusive == true;
 
   // opus
   Fallback? fallback;
@@ -932,6 +939,13 @@ class DynamicMajorModel {
 
   SubscriptionNew? subscriptionNew;
 
+  bool get isUpowerExclusive =>
+      upowerCommon != null ||
+      archive?.isUpowerExclusive == true ||
+      ugcSeason?.isUpowerExclusive == true ||
+      pgc?.isUpowerExclusive == true ||
+      courses?.isUpowerExclusive == true;
+
   DynamicMajorModel.fromJson(Map<String, dynamic> json) {
     archive = json['archive'] != null
         ? DynamicArchiveModel.fromJson(json['archive'])
@@ -1123,6 +1137,8 @@ class DynamicArchiveModel {
   int? type;
   int? epid;
   int? seasonId;
+
+  bool get isUpowerExclusive => badge?.text?.contains('充电专属') == true;
 
   DynamicArchiveModel.fromJson(Map<String, dynamic> json) {
     id = safeToInt(json['id']);
