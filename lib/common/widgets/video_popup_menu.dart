@@ -271,7 +271,7 @@ class VideoPopupMenu extends StatelessWidget {
                           title: const Text('提示'),
                           content: Text(
                             '确定拉黑:${videoItem.owner.name}(${videoItem.owner.mid})?'
-                            '\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除',
+                            '\n\n注：被拉黑的Up可以在 设置-屏蔽过滤设置-黑名单管理 中解除',
                           ),
                           actions: [
                             TextButton(
@@ -293,6 +293,10 @@ class VideoPopupMenu extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () async {
+                                if (!Accounts.main.isLogin) {
+                                  SmartDialog.showToast('账号未登录');
+                                  return;
+                                }
                                 Get.back();
                                 final res = await VideoHttp.relationMod(
                                   mid: videoItem.owner.mid!,

@@ -4,6 +4,7 @@ import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/feedback.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
+import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/local_blacklist.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -131,8 +132,8 @@ class LivePopupMenu extends StatelessWidget {
         return AlertDialog(
           title: const Text('提示'),
           content: Text(
-            '确定拉黑:$uname($uid)?'
-            '\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除',
+            '确定拉黑:${uname ?? uid}($uid)?'
+            '\n\n注：被拉黑的Up可以在 设置-屏蔽过滤设置-黑名单管理 中解除',
           ),
           actions: [
             TextButton(
@@ -153,6 +154,10 @@ class LivePopupMenu extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
+                if (!Accounts.main.isLogin) {
+                  SmartDialog.showToast('账号未登录');
+                  return;
+                }
                 Get.back();
                 final res = await VideoHttp.relationMod(
                   mid: uid!,
@@ -194,7 +199,7 @@ class LivePopupMenu extends StatelessWidget {
                   ),
                 if (uid != null)
                   _LiveCustomAction(
-                    '访问：$uname',
+                    '访问：${uname ?? uid}',
                     const Icon(MdiIcons.accountCircleOutline, size: 16),
                     () => Get.toNamed('/member?mid=$uid'),
                   ),
@@ -206,7 +211,7 @@ class LivePopupMenu extends StatelessWidget {
                   ),
                 if (uid != null)
                   _LiveCustomAction(
-                    '拉黑：$uname',
+                    '拉黑：${uname ?? uid}',
                     const Icon(MdiIcons.cancel, size: 16),
                     () => _showBlockDialog(context),
                   ),
