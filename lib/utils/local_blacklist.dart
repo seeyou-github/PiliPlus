@@ -15,7 +15,7 @@ class LocalBlacklist {
   LocalBlacklist._();
 
   static List<String>? _names;
-  static RegExp? _cachedRegExp;
+  static List<String>? _cachedPatterns;
   static int _version = 0;
   static int _cachedVersion = -1;
 
@@ -25,49 +25,68 @@ class LocalBlacklist {
   /// 昵称匹配规则数量，用于外部判断是否需要展示
   static bool get hasNames => names.isNotEmpty;
 
-  static RegExp? get _regExp {
+  static List<String>? get _patterns {
     if (_cachedVersion != _version) {
       _cachedVersion = _version;
-      _cachedRegExp = _buildRegExp(names);
+      _cachedPatterns = _buildPatterns(names);
     }
-    return _cachedRegExp;
+    return _cachedPatterns;
   }
 
-  static RegExp? _buildRegExp(List<String> patterns) {
+  static List<String>? _buildPatterns(List<String> patterns) {
     final list = <String>[];
     for (final pattern in patterns) {
-      final p = pattern.trim();
+      final p = pattern.trim().toLowerCase();
       if (p.isNotEmpty) {
-        list.add(_toRegExpString(p));
+        list.add(p);
       }
     }
-    if (list.isEmpty) return null;
-    return RegExp('^(?:${list.join('|')})\$', caseSensitive: false);
-  }
-
-  /// 把通配符字符串转为正则片段（其余字符全部转义）
-  static String _toRegExpString(String pattern) {
-    final sb = StringBuffer();
-    for (final rune in pattern.runes) {
-      switch (rune) {
-        case 0x2A: // *
-          sb.write('.*');
-        case 0x3F: // ?
-          sb.write('.');
-        default:
-          sb.write(RegExp.escape(String.fromCharCode(rune)));
-      }
-    }
-    return sb.toString();
+    return list.isEmpty ? null : list;
   }
 
   /// 昵称是否命中黑名单（支持通配符）
   static bool containsName(Object? name) {
     if (name == null) return false;
-    final regExp = _regExp;
-    if (regExp == null) return false;
-    final value = name is String ? name : name.toString();
-    return value.isNotEmpty && regExp.hasMatch(value);
+    final patterns = _patterns;
+    if (patterns == null) return false;
+    final value = (name is String ? name : name.toString()).toLowerCase();
+    if (value.isEmpty) return false;
+    for (final pattern in patterns) {
+      if (_globMatch(pattern, value)) return true;
+    }
+    return false;
+  }
+
+  /// 线性匹配 glob 模式，避免正则回溯在多个 `*` 时退化
+  static bool _globMatch(String pattern, String value) {
+    var p = 0;
+    var v = 0;
+    var star = -1;
+    var mark = 0;
+    while (v < value.length) {
+      if (p < pattern.length) {
+        final c = pattern.codeUnitAt(p);
+        // ? 匹配任意单个字符
+        if (c == 0x3F || c == value.codeUnitAt(v)) {
+          p++;
+          v++;
+          continue;
+        }
+        // * 匹配任意长度的字符序列
+        if (c == 0x2A) {
+          star = p++;
+          mark = v;
+          continue;
+        }
+      }
+      if (star == -1) return false;
+      p = star + 1;
+      v = ++mark;
+    }
+    while (p < pattern.length && pattern.codeUnitAt(p) == 0x2A) {
+      p++;
+    }
+    return p == pattern.length;
   }
 
   /// UID 是否命中黑名单（兼容 int/num/String 形式的 mid）
@@ -90,6 +109,13 @@ class LocalBlacklist {
     final id = mid is int ? mid : int.tryParse(mid.toString());
     if (id == null) return;
     Pref.setBlackMid(id);
+  }
+
+  /// 批量添加并立即持久化（导入黑名单时使用）
+  static void addMids(Iterable<int> mids) {
+    if (mids.isEmpty) return;
+    final blackMids = GlobalData().blackMids..addAll(mids);
+    Pref.blackMids = blackMids;
   }
 
   static void removeMid(int mid) => Pref.removeBlackMid(mid);

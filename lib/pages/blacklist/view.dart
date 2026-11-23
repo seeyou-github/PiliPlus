@@ -214,7 +214,7 @@ class _BlackListPageState extends State<BlackListPage>
         final mids = json.whereType<int>().toSet();
         final names = json.whereType<String>();
         if (mids.isNotEmpty) {
-          _blackListController.blackMids.addAll(mids);
+          LocalBlacklist.addMids(mids);
         }
         if (names.isNotEmpty) {
           LocalBlacklist.setNames({...LocalBlacklist.names, ...names});
@@ -285,7 +285,7 @@ class _BlackListPageState extends State<BlackListPage>
                           if (entry.isName) {
                             LocalBlacklist.removeName(entry.text);
                           } else {
-                            _blackListController.blackMids.remove(entry.mid);
+                            LocalBlacklist.removeMid(entry.mid!);
                           }
                           setState(() {});
                         },
@@ -356,8 +356,11 @@ class _BlackListPageState extends State<BlackListPage>
                           item.mid,
                         );
                         if (mounted && removed) {
-                          if (_blackListController.blackMids.remove(item.mid)) {
-                            setState(() {});
+                          if (item.mid case final mid?) {
+                            if (LocalBlacklist.containsMid(mid)) {
+                              LocalBlacklist.removeMid(mid);
+                              setState(() {});
+                            }
                           }
                         }
                       },
