@@ -82,13 +82,6 @@ List<SettingsModel> get dynFilterSettings => [
     defaultVal: true,
     onChanged: (value) => DynamicsDataModel.antiGoodsDyn = value,
   ),
-  const SwitchModel(
-    title: '隐藏充电专属视频',
-    subtitle: 'UP主页、投稿列表、视频页、首页、动态页、热门和分区不显示充电专属视频',
-    leading: Icon(Icons.bolt_outlined),
-    setKey: SettingBoxKey.hideUpowerExclusiveVideo,
-    defaultVal: true,
-  ),
 ];
 
 void _showDynDialog(BuildContext context) {
