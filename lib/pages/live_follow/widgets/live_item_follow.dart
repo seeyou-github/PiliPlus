@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/image/image_save.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models_new/live/live_follow/item.dart';
+import 'package:PiliPlus/pages/live/widgets/live_popup_menu.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:material_ui/material_ui.dart';
@@ -9,10 +10,12 @@ import 'package:material_ui/material_ui.dart';
 // 视频卡片 - 垂直布局
 class LiveCardVFollow extends StatelessWidget {
   final LiveFollowItem liveItem;
+  final VoidCallback? onRemove;
 
   const LiveCardVFollow({
     super.key,
     required this.liveItem,
+    this.onRemove,
   });
 
   @override
@@ -21,45 +24,63 @@ class LiveCardVFollow extends StatelessWidget {
       title: liveItem.title,
       cover: liveItem.roomCover,
     );
-    return Card(
-      child: InkWell(
-        onTap: () => PageUtils.toLiveRoom(liveItem.roomid),
-        onLongPress: onLongPress,
-        onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
-        borderRadius: const .all(.circular(12)),
-        child: Column(
-          crossAxisAlignment: .start,
-          children: [
-            AspectRatio(
-              aspectRatio: Style.aspectRatio,
-              child: LayoutBuilder(
-                builder: (context, boxConstraints) {
-                  double maxWidth = boxConstraints.maxWidth;
-                  double maxHeight = boxConstraints.maxHeight;
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      NetworkImgLayer(
-                        src: liveItem.roomCover!,
-                        width: maxWidth,
-                        height: maxHeight,
-                        borderRadius: const .vertical(top: .circular(12)),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: videoStat(),
-                      ),
-                    ],
-                  );
-                },
-              ),
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Card(
+          child: InkWell(
+            onTap: () => PageUtils.toLiveRoom(liveItem.roomid),
+            onLongPress: onLongPress,
+            onSecondaryTap: PlatformUtils.isMobile ? null : onLongPress,
+            borderRadius: const .all(.circular(12)),
+            child: Column(
+              crossAxisAlignment: .start,
+              children: [
+                AspectRatio(
+                  aspectRatio: Style.aspectRatio,
+                  child: LayoutBuilder(
+                    builder: (context, boxConstraints) {
+                      double maxWidth = boxConstraints.maxWidth;
+                      double maxHeight = boxConstraints.maxHeight;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          NetworkImgLayer(
+                            src: liveItem.roomCover!,
+                            width: maxWidth,
+                            height: maxHeight,
+                            borderRadius: const .vertical(top: .circular(12)),
+                          ),
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: videoStat(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                liveContent(context),
+              ],
             ),
-            liveContent(context),
-          ],
+          ),
         ),
-      ),
+        Positioned(
+          right: -5,
+          bottom: -2,
+          width: 29,
+          height: 29,
+          child: LivePopupMenu(
+            iconSize: 17,
+            uid: liveItem.uid,
+            uname: liveItem.uname,
+            roomid: liveItem.roomid,
+            onRemove: onRemove,
+          ),
+        ),
+      ],
     );
   }
 

@@ -249,15 +249,24 @@ class _LivePageState extends State<LivePage>
                       controller.onLoadMore();
                     }
                     final item = response[index];
+                    void onRemove() {
+                      if (index < response.length) {
+                        response.removeAt(index);
+                      }
+                      setState(() {});
+                    }
+
                     if (item is LiveCardList) {
                       return LiveCardVApp(
                         item: item.cardData!.smallCardV1!,
                         showFirstFrame: controller.showFirstFrame,
+                        onRemove: onRemove,
                       );
                     }
                     return LiveCardVApp(
                       item: item,
                       showFirstFrame: controller.showFirstFrame,
+                      onRemove: onRemove,
                     );
                   },
                   itemCount: response.length,

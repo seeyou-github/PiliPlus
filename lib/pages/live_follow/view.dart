@@ -80,6 +80,12 @@ class _LiveFollowPageState extends State<LiveFollowPage> {
                   }
                   return LiveCardVFollow(
                     liveItem: response[index],
+                    onRemove: () {
+                      if (index < response.length) {
+                        response.removeAt(index);
+                      }
+                      setState(() {});
+                    },
                   );
                 },
                 itemCount: response.length,

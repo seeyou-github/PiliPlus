@@ -105,6 +105,12 @@ class _LiveAreaChildPageState extends State<LiveAreaChildPage>
               return LiveCardVApp(
                 item: response[index],
                 showFirstFrame: widget.showFirstFrame,
+                onRemove: () {
+                  if (index < response.length) {
+                    response.removeAt(index);
+                  }
+                  setState(() {});
+                },
               );
             },
             itemCount: response.length,
