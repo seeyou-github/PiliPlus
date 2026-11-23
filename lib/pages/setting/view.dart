@@ -7,6 +7,7 @@ import 'package:PiliPlus/models/common/setting_type.dart';
 import 'package:PiliPlus/pages/about/view.dart';
 import 'package:PiliPlus/pages/login/controller.dart';
 import 'package:PiliPlus/pages/setting/common_setting.dart';
+import 'package:PiliPlus/pages/setting/filter_setting.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
@@ -44,13 +45,18 @@ class _SettingPageState extends State<SettingPage> {
 
   static const List<_SettingsModel> _items = [
     _SettingsModel(
+      type: .filterSetting,
+      subtitle: '黑名单、标题/分区/评论/动态关键词、点赞率、时长、播放量等',
+      icon: Icon(Icons.filter_alt_outlined),
+    ),
+    _SettingsModel(
       type: .privacySetting,
-      subtitle: '账号、黑名单',
+      subtitle: '账号、buvid',
       icon: Icon(Icons.privacy_tip_outlined),
     ),
     _SettingsModel(
       type: .recommendSetting,
-      subtitle: '推荐来源（web/app）、刷新保留内容、过滤器',
+      subtitle: '推荐来源（web/app）、刷新保留内容',
       icon: Icon(Icons.explore_outlined),
     ),
     _SettingsModel(
@@ -70,12 +76,12 @@ class _SettingPageState extends State<SettingPage> {
     ),
     _SettingsModel(
       type: .replySetting,
-      subtitle: '过滤、屏蔽、记录、默认展示等',
+      subtitle: '记录、反诈、折叠、关键词、展示等',
       icon: Icon(Icons.comment_outlined),
     ),
     _SettingsModel(
       type: .dynSetting,
-      subtitle: '过滤、屏蔽、默认展示等',
+      subtitle: '未读检查、警告信息、反诈、展示等',
       icon: Icon(CustomIcons.motion_photos_on_outlined),
     ),
     _SettingsModel(
@@ -132,6 +138,7 @@ class _SettingPageState extends State<SettingPage> {
                         showAppBar: false,
                       ),
                       .about => const AboutPage(showAppBar: false),
+                      .filterSetting => const FilterSetting(showAppBar: false),
                       _ => CommonSetting(settingType: _type, showAppBar: false),
                     },
                   ),
@@ -153,6 +160,7 @@ class _SettingPageState extends State<SettingPage> {
         () => switch (type) {
           .webdavSetting => const WebDavSettingPage(),
           .about => const AboutPage(),
+          .filterSetting => const FilterSetting(),
           _ => CommonSetting(settingType: type),
         },
       );

@@ -33,27 +33,12 @@ List<SettingsModel> get dynSettings => [
     defaultVal: false,
     onChanged: (val) => ItemModulesModel.showDynDispute = val,
   ),
-  getBanWordModel(
-    title: '动态关键词过滤',
-    key: SettingBoxKey.banWordForDyn,
-    onChanged: (value) {
-      DynamicsDataModel.banWordForDyn = value;
-      DynamicsDataModel.enableFilter = value.pattern.isNotEmpty;
-    },
-  ),
   const SwitchModel(
     title: '发布/转发动态反诈',
     subtitle: '发布/转发动态后检查动态是否可见',
     leading: Icon(CustomIcons.shield_published),
     setKey: SettingBoxKey.enableCreateDynAntifraud,
     defaultVal: false,
-  ),
-  SwitchModel(
-    title: '屏蔽带货动态',
-    leading: const Icon(CustomIcons.shopping_bag_not_interested),
-    setKey: SettingBoxKey.antiGoodsDyn,
-    defaultVal: true,
-    onChanged: (value) => DynamicsDataModel.antiGoodsDyn = value,
   ),
   const SwitchModel(
     title: '隐藏充电专属视频',
@@ -84,6 +69,25 @@ List<SettingsModel> get dynSettings => [
     setKey: SettingBoxKey.showDynInteraction,
     defaultVal: true,
     onChanged: (val) => ItemModulesModel.showDynInteraction = val,
+  ),
+];
+
+/// 「屏蔽过滤设置」中的动态相关项
+List<SettingsModel> get dynFilterSettings => [
+  getBanWordModel(
+    title: '动态关键词过滤',
+    key: SettingBoxKey.banWordForDyn,
+    onChanged: (value) {
+      DynamicsDataModel.banWordForDyn = value;
+      DynamicsDataModel.enableFilter = value.pattern.isNotEmpty;
+    },
+  ),
+  SwitchModel(
+    title: '屏蔽带货动态',
+    leading: const Icon(CustomIcons.shopping_bag_not_interested),
+    setKey: SettingBoxKey.antiGoodsDyn,
+    defaultVal: true,
+    onChanged: (value) => DynamicsDataModel.antiGoodsDyn = value,
   ),
 ];
 

@@ -23,6 +23,7 @@ class _SettingsSearchPageState
   final _textEditingController = TextEditingController();
   final RxList<TaggedSetting> _list = <TaggedSetting>[].obs;
   late final _settings = [
+    ..._tagSettings(SettingType.filterSetting),
     ..._tagSettings(SettingType.extraSetting),
     ..._tagSettings(SettingType.dmSetting),
     ..._tagSettings(SettingType.replySetting),

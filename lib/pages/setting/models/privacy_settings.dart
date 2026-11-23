@@ -11,12 +11,6 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 
 List<SettingsModel> get privacySettings => [
-  NormalModel(
-    onTap: (context, setState) => Get.toNamed('/blackListPage'),
-    title: '黑名单管理',
-    subtitle: '已拉黑用户',
-    leading: const Icon(Icons.block),
-  ),
   const NormalModel(
     title: 'buvid设置',
     leading: Icon(CustomIcons.identifier_circle),
@@ -45,6 +39,16 @@ List<SettingsModel> get privacySettings => [
     leading: const Icon(Icons.flag_outlined),
     title: '了解账号模式',
     subtitle: '查看各个账号模式作用的API列表',
+  ),
+];
+
+/// 「屏蔽过滤设置」中的隐私相关项
+List<SettingsModel> get privacyFilterSettings => [
+  NormalModel(
+    onTap: (context, setState) => Get.toNamed('/blackListPage'),
+    title: '黑名单管理',
+    subtitle: '已拉黑用户',
+    leading: const Icon(Icons.block),
   ),
 ];
 

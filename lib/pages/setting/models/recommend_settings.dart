@@ -51,6 +51,10 @@ List<SettingsModel> get recommendSettings => [
       }
     },
   ),
+];
+
+/// 「屏蔽过滤设置」中的推荐流相关项
+List<SettingsModel> get recommendFilterSettings => [
   getVideoFilterSelectModel(
     title: '点赞率',
     suffix: '%',

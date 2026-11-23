@@ -63,40 +63,6 @@ List<SettingsModel> get replySettings => [
       setKey: SettingBoxKey.biliSendCommAntifraud,
       defaultVal: false,
     ),
-  SwitchModel(
-    title: '屏蔽带货评论',
-    leading: const Icon(CustomIcons.shopping_bag_not_interested),
-    setKey: SettingBoxKey.antiGoodsReply,
-    defaultVal: true,
-    onChanged: (value) => ReplyGrpc.antiGoodsReply = value,
-  ),
-  const NormalModel(
-    title: '屏蔽评论@数量',
-    getSubtitle: _replyAtBlockSubtitle,
-    leading: Icon(Icons.pin_outlined),
-    onTap: _showReplyAtBlockDialog,
-  ),
-  const SwitchModel(
-    title: '屏蔽只包含@的评论',
-    leading: Icon(Icons.alternate_email),
-    setKey: SettingBoxKey.blockAtOnlyReply,
-    defaultVal: true,
-    onChanged: _onBlockAtOnlyReplyChanged,
-  ),
-  const SwitchModel(
-    title: '屏蔽复制简介评论',
-    leading: Icon(Icons.summarize),
-    setKey: SettingBoxKey.filterIntro,
-    defaultVal: true,
-  ),
-  getBanWordModel(
-    title: '评论关键词过滤',
-    key: SettingBoxKey.banWordForReply,
-    onChanged: (value) {
-      ReplyGrpc.replyRegExp = value;
-      ReplyGrpc.enableFilter = value.pattern.isNotEmpty;
-    },
-  ),
   NormalModel(
     title: '线程式评论折叠阈值',
     getSubtitle: () => '当前：「${Pref.foldDepth}」，0为不折叠',
@@ -135,6 +101,44 @@ List<SettingsModel> get replySettings => [
     onSelected: (value, setState) => GStorage.setting
         .put(SettingBoxKey.reply2SortType, value.index)
         .whenComplete(setState),
+  ),
+];
+
+/// 「屏蔽过滤设置」中的评论相关项
+List<SettingsModel> get replyFilterSettings => [
+  SwitchModel(
+    title: '屏蔽带货评论',
+    leading: const Icon(CustomIcons.shopping_bag_not_interested),
+    setKey: SettingBoxKey.antiGoodsReply,
+    defaultVal: true,
+    onChanged: (value) => ReplyGrpc.antiGoodsReply = value,
+  ),
+  const NormalModel(
+    title: '屏蔽评论@数量',
+    getSubtitle: _replyAtBlockSubtitle,
+    leading: Icon(Icons.pin_outlined),
+    onTap: _showReplyAtBlockDialog,
+  ),
+  const SwitchModel(
+    title: '屏蔽只包含@的评论',
+    leading: Icon(Icons.alternate_email),
+    setKey: SettingBoxKey.blockAtOnlyReply,
+    defaultVal: true,
+    onChanged: _onBlockAtOnlyReplyChanged,
+  ),
+  const SwitchModel(
+    title: '屏蔽复制简介评论',
+    leading: Icon(Icons.summarize),
+    setKey: SettingBoxKey.filterIntro,
+    defaultVal: true,
+  ),
+  getBanWordModel(
+    title: '评论关键词过滤',
+    key: SettingBoxKey.banWordForReply,
+    onChanged: (value) {
+      ReplyGrpc.replyRegExp = value;
+      ReplyGrpc.enableFilter = value.pattern.isNotEmpty;
+    },
   ),
 ];
 
