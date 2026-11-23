@@ -32,6 +32,7 @@ import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
+import 'package:PiliPlus/utils/local_blacklist.dart';
 import 'package:PiliPlus/utils/recommend_filter.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -110,8 +111,10 @@ abstract final class VideoHttp {
 
   static bool _filterWebRcmd(dynamic i) {
     if (i['goto'] != 'av') return true;
-    if (i['owner'] != null &&
-        GlobalData().blackMids.contains(i['owner']['mid'])) {
+    if (LocalBlacklist.blocked(
+      mid: i['owner']?['mid'],
+      name: i['owner']?['name'],
+    )) {
       return true;
     }
     return false;
@@ -125,7 +128,10 @@ abstract final class VideoHttp {
       return true;
     }
     if (i['args'] != null &&
-        GlobalData().blackMids.contains(i['args']['up_id'])) {
+        LocalBlacklist.blocked(
+          mid: i['args']['up_id'],
+          name: i['args']['up_name'],
+        )) {
       return true;
     }
     if (enableFilter &&
@@ -207,7 +213,12 @@ abstract final class VideoHttp {
   }
 
   static bool _filterHotAndRank(dynamic i) {
-    if (GlobalData().blackMids.contains(i['owner']['mid'])) return false;
+    if (LocalBlacklist.blocked(
+      mid: i['owner']?['mid'],
+      name: i['owner']?['name'],
+    )) {
+      return false;
+    }
     if (RecommendFilter.filterTitle(i['title'])) return false;
     if (RecommendFilter.filterLikeRatio(i['stat']['like'], i['stat']['view'])) {
       return false;
@@ -419,7 +430,10 @@ abstract final class VideoHttp {
     );
     if (res.data['code'] == 0) {
       final items = (res.data['data'] as List?)
-          ?.whereNotBlocked((e) => e['owner']?['mid'])
+          ?.whereNotBlocked(
+            (e) => e['owner']?['mid'],
+            (e) => e['owner']?['name'],
+          )
           .map((i) => HotVideoItemModel.fromJson(i))
           .where(
             (i) => !Pref.hideUpowerExclusiveVideo || !i.isUpowerExclusive,
@@ -1088,7 +1102,13 @@ abstract final class VideoHttp {
       ),
     );
     if (res.data['code'] == 0) {
-      return Success(PopularSeriesOneData.fromJson(res.data['data']));
+      final data = PopularSeriesOneData.fromJson(res.data['data']);
+      LocalBlacklist.removeBlocked(
+        data.list,
+        (e) => e.owner?.mid,
+        (e) => e.owner?.name,
+      );
+      return Success(data);
     } else {
       return Error(res.data['message']);
     }
@@ -1113,7 +1133,13 @@ abstract final class VideoHttp {
       ),
     );
     if (res.data['code'] == 0) {
-      return Success(PopularPreciousData.fromJson(res.data['data']));
+      final data = PopularPreciousData.fromJson(res.data['data']);
+      LocalBlacklist.removeBlocked(
+        data.list,
+        (e) => e.owner?.mid,
+        (e) => e.owner?.name,
+      );
+      return Success(data);
     } else {
       return Error(res.data['message']);
     }

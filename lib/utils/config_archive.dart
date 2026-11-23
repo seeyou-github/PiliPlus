@@ -13,6 +13,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/local_blacklist.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -201,7 +202,8 @@ abstract final class ConfigArchive {
 
   static String _exportAccount() => jsonEncode(Accounts.account.toMap());
 
-  static String _exportBlacklist() => jsonEncode(Pref.blackMids.toList());
+  static String _exportBlacklist() =>
+      jsonEncode([...Pref.blackMids, ...Pref.blackNames]);
 
   static String? _exportReply() {
     final box = GStorage.reply;
@@ -250,10 +252,13 @@ abstract final class ConfigArchive {
 
   static void _importBlacklist(List<dynamic> list) {
     // 就地覆盖，保持已有引用
+    // 兼容旧数据：数组项仅含 UID；新数据还包含昵称字符串
     final set = GlobalData().blackMids
       ..clear()
-      ..addAll(Set<int>.from(list));
+      ..addAll(list.whereType<int>());
     Pref.blackMids = set;
+    Pref.blackNames = list.whereType<String>().toList();
+    LocalBlacklist.reload();
   }
 
   static void _importReply(List<dynamic> list) {

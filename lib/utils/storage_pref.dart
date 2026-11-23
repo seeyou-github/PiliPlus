@@ -84,6 +84,16 @@ abstract final class Pref {
     GlobalData().blackMids..remove(mid),
   );
 
+  /// 本地黑名单中的昵称（支持通配符，如 `*官方*`、`张?`）
+  static List<String> get blackNames {
+    final value = _localCache.get(LocalCacheKey.blackNames);
+    // Hive 读取回来是 List<dynamic>，这里显式转成 List<String>
+    return value is List ? value.whereType<String>().toList() : <String>[];
+  }
+
+  static set blackNames(List<String> names) =>
+      _localCache.put(LocalCacheKey.blackNames, names);
+
   static MemberTabType get memberTab =>
       MemberTabType.values[_setting.get(
         SettingBoxKey.memberTab,

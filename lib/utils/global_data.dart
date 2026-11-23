@@ -1,3 +1,4 @@
+import 'package:PiliPlus/utils/local_blacklist.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 
 class GlobalData {
@@ -28,6 +29,11 @@ class GlobalData {
 }
 
 extension IterableExt<E> on Iterable<E> {
-  Iterable<E> whereNotBlocked(Object? /* mid */ Function(E element) test) =>
-      where((e) => !GlobalData().blackMids.contains(test(e)));
+  /// 过滤本地黑名单（UID 或昵称，昵称支持通配符）
+  Iterable<E> whereNotBlocked(
+    Object? /* mid */ Function(E element) test, [
+    Object? /* name */ Function(E element)? name,
+  ]) => where(
+    (e) => !LocalBlacklist.blocked(mid: test(e), name: name?.call(e)),
+  );
 }

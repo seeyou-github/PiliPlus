@@ -15,6 +15,7 @@ import 'package:PiliPlus/models_new/live/live_dm_info/data.dart';
 import 'package:PiliPlus/models_new/live/live_emote/data.dart';
 import 'package:PiliPlus/models_new/live/live_emote/datum.dart';
 import 'package:PiliPlus/models_new/live/live_fans_medal/data.dart';
+import 'package:PiliPlus/models_new/live/live_feed_index/card_data_list_item.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/data.dart';
 import 'package:PiliPlus/models_new/live/live_follow/data.dart';
 import 'package:PiliPlus/models_new/live/live_info_by_user/data.dart';
@@ -31,6 +32,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:PiliPlus/utils/live_trace_utils.dart';
+import 'package:PiliPlus/utils/local_blacklist.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
 
@@ -241,10 +243,24 @@ abstract final class LiveHttp {
       ),
     );
     if (res.data['code'] == 0) {
-      return Success(LiveIndexData.fromJson(res.data['data']));
+      final data = LiveIndexData.fromJson(res.data['data']);
+      _filterLocalBlacklistOfIndex(data);
+      return Success(data);
     } else {
       return Error(res.data['message']);
     }
+  }
+
+  /// 直播卡片是否命中本地黑名单（UID 或昵称）
+  static bool _isLiveBlocked(CardLiveItem? item) =>
+      item != null &&
+      LocalBlacklist.blocked(mid: item.uid, name: item.uname);
+
+  /// 过滤直播首页的推荐卡片与关注卡片
+  static void _filterLocalBlacklistOfIndex(LiveIndexData data) {
+    data.cardList?.removeWhere((e) => _isLiveBlocked(e.cardData?.smallCardV1));
+    final followList = data.followItem?.cardData?.myIdolV1?.list;
+    followList?.removeWhere(_isLiveBlocked);
   }
 
   static Future<LoadingState<LiveFollowData>> liveFollow(int page) async {
@@ -258,7 +274,21 @@ abstract final class LiveHttp {
       },
     );
     if (res.data['code'] == 0) {
-      return Success(LiveFollowData.fromJson(res.data['data']));
+      final data = LiveFollowData.fromJson(res.data['data']);
+      final list = data.list;
+      if (list != null && list.isNotEmpty) {
+        final before = list.length;
+        list.removeWhere(
+          (e) => LocalBlacklist.blocked(mid: e.uid, name: e.uname),
+        );
+        final removed = before - list.length;
+        if (removed > 0) {
+          // 保持分页判定与实际展示数量一致
+          if (data.count != null) data.count = data.count! - removed;
+          if (data.liveCount != null) data.liveCount = data.liveCount! - removed;
+        }
+      }
+      return Success(data);
     } else {
       return Error(res.data['message']);
     }
@@ -319,7 +349,17 @@ abstract final class LiveHttp {
       ),
     );
     if (res.data['code'] == 0) {
-      return Success(LiveSecondData.fromJson(res.data['data']));
+      final data = LiveSecondData.fromJson(res.data['data']);
+      final list = data.cardList;
+      if (list != null && list.isNotEmpty) {
+        final before = list.length;
+        list.removeWhere(_isLiveBlocked);
+        final removed = before - list.length;
+        if (removed > 0 && data.count != null) {
+          data.count = data.count! - removed;
+        }
+      }
+      return Success(data);
     } else {
       return Error(res.data['message']);
     }
@@ -484,7 +524,14 @@ abstract final class LiveHttp {
       queryParameters: params,
     );
     if (res.data['code'] == 0) {
-      return Success(LiveSearchData.fromJson(res.data['data']));
+      final data = LiveSearchData.fromJson(res.data['data']);
+      data.room?.list?.removeWhere(
+        (e) => LocalBlacklist.blocked(mid: e.uid, name: e.name),
+      );
+      data.user?.list?.removeWhere(
+        (e) => LocalBlacklist.blocked(mid: e.uid, name: e.name),
+      );
+      return Success(data);
     } else {
       return Error(res.data['message']);
     }

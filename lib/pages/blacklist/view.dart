@@ -16,8 +16,8 @@ import 'package:PiliPlus/models_new/blacklist/list.dart';
 import 'package:PiliPlus/pages/blacklist/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
+import 'package:PiliPlus/utils/local_blacklist.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -31,6 +31,18 @@ enum _BlockType implements EnumWithLabel {
   final String label;
 
   _BlockType(this.label);
+}
+
+/// 本地黑名单条目的展示模型（UID 或 昵称规则）
+class _LocalBlockEntry {
+  final String text;
+
+  /// 为 null 表示昵称规则（通配符），否则为 UID
+  final int? mid;
+
+  const _LocalBlockEntry({required this.text, this.mid});
+
+  bool get isName => mid == null;
 }
 
 class BlackListPage extends StatefulWidget {
@@ -112,60 +124,109 @@ class _BlackListPageState extends State<BlackListPage>
     );
   }
 
-  void _onAddMid(String mid) {
-    if (mid.isEmpty) return;
-    int intMid;
-    try {
-      intMid = int.parse(mid);
-    } catch (e) {
-      SmartDialog.showToast(e.toString());
-      return;
+  void _onAddBlock(String value) {
+    final text = value.trim();
+    if (text.isEmpty) return;
+    // 纯数字按 UID 处理，其余按昵称（支持 * ? 通配符）
+    if (RegExp(r'^\d+$').hasMatch(text)) {
+      final intMid = int.tryParse(text);
+      if (intMid == null || intMid <= 0) {
+        SmartDialog.showToast('请输入正确的UID');
+        return;
+      }
+      if (_blackListController.blackMids.contains(intMid)) {
+        SmartDialog.showToast('该UID已在黑名单中');
+        return;
+      }
+      _blackListController.blackMids.add(intMid);
+      LocalBlacklist.addMid(intMid);
+    } else {
+      if (!LocalBlacklist.addName(text)) {
+        SmartDialog.showToast('该昵称规则已存在');
+        return;
+      }
     }
-    _blackListController.blackMids.add(intMid);
     SmartDialog.showToast('屏蔽成功');
     setState(() {});
   }
 
   void _showAddMidDialog() {
     var text = '';
+    final colorScheme = ColorScheme.of(context);
     showConfirmDialog(
       context: context,
       title: const Text('屏蔽用户'),
-      content: TextField(
-        autofocus: true,
-        textInputAction: .done,
-        keyboardType: .number,
-        onChanged: (value) => text = value,
-        onSubmitted: (value) {
-          Get.back();
-          _onAddMid(value);
-        },
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(
-          labelText: 'UID',
-          border: OutlineInputBorder(),
-        ),
+      content: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
+        children: [
+          TextField(
+            autofocus: true,
+            textInputAction: .done,
+            onChanged: (value) => text = value,
+            onSubmitted: (value) {
+              Get.back();
+              _onAddBlock(value);
+            },
+            decoration: const InputDecoration(
+              labelText: 'UID 或昵称',
+              hintText: '如 123456 或 *官方*',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '用法：\n'
+            '· 纯数字按 UID 屏蔽\n'
+            '· 其它内容按昵称屏蔽，支持通配符\n'
+            '· * 匹配任意个字符，? 匹配单个字符\n'
+            '· 不区分大小写，如 *官方*、张?、*资讯',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: colorScheme.outline,
+            ),
+          ),
+        ],
       ),
-      onConfirm: () => _onAddMid(text),
+      onConfirm: () => _onAddBlock(text),
     );
   }
+
+  /// 本地黑名单条目：昵称规则在前，UID 在后
+  List<_LocalBlockEntry> get _localEntries => [
+    for (final name in LocalBlacklist.names) _LocalBlockEntry(text: name),
+    for (final mid in _blackListController.blackMids)
+      _LocalBlockEntry(text: mid.toString(), mid: mid),
+  ];
 
   void _showImportExportDialog() {
     showImportExportDialog<List>(
       context,
       title: '黑名单',
       localFileName: () => 'blackMids',
-      onExport: () =>
-          Utils.jsonEncoder.convert(_blackListController.blackMids.toList()),
+      onExport: () => Utils.jsonEncoder.convert([
+        ..._blackListController.blackMids,
+        ...LocalBlacklist.names,
+      ]),
       onImport: (json) {
-        final mids = Set<int>.from(json);
-        _blackListController.blackMids.addAll(mids);
+        // 兼容旧格式（纯 UID 数组）与新格式（UID + 昵称混合数组）
+        final mids = json.whereType<int>().toSet();
+        final names = json.whereType<String>();
+        if (mids.isNotEmpty) {
+          _blackListController.blackMids.addAll(mids);
+        }
+        if (names.isNotEmpty) {
+          LocalBlacklist.setNames({...LocalBlacklist.names, ...names});
+        }
         setState(() {});
       },
     );
   }
 
   Widget get _local {
+    final entries = _localEntries;
+    final colorScheme = ColorScheme.of(context);
     return ScaffoldLayout(
       fab: Padding(
         padding: .only(
@@ -204,17 +265,28 @@ class _BlackListPageState extends State<BlackListPage>
                 delegate: SliverChildBuilderDelegate(
                   addAutomaticKeepAlives: false,
                   addRepaintBoundaries: false,
-                  childCount: _blackListController.blackMids.length,
+                  childCount: entries.length,
                   (context, index) {
-                    final mid = _blackListController.blackMids.elementAt(index);
+                    final entry = entries[index];
                     return SearchText(
-                      text: mid.toString(),
-                      onTap: (mid) => Get.toNamed('/member?mid=$mid'),
+                      text: entry.text,
+                      bgColor: entry.isName
+                          ? colorScheme.secondaryContainer
+                          : null,
+                      onTap: entry.isName
+                          ? null
+                          : (mid) => Get.toNamed('/member?mid=$mid'),
                       onLongPress: (_) => showConfirmDialog(
                         context: context,
-                        title: const Text('确定移除该用户？'),
+                        title: Text(
+                          entry.isName ? '确定移除该昵称规则？' : '确定移除该用户？',
+                        ),
                         onConfirm: () {
-                          _blackListController.blackMids.remove(mid);
+                          if (entry.isName) {
+                            LocalBlacklist.removeName(entry.text);
+                          } else {
+                            _blackListController.blackMids.remove(entry.mid);
+                          }
                           setState(() {});
                         },
                       ),

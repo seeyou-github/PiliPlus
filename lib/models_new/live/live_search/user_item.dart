@@ -1,6 +1,7 @@
 class LiveSearchUserItemModel {
   String? face;
   String? name;
+  int? uid;
   int? liveStatus;
   String? areaName;
   int? fansNum;
@@ -9,6 +10,7 @@ class LiveSearchUserItemModel {
   LiveSearchUserItemModel({
     this.face,
     this.name,
+    this.uid,
     this.liveStatus,
     this.areaName,
     this.fansNum,
@@ -19,6 +21,11 @@ class LiveSearchUserItemModel {
       LiveSearchUserItemModel(
         face: json['face'] as String?,
         name: json['name'] as String?,
+        uid: switch (json['uid']) {
+          final num v => v.toInt(),
+          final String v => int.tryParse(v),
+          _ => null,
+        },
         liveStatus: json['live_status'] as int?,
         areaName: json['areaName'] as String?,
         fansNum: json['fansNum'] as int?,
