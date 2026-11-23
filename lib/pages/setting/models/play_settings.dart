@@ -73,7 +73,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '进入详情页自动播放',
     leading: Icon(Icons.motion_photos_auto_outlined),
     setKey: SettingBoxKey.autoPlayEnable,
-    defaultVal: false,
+    defaultVal: true,
   ),
   const SwitchModel(
     title: '全屏显示锁定按钮',
@@ -85,7 +85,7 @@ List<SettingsModel> get playSettings => [
     title: '全屏显示截图按钮',
     leading: Icon(Icons.photo_camera_outlined),
     setKey: SettingBoxKey.showFsScreenshotBtn,
-    defaultVal: true,
+    defaultVal: false,
   ),
   SwitchModel(
     title: '全屏显示电池电量',
@@ -143,7 +143,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '高能进度条反应了在时域上，单位时间内弹幕发送量的变化趋势',
     leading: Icon(Icons.show_chart),
     setKey: SettingBoxKey.showDmChart,
-    defaultVal: false,
+    defaultVal: true,
   ),
   const SwitchModel(
     title: '启用双指缩小视频',
@@ -198,7 +198,7 @@ List<SettingsModel> get playSettings => [
     title: '显示视频警告/争议信息',
     leading: Icon(Icons.warning_amber_rounded),
     setKey: SettingBoxKey.showArgueMsg,
-    defaultVal: true,
+    defaultVal: false,
   ),
   const SwitchModel(
     title: '显示视频分段信息',
@@ -302,7 +302,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '小屏竖屏视频宽高比由16:9扩大至1:1（不支持收起）；横屏适配时，扩大至9:16',
     leading: Icon(Icons.expand_outlined),
     setKey: SettingBoxKey.enableVerticalExpand,
-    defaultVal: false,
+    defaultVal: true,
   ),
   const SwitchModel(
     title: '自动全屏',
@@ -369,14 +369,14 @@ List<SettingsModel> get playSettings => [
     title: '全屏展示点赞/投币/收藏等操作按钮',
     leading: Icon(MdiIcons.dotsHorizontalCircleOutline),
     setKey: SettingBoxKey.showFSActionItem,
-    defaultVal: true,
+    defaultVal: false,
   ),
   const SwitchModel(
     title: '观看人数',
     subtitle: '展示同时在看人数',
     leading: Icon(Icons.people_outlined),
     setKey: SettingBoxKey.enableOnlineTotal,
-    defaultVal: false,
+    defaultVal: true,
   ),
   NormalModel(
     title: '默认全屏方向',

@@ -27,8 +27,16 @@ class _BarSetPageState extends State<BarSetPage> with ReorderMixin {
     key = args['key'];
     title = args['title'];
     final List? cache = GStorage.setting.get(key);
+    final List<EnumWithLabel>? defaultChecked = args['defaultChecked'];
     list = (args['defaultBars'] as List<EnumWithLabel>)
-        .map((e) => Pair(first: e, second: cache?.contains(e.index) ?? true))
+        .map(
+          (e) => Pair(
+            first: e,
+            second: cache?.contains(e.index) ??
+                defaultChecked?.contains(e) ??
+                true,
+          ),
+        )
         .toList();
     if (cache != null && cache.isNotEmpty) {
       final cacheIndex = {for (int i = 0; i < cache.length; i++) cache[i]: i};

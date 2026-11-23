@@ -67,7 +67,7 @@ class HomeController extends GetxController
     if (tabs != null) {
       this.tabs = tabs.map((i) => HomeTabType.values[i]).toList();
     } else {
-      this.tabs = HomeTabType.values;
+      this.tabs = HomeTabType.defaultTabs;
     }
 
     tabController = TabController(

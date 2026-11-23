@@ -43,7 +43,7 @@ List<SettingsModel> get extraSettings => [
       title: '退出时最小化',
       leading: const Icon(Icons.exit_to_app),
       setKey: SettingBoxKey.minimizeOnExit,
-      defaultVal: true,
+      defaultVal: false,
       onChanged: (value) => WindowController.instance.minimizeOnExit = value,
     ),
     NormalModel(
@@ -68,7 +68,7 @@ List<SettingsModel> get extraSettings => [
       leading: Icon(CustomIcons.shield_play_arrow),
     ),
     switchModel: SwitchModel.split(
-      defaultVal: false,
+      defaultVal: true,
       setKey: SettingBoxKey.enableSponsorBlock,
       onTap: (context) => Get.toNamed('/sponsorBlock'),
     ),
@@ -113,7 +113,7 @@ List<SettingsModel> get extraSettings => [
     subtitle: '热门页面显示每周必看等推荐内容入口',
     leading: Icon(Icons.local_fire_department_outlined),
     setKey: SettingBoxKey.showHotRcmd,
-    defaultVal: false,
+    defaultVal: true,
     needReboot: true,
   ),
   const SwitchModel(
@@ -270,7 +270,7 @@ List<SettingsModel> get extraSettings => [
     subtitle: '每次启动时检查是否需要更新',
     leading: const Icon(Icons.system_update_alt),
     setKey: SettingBoxKey.autoUpdate,
-    defaultVal: true,
+    defaultVal: false,
     onChanged: (val) {
       if (val) {
         Update.checkUpdate(false);

@@ -8,6 +8,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -155,7 +156,7 @@ class _FontSettingPageState extends State<FontSettingPage> {
             onPressed: () => setState(() {
               _appFont = (fontFamily: null, isCustom: false);
               _selectedWeight = _normalFontWeight;
-              _selectedScale = 1;
+              _selectedScale = PlatformUtils.isDesktop ? 1.2 : 1;
             }),
             child: const Text('重置'),
           ),

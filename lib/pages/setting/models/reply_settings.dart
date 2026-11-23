@@ -43,7 +43,7 @@ List<SettingsModel> get replySettings => [
     title: '记录评论',
     leading: Icon(Icons.message_outlined),
     setKey: SettingBoxKey.saveReply,
-    defaultVal: true,
+    defaultVal: false,
     needReboot: true,
   ),
   const SwitchModel(
@@ -67,7 +67,7 @@ List<SettingsModel> get replySettings => [
     title: '屏蔽带货评论',
     leading: const Icon(CustomIcons.shopping_bag_not_interested),
     setKey: SettingBoxKey.antiGoodsReply,
-    defaultVal: false,
+    defaultVal: true,
     onChanged: (value) => ReplyGrpc.antiGoodsReply = value,
   ),
   const NormalModel(
@@ -80,13 +80,14 @@ List<SettingsModel> get replySettings => [
     title: '屏蔽只包含@的评论',
     leading: Icon(Icons.alternate_email),
     setKey: SettingBoxKey.blockAtOnlyReply,
+    defaultVal: true,
     onChanged: _onBlockAtOnlyReplyChanged,
   ),
   const SwitchModel(
     title: '屏蔽复制简介评论',
     leading: Icon(Icons.summarize),
     setKey: SettingBoxKey.filterIntro,
-    defaultVal: false,
+    defaultVal: true,
   ),
   getBanWordModel(
     title: '评论关键词过滤',

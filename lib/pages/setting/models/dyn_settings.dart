@@ -52,7 +52,7 @@ List<SettingsModel> get dynSettings => [
     title: '屏蔽带货动态',
     leading: const Icon(CustomIcons.shopping_bag_not_interested),
     setKey: SettingBoxKey.antiGoodsDyn,
-    defaultVal: false,
+    defaultVal: true,
     onChanged: (value) => DynamicsDataModel.antiGoodsDyn = value,
   ),
   const SwitchModel(

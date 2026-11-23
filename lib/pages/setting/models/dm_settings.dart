@@ -19,7 +19,7 @@ List<SettingsModel> get dmSettings => [
     subtitle: '是否展示弹幕',
     leading: Icon(CustomIcons.dm_settings),
     setKey: SettingBoxKey.enableShowDanmaku,
-    defaultVal: true,
+    defaultVal: false,
   ),
   if (PlatformUtils.isMobile)
     const SwitchModel(
@@ -50,7 +50,7 @@ List<SettingsModel> get dmSettings => [
     subtitle: '合并一段时间内获取到的相同弹幕',
     leading: Icon(Icons.merge),
     setKey: SettingBoxKey.mergeDanmaku,
-    defaultVal: false,
+    defaultVal: true,
   ),
 ];
 

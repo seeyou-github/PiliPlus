@@ -26,6 +26,13 @@ enum HomeTabType implements EnumWithLabel {
   final String label;
   const HomeTabType(this.label);
 
+  static const List<HomeTabType> defaultTabs = [
+    live,
+    rcmd,
+    hot,
+    rank,
+  ];
+
   ScrollOrRefreshMixin Function() get ctr => switch (this) {
     HomeTabType.live => Get.find<LiveController>,
     HomeTabType.rcmd => Get.find<RcmdController>,

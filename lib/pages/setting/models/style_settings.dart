@@ -63,7 +63,7 @@ List<SettingsModel> get styleSettings => [
       title: '显示托盘图标',
       leading: Icon(Icons.donut_large_rounded),
       setKey: SettingBoxKey.showTrayIcon,
-      defaultVal: true,
+      defaultVal: false,
       needReboot: true,
     ),
   ],
@@ -89,7 +89,7 @@ List<SettingsModel> get styleSettings => [
     subtitle: '仅显示图标，减少侧边栏占用宽度',
     leading: Icon(Icons.label_off_outlined),
     setKey: SettingBoxKey.hideSideBarLabel,
-    defaultVal: false,
+    defaultVal: true,
     needReboot: true,
   ),
   NormalModel(
@@ -137,7 +137,7 @@ List<SettingsModel> get styleSettings => [
     subtitle: 'Material You设计规范底栏，关闭可变窄',
     leading: Icon(Icons.design_services_outlined),
     setKey: SettingBoxKey.enableMYBar,
-    defaultVal: true,
+    defaultVal: false,
     needReboot: true,
   ),
   const SwitchModel(
@@ -151,14 +151,14 @@ List<SettingsModel> get styleSettings => [
     title: '显示粉丝勋章',
     leading: const Icon(MdiIcons.medalOutline),
     setKey: SettingBoxKey.showMedal,
-    defaultVal: true,
+    defaultVal: false,
     onChanged: (value) => GlobalData().showMedal = value,
   ),
   SwitchModel(
     title: '展示头像/评论/动态装饰',
     leading: const Icon(MdiIcons.stickerCircleOutline),
     setKey: SettingBoxKey.showDecorate,
-    defaultVal: true,
+    defaultVal: false,
     onChanged: (value) => PendantAvatar.showDecorate = value,
   ),
   SwitchModel(
@@ -211,14 +211,14 @@ List<SettingsModel> get styleSettings => [
     title: '动态页显示所有已关注UP主',
     leading: Icon(Icons.people_alt_outlined),
     setKey: SettingBoxKey.dynamicsShowAllFollowedUp,
-    defaultVal: false,
+    defaultVal: true,
     needReboot: true,
   ),
   const SwitchModel(
     title: '动态页展开正在直播UP列表',
     leading: Icon(Icons.live_tv),
     setKey: SettingBoxKey.expandDynLivePanel,
-    defaultVal: false,
+    defaultVal: true,
     needReboot: true,
   ),
   PopupModel(
@@ -272,7 +272,7 @@ List<SettingsModel> get styleSettings => [
     subtitle: '首页列表滑动时，收起顶栏',
     leading: const Icon(Icons.vertical_align_top_outlined),
     setKey: SettingBoxKey.hideTopBar,
-    defaultVal: PlatformUtils.isMobile,
+    defaultVal: true,
     needReboot: true,
   ),
   SwitchModel(
@@ -280,7 +280,7 @@ List<SettingsModel> get styleSettings => [
     subtitle: '首页列表滑动时，收起底栏',
     leading: const Icon(Icons.vertical_align_bottom_outlined),
     setKey: SettingBoxKey.hideBottomBar,
-    defaultVal: PlatformUtils.isMobile,
+    defaultVal: true,
     needReboot: true,
   ),
   NormalModel(
@@ -399,6 +399,7 @@ List<SettingsModel> get styleSettings => [
       arguments: {
         'key': SettingBoxKey.tabBarSort,
         'defaultBars': HomeTabType.values,
+        'defaultChecked': HomeTabType.defaultTabs,
         'title': '首页标签页',
       },
     ),

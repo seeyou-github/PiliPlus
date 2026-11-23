@@ -121,7 +121,14 @@ abstract final class Pref {
     final list = _setting.get(SettingBoxKey.blockSettings) as List?;
     if (list == null || list.length > SegmentType.values.length) {
       return SegmentType.values
-          .map((i) => Pair(first: i, second: SkipType.skipOnce))
+          .map(
+            (i) => Pair(
+              first: i,
+              second: i == SegmentType.sponsor || i == SegmentType.selfpromo
+                  ? SkipType.alwaysSkip
+                  : SkipType.skipOnce,
+            ),
+          )
           .toList();
     }
     return SegmentType.values
@@ -186,10 +193,10 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.previewQuality, defaultValue: 100);
 
   static double get smallCardWidth =>
-      _setting.get(SettingBoxKey.smallCardWidth, defaultValue: 240.0);
+      _setting.get(SettingBoxKey.smallCardWidth, defaultValue: 280.0);
 
   static double get recommendCardWidth =>
-      _setting.get(SettingBoxKey.recommendCardWidth, defaultValue: 240.0);
+      _setting.get(SettingBoxKey.recommendCardWidth, defaultValue: 280.0);
 
   static UpPanelPosition get upPanelPosition =>
       UpPanelPosition.values[_setting.get(
@@ -229,22 +236,22 @@ abstract final class Pref {
 
   static int get defaultVideoQa => _setting.get(
     SettingBoxKey.defaultVideoQa,
-    defaultValue: VideoQuality.super8k.code,
+    defaultValue: VideoQuality.clear480.code,
   );
 
   static int get defaultVideoQaCellular => _setting.get(
     SettingBoxKey.defaultVideoQaCellular,
-    defaultValue: VideoQuality.high1080.code,
+    defaultValue: VideoQuality.clear480.code,
   );
 
   static int get defaultAudioQa => _setting.get(
     SettingBoxKey.defaultAudioQa,
-    defaultValue: AudioQuality.hiRes.code,
+    defaultValue: AudioQuality.k132.code,
   );
 
   static int get defaultAudioQaCellular => _setting.get(
     SettingBoxKey.defaultAudioQaCellular,
-    defaultValue: AudioQuality.k192.code,
+    defaultValue: AudioQuality.k132.code,
   );
 
   static List<VideoDecodeFormatType> get preferCodecs {
@@ -429,7 +436,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.danmakuLineHeight, defaultValue: 1.6);
 
   static bool get showArgueMsg =>
-      _setting.get(SettingBoxKey.showArgueMsg, defaultValue: true);
+      _setting.get(SettingBoxKey.showArgueMsg, defaultValue: false);
 
   static bool get reverseFromFirst =>
       _setting.get(SettingBoxKey.reverseFromFirst, defaultValue: true);
@@ -474,10 +481,10 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.showVipDanmaku, defaultValue: true);
 
   static bool get mergeDanmaku =>
-      _setting.get(SettingBoxKey.mergeDanmaku, defaultValue: false);
+      _setting.get(SettingBoxKey.mergeDanmaku, defaultValue: true);
 
   static bool get showHotRcmd =>
-      _setting.get(SettingBoxKey.showHotRcmd, defaultValue: false);
+      _setting.get(SettingBoxKey.showHotRcmd, defaultValue: true);
 
   static String get audioNormalization =>
       _setting.get(SettingBoxKey.audioNormalization, defaultValue: '0');
@@ -504,10 +511,10 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.searchSuggestion, defaultValue: true);
 
   static bool get showDecorate =>
-      _setting.get(SettingBoxKey.showDecorate, defaultValue: true);
+      _setting.get(SettingBoxKey.showDecorate, defaultValue: false);
 
   static bool get showMedal =>
-      _setting.get(SettingBoxKey.showMedal, defaultValue: true);
+      _setting.get(SettingBoxKey.showMedal, defaultValue: false);
 
   static bool get enableLivePhoto =>
       _setting.get(SettingBoxKey.enableLivePhoto, defaultValue: true);
@@ -516,7 +523,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.showSeekPreview, defaultValue: true);
 
   static bool get showDmChart =>
-      _setting.get(SettingBoxKey.showDmChart, defaultValue: false);
+      _setting.get(SettingBoxKey.showDmChart, defaultValue: true);
 
   static bool get enableCommAntifraud =>
       _setting.get(SettingBoxKey.enableCommAntifraud, defaultValue: false);
@@ -535,13 +542,13 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.isPureBlackTheme, defaultValue: false);
 
   static bool get antiGoodsDyn =>
-      _setting.get(SettingBoxKey.antiGoodsDyn, defaultValue: false);
+      _setting.get(SettingBoxKey.antiGoodsDyn, defaultValue: true);
 
   static bool get antiGoodsReply =>
-      _setting.get(SettingBoxKey.antiGoodsReply, defaultValue: false);
+      _setting.get(SettingBoxKey.antiGoodsReply, defaultValue: true);
 
   static bool get expandDynLivePanel =>
-      _setting.get(SettingBoxKey.expandDynLivePanel, defaultValue: false);
+      _setting.get(SettingBoxKey.expandDynLivePanel, defaultValue: true);
 
   static bool get slideDismissReplyPage => _setting.get(
     SettingBoxKey.slideDismissReplyPage,
@@ -549,7 +556,7 @@ abstract final class Pref {
   );
 
   static bool get showFSActionItem =>
-      _setting.get(SettingBoxKey.showFSActionItem, defaultValue: true);
+      _setting.get(SettingBoxKey.showFSActionItem, defaultValue: false);
 
   static bool get enableShrinkVideoSize =>
       _setting.get(SettingBoxKey.enableShrinkVideoSize, defaultValue: true);
@@ -579,12 +586,12 @@ abstract final class Pref {
 
   static int get liveQuality => _setting.get(
     SettingBoxKey.liveQuality,
-    defaultValue: LiveQuality.origin.code,
+    defaultValue: LiveQuality.flunt.code,
   );
 
   static int get liveQualityCellular => _setting.get(
     SettingBoxKey.liveQualityCellular,
-    defaultValue: LiveQuality.superHD.code,
+    defaultValue: LiveQuality.flunt.code,
   );
 
   static FontWeight get appFontWeight {
@@ -687,16 +694,18 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.enableAutoExit, defaultValue: true);
 
   static bool get autoPlayEnable =>
-      _setting.get(SettingBoxKey.autoPlayEnable, defaultValue: false);
+      _setting.get(SettingBoxKey.autoPlayEnable, defaultValue: true);
 
   static bool get pipNoDanmaku =>
       _setting.get(SettingBoxKey.pipNoDanmaku, defaultValue: false);
 
   static bool get enableVerticalExpand =>
-      _setting.get(SettingBoxKey.enableVerticalExpand, defaultValue: false);
+      _setting.get(SettingBoxKey.enableVerticalExpand, defaultValue: true);
 
-  static double get defaultTextScale =>
-      _setting.get(SettingBoxKey.defaultTextScale, defaultValue: 1.0);
+  static double get defaultTextScale => _setting.get(
+    SettingBoxKey.defaultTextScale,
+    defaultValue: PlatformUtils.isDesktop ? 1.2 : 1.0,
+  );
 
   static double get uiScale =>
       _setting.get(SettingBoxKey.uiScale, defaultValue: 1.0);
@@ -706,15 +715,11 @@ abstract final class Pref {
     defaultValue: horizontalScreen,
   );
 
-  static bool get hideTopBar => _setting.get(
-    SettingBoxKey.hideTopBar,
-    defaultValue: PlatformUtils.isMobile,
-  );
+  static bool get hideTopBar =>
+      _setting.get(SettingBoxKey.hideTopBar, defaultValue: true);
 
-  static bool get hideBottomBar => _setting.get(
-    SettingBoxKey.hideBottomBar,
-    defaultValue: PlatformUtils.isMobile,
-  );
+  static bool get hideBottomBar =>
+      _setting.get(SettingBoxKey.hideBottomBar, defaultValue: true);
 
   static BarHideType get barHideType =>
       BarHideType.values[_setting.get(
@@ -729,15 +734,15 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.useSideBar, defaultValue: false);
 
   static bool get hideSideBarLabel =>
-      _setting.get(SettingBoxKey.hideSideBarLabel, defaultValue: false);
+      _setting.get(SettingBoxKey.hideSideBarLabel, defaultValue: true);
 
   static bool get dynamicsShowAllFollowedUp => _setting.get(
     SettingBoxKey.dynamicsShowAllFollowedUp,
-    defaultValue: false,
+    defaultValue: true,
   );
 
   static bool get enableShowDanmaku =>
-      _setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: true);
+      _setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: false);
 
   static bool get enableShowLiveDanmaku =>
       _setting.get(SettingBoxKey.enableShowLiveDanmaku, defaultValue: true);
@@ -780,7 +785,7 @@ abstract final class Pref {
       )];
 
   static bool get enableMYBar =>
-      _setting.get(SettingBoxKey.enableMYBar, defaultValue: true);
+      _setting.get(SettingBoxKey.enableMYBar, defaultValue: false);
 
   static Transition get pageTransition =>
       Transition.values[_setting.get(
@@ -798,7 +803,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.autoPiP, defaultValue: false);
 
   static bool get enableSponsorBlock =>
-      _setting.get(SettingBoxKey.enableSponsorBlock, defaultValue: false);
+      _setting.get(SettingBoxKey.enableSponsorBlock, defaultValue: true);
 
   static bool get enableHA =>
       _setting.get(SettingBoxKey.enableHA, defaultValue: true);
@@ -891,7 +896,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.enableAi, defaultValue: false);
 
   static bool get enableOnlineTotal =>
-      _setting.get(SettingBoxKey.enableOnlineTotal, defaultValue: false);
+      _setting.get(SettingBoxKey.enableOnlineTotal, defaultValue: true);
 
   static bool get autoEnterFullScreen =>
       _setting.get(SettingBoxKey.enableAutoEnter, defaultValue: false);
@@ -952,7 +957,7 @@ abstract final class Pref {
   }
 
   static bool get showFsScreenshotBtn =>
-      _setting.get(SettingBoxKey.showFsScreenshotBtn, defaultValue: true);
+      _setting.get(SettingBoxKey.showFsScreenshotBtn, defaultValue: false);
 
   static bool get showFsLockBtn =>
       _setting.get(SettingBoxKey.showFsLockBtn, defaultValue: true);
@@ -1000,7 +1005,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.fullScreenSCScale, defaultValue: 1.0);
 
   static bool get minimizeOnExit =>
-      _setting.get(SettingBoxKey.minimizeOnExit, defaultValue: true);
+      _setting.get(SettingBoxKey.minimizeOnExit, defaultValue: false);
 
   static Size get windowSize {
     final List<double>? size = (_setting.get(SettingBoxKey.windowSize) as List?)
@@ -1041,7 +1046,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.enableTapDm, defaultValue: true);
 
   static bool get showTrayIcon =>
-      _setting.get(SettingBoxKey.showTrayIcon, defaultValue: true);
+      _setting.get(SettingBoxKey.showTrayIcon, defaultValue: false);
 
   static bool get setSystemBrightness =>
       _setting.get(SettingBoxKey.setSystemBrightness, defaultValue: false);
@@ -1075,7 +1080,7 @@ abstract final class Pref {
   );
 
   static bool get saveReply =>
-      _setting.get(SettingBoxKey.saveReply, defaultValue: true);
+      _setting.get(SettingBoxKey.saveReply, defaultValue: false);
 
   static bool get floatingNavBar =>
       _setting.get(SettingBoxKey.floatingNavBar, defaultValue: false);
@@ -1107,13 +1112,13 @@ abstract final class Pref {
       MineTabType.kDefault;
 
   static bool get blockAtOnlyReply =>
-      _setting.get(SettingBoxKey.blockAtOnlyReply, defaultValue: false);
+      _setting.get(SettingBoxKey.blockAtOnlyReply, defaultValue: true);
 
   static int? get blockReplyAtCount =>
       _setting.get(SettingBoxKey.blockReplyAtCount);
 
   static bool get filterIntro =>
-      _setting.get(SettingBoxKey.filterIntro, defaultValue: false);
+      _setting.get(SettingBoxKey.filterIntro, defaultValue: true);
 
   static int get foldDepth =>
       _setting.get(SettingBoxKey.foldDepth, defaultValue: 0);
