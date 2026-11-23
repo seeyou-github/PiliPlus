@@ -30,6 +30,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
+import 'package:PiliPlus/utils/local_follow_action.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -135,8 +136,22 @@ abstract final class RequestUtils {
     required bool isFollow,
     required ValueChanged<int>? afterMod,
     RelationData? followStatus,
+    String? name,
+    String? face,
+    String? sign,
   }) async {
     if (mid == null) {
+      return;
+    }
+    // 未登录：使用本地关注，不走网络
+    if (LocalFollowAction.handle(
+      mid: mid,
+      name: name,
+      face: face,
+      sign: sign,
+      isFollow: isFollow,
+      onChanged: afterMod,
+    )) {
       return;
     }
     feedBack();

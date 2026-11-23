@@ -7,7 +7,9 @@ import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
+import 'package:PiliPlus/pages/dynamics_local/view.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
@@ -49,6 +51,26 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // 用 Obx 监听登录状态，登录后自动切回在线动态页
+    return Obx(() => _buildContent(context));
+  }
+
+  Widget _buildContent(BuildContext context) {
+    // 未登录：展示本地关注 UP 的投稿流（仅「全部」分类，其余分类给出提示）
+    if (!Get.find<AccountService>().isLogin.value) {
+      if (widget.dynamicsType == .all) {
+        return const LocalFeedPage();
+      }
+      return Center(
+        child: Text(
+          '未登录时仅支持查看本地关注的投稿',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.outline,
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
     return refreshIndicator(
       key: controller.refreshKey,
       onRefresh: onRefresh,

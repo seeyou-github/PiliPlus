@@ -4,10 +4,12 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_topic_feed/item.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_topic_feed/topic_card_list.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_topic_feed/topic_sort_by_conf.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_topic_top/top_details.dart';
 import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
@@ -44,6 +46,13 @@ class DynTopicController
       topicName = topicItem.name;
       isFav.value = topicItem.isFav ?? false;
       isLike.value = topicItem.isLike ?? false;
+      // 未登录：收藏状态以本地收藏为准
+      if (!isLogin) {
+        isFav.value = LocalFavAction.isFaved(
+          LocalFavType.topic,
+          int.tryParse(topicId),
+        );
+      }
     }
   }
 
@@ -96,7 +105,22 @@ class DynTopicController
 
   Future<void> onFav() async {
     if (!isLogin) {
-      SmartDialog.showToast('账号未登录');
+      // 未登录：收藏到本地
+      LocalFavAction.toggle(
+        meta: LocalFavMeta(
+          type: LocalFavType.topic,
+          oid: int.tryParse(topicId) ?? 0,
+          title: topicName,
+        ),
+        onChanged: (isFav) {
+          if (this.isFav.value == isFav) return;
+          final topicItem = topState.value.data?.topicItem;
+          if (topicItem != null) {
+            topicItem.fav += isFav ? 1 : -1;
+          }
+          this.isFav.value = isFav;
+        },
+      );
       return;
     }
     final isFav = this.isFav.value;

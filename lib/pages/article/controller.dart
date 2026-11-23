@@ -8,6 +8,7 @@ import 'package:PiliPlus/models/dynamics/article_content_model.dart'
     show ArticleContentModel;
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/models/model_avatar.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models_new/article/article_view/data.dart';
 import 'package:PiliPlus/models_new/dynamic/dyn_mention/item.dart';
 import 'package:PiliPlus/pages/common/dyn/common_dyn_controller.dart';
@@ -15,6 +16,7 @@ import 'package:PiliPlus/pages/common/reply/reply_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/url_utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -191,6 +193,28 @@ class ArticleController extends CommonDynController
     final favorite = stats.value?.favorite;
     if (favorite == null) return;
     final isFav = favorite.status ?? false;
+    if (!Accounts.main.isLogin) {
+      // 未登录：专栏收藏到本地（图文动态暂不支持本地收藏）
+      if (type != .read) {
+        SmartDialog.showToast('账号未登录');
+        return;
+      }
+      LocalFavAction.toggle(
+        meta: LocalFavMeta(
+          type: LocalFavType.article,
+          oid: commentId,
+          title: articleData?.title ?? '',
+        ),
+        fav: !isFav,
+        onChanged: (isFav) {
+          favorite
+            ..status = isFav
+            ..count = (favorite.count ?? 0) + (isFav ? 1 : -1);
+          stats.refresh();
+        },
+      );
+      return;
+    }
     final res = type == .read
         ? isFav
               ? await FavHttp.delFavArticle(id: commentId)

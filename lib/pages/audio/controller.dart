@@ -18,6 +18,7 @@ import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/audio_normalization.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/video/play/url.dart' as http_model show Volume;
 import 'package:PiliPlus/pages/common/common_intro_controller.dart'
     show FavMixin;
@@ -38,6 +39,7 @@ import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
@@ -249,6 +251,13 @@ class AudioController extends GetxController
     hasLike.value = item.stat.hasLike_7;
     coinNum.value = item.stat.hasCoin_8 ? 2 : 0;
     hasFav.value = item.stat.hasFav;
+    // 未登录：收藏状态以本地收藏为准
+    if (!isLogin) {
+      final meta = localFavMeta;
+      if (meta != null) {
+        hasFav.value = LocalFavAction.isFaved(meta.type, meta.oid);
+      }
+    }
     videoPlayerServiceHandler?.onVideoDetailChange(
       item,
       (subId.firstOrNull ?? oid).toInt(),
@@ -593,7 +602,21 @@ class AudioController extends GetxController
   @override
   void showFavBottomSheet(BuildContext context, {bool isLongPress = false}) {
     if (!isLogin) {
-      SmartDialog.showToast('账号未登录');
+      // 未登录：收藏到本地
+      final meta = localFavMeta;
+      if (meta == null) {
+        SmartDialog.showToast('账号未登录');
+        return;
+      }
+      LocalFavAction.toggle(
+        meta: meta,
+        onChanged: (isFav) {
+          if (hasFav.value != isFav) {
+            updateFavCount(isFav ? 1 : -1);
+            hasFav.value = isFav;
+          }
+        },
+      );
       return;
     }
     if (enableQuickFav) {
@@ -776,6 +799,22 @@ class AudioController extends GetxController
 
   @override
   (Object, int) get getFavRidType => (oid, isUgc ? 2 : 12);
+
+  /// 未登录时的本地收藏信息
+  @override
+  LocalFavMeta? get localFavMeta {
+    final item = audioItem.value;
+    if (item == null) return null;
+    return LocalFavMeta(
+      type: LocalFavType.audio,
+      oid: oid.toInt(),
+      subId: item.owner.mid.toInt(),
+      title: item.arc.title,
+      cover: item.arc.cover,
+      author: item.owner.name,
+      duration: item.arc.duration.toInt(),
+    );
+  }
 
   @override
   void updateFavCount(int count) {

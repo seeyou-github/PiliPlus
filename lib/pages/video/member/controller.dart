@@ -7,6 +7,7 @@ import 'package:PiliPlus/models_new/space/space_archive/item.dart';
 import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
+import 'package:PiliPlus/utils/local_follow_action.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 
@@ -31,6 +32,13 @@ class HorizontalMemberPageController
     final res = await MemberHttp.memberInfo(mid: mid);
     userState.value = res;
     if (res.isSuccess) {
+      // 未登录：关注状态以本地关注为准
+      if (!Accounts.main.isLogin) {
+        res.data.isFollowed = LocalFollowAction.localAttribute(
+          mid is int ? mid : int.tryParse('$mid'),
+        ) != 0;
+        userState.refresh();
+      }
       getMemberStat();
       getMemberView();
     }

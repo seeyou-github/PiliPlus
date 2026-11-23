@@ -22,6 +22,7 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:flutter_svg/svg.dart';
@@ -390,11 +391,15 @@ class _MediaPageState extends CommonPageState<MinePage>
                 onTap: () => controller.push('memberDynamics'),
               ),
               _btn(
-                count: userStat.following,
+                count: controller.isLogin
+                    ? userStat.following
+                    : LocalLibrary.followCount.value,
                 countStyle: style,
                 name: '关注',
                 labelStyle: labelStyle,
-                onTap: () => controller.push('follow'),
+                onTap: () => controller.isLogin
+                    ? controller.push('follow')
+                    : Get.toNamed('/localFollow'),
               ),
               _btn(
                 count: userStat.follower,
@@ -452,6 +457,9 @@ class _MediaPageState extends CommonPageState<MinePage>
   );
 
   Widget _buildFav() {
+    if (!controller.isLogin) {
+      return _buildLocalFav();
+    }
     return _buildTab(
       .favorite,
       controller.favCtr!,
@@ -462,6 +470,60 @@ class _MediaPageState extends CommonPageState<MinePage>
       onPushDetail: () => Get.toNamed(
         '/fav',
       )?.whenComplete(() => _autoRefresh(controller.favCtr!)),
+    );
+  }
+
+  /// 未登录时的本地收藏入口
+  Widget _buildLocalFav() {
+    final secondary = theme.colorScheme.secondary;
+    return Column(
+      children: [
+        Divider(
+          height: 20,
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+        ListTile(
+          dense: true,
+          onTap: () => Get.toNamed('/localFav'),
+          title: Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: '本地收藏  ',
+                    style: TextStyle(fontSize: 16, fontWeight: .bold),
+                  ),
+                  TextSpan(
+                    text: '${LocalLibrary.favCount.value}  ',
+                    style: TextStyle(color: secondary),
+                  ),
+                  WidgetSpan(
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                      color: secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 30, bottom: 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '未登录 · 收藏会保存在本地',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

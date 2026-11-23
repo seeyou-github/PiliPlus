@@ -26,11 +26,11 @@ import 'package:PiliPlus/pages/video/member/controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/utils/local_follow_action.dart';
 import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -358,13 +358,25 @@ class _HorizontalMemberPageState extends State<HorizontalMemberPage> {
                   Get.toNamed('/editProfile');
                 } else {
                   if (!account.isLogin) {
-                    SmartDialog.showToast('账号未登录');
+                    LocalFollowAction.handle(
+                      mid: widget.mid,
+                      name: memberInfoModel.name,
+                      face: memberInfoModel.face,
+                      isFollow: memberInfoModel.isFollowed ?? false,
+                      onChanged: (attribute) {
+                        _controller
+                          ..userState.value.data.isFollowed = attribute != 0
+                          ..userState.refresh();
+                      },
+                    );
                     return;
                   }
                   RequestUtils.actionRelationMod(
                     context: context,
                     mid: widget.mid,
                     isFollow: memberInfoModel.isFollowed ?? false,
+                    name: memberInfoModel.name,
+                    face: memberInfoModel.face,
                     afterMod: (attribute) {
                       _controller
                         ..userState.value.data.isFollowed = attribute != 0

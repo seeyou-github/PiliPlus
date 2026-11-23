@@ -15,6 +15,7 @@ import 'package:PiliPlus/models_new/space/space/tab2.dart';
 import 'package:PiliPlus/pages/common/common_data_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/nested_scroll_ext.dart';
+import 'package:PiliPlus/utils/local_follow_action.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -112,6 +113,10 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
                   ? -10
                   : card?.relation?.status ?? 2
             : data.relation ?? 0;
+    }
+    // 未登录：关注状态以本地关注为准
+    if (!account.isLogin) {
+      relation.value = LocalFollowAction.localAttribute(mid);
     }
     tab2 = data.tab2;
     live = data.live;
@@ -258,7 +263,14 @@ class MemberController extends CommonDataController<SpaceData, SpaceData?>
       _onBlock();
     } else {
       if (!account.isLogin) {
-        SmartDialog.showToast('账号未登录');
+        // 未登录：本地关注/取关
+        LocalFollowAction.handle(
+          mid: mid,
+          name: username,
+          face: userAvatar,
+          isFollow: isFollow,
+          onChanged: (attribute) => relation.value = attribute,
+        );
         return;
       }
       RequestUtils.actionRelationMod(

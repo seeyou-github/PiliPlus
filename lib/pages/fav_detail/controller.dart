@@ -5,6 +5,7 @@ import 'package:PiliPlus/http/fav.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/fav_order_type.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/data.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/media.dart';
 import 'package:PiliPlus/models_new/fav/fav_folder/list.dart';
@@ -15,6 +16,7 @@ import 'package:PiliPlus/pages/common/page_order/page_order_mixin.dart';
 import 'package:PiliPlus/pages/fav_sort/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/extension/scroll_controller_ext.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -189,7 +191,23 @@ class FavDetailController
 
   Future<void> onFav(bool isFav) async {
     if (!account.isLogin) {
-      SmartDialog.showToast('账号未登录');
+      // 未登录：收藏到本地（播放列表）
+      final info = folderInfo.value;
+      LocalFavAction.toggle(
+        meta: LocalFavMeta(
+          type: LocalFavType.favFolder,
+          oid: mediaId,
+          title: info.title,
+          cover: info.cover,
+          author: info.upper?.name,
+        ),
+        fav: !isFav,
+        onChanged: (isFav) {
+          folderInfo
+            ..value.favState = isFav ? 1 : 0
+            ..refresh();
+        },
+      );
       return;
     }
     final res = isFav

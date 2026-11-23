@@ -18,6 +18,8 @@ import 'package:PiliPlus/pages/fav_create/view.dart';
 import 'package:PiliPlus/pages/fav_detail/view.dart';
 import 'package:PiliPlus/pages/fav_search/view.dart';
 import 'package:PiliPlus/pages/follow/view.dart';
+import 'package:PiliPlus/pages/local_fav/view.dart';
+import 'package:PiliPlus/pages/local_follow/view.dart';
 import 'package:PiliPlus/pages/follow_search/view.dart';
 import 'package:PiliPlus/pages/follow_type/follow_same/view.dart';
 import 'package:PiliPlus/pages/follow_type/followed/view.dart';
@@ -112,6 +114,9 @@ class Routes {
     GetPage(name: '/memberSearch', page: () => const MemberSearchPage()),
     //
     GetPage(name: '/blackListPage', page: () => const BlackListPage()),
+    // 本地关注 / 本地收藏（未登录）
+    GetPage(name: '/localFollow', page: () => const LocalFollowPage()),
+    GetPage(name: '/localFav', page: () => const LocalFavPage()),
     GetPage(name: '/colorSetting', page: () => const ColorSelectPage()),
     GetPage(name: '/fontSetting', page: () => const FontSettingPage()),
     // 屏幕帧率

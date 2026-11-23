@@ -15,6 +15,8 @@ import 'package:PiliPlus/pages/video/introduction/ugc/widgets/triple_mixin.dart'
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -167,6 +169,9 @@ mixin FavMixin on TripleMixin {
 
   (Object, int) get getFavRidType;
 
+  /// 未登录时收藏到本地所需的元信息；返回 null 表示该页面不支持本地收藏
+  LocalFavMeta? get localFavMeta => null;
+
   Future<LoadingState<FavFolderData>> queryVideoInFolder() async {
     favIds = null;
     final (rid, type) = getFavRidType;
@@ -205,7 +210,21 @@ mixin FavMixin on TripleMixin {
   // 收藏
   void showFavBottomSheet(BuildContext context, {bool isLongPress = false}) {
     if (!Accounts.main.isLogin) {
-      SmartDialog.showToast('账号未登录');
+      // 未登录：收藏到本地
+      final meta = localFavMeta;
+      if (meta == null) {
+        SmartDialog.showToast('账号未登录');
+        return;
+      }
+      LocalFavAction.toggle(
+        meta: meta,
+        onChanged: (isFav) {
+          if (hasFav.value != isFav) {
+            updateFavCount(isFav ? 1 : -1);
+            hasFav.value = isFav;
+          }
+        },
+      );
       return;
     }
     // 快速收藏 &

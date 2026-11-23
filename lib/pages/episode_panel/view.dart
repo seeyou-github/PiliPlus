@@ -15,6 +15,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/episode_panel_type.dart';
 import 'package:PiliPlus/models/common/pgc_episode_type.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/episode.dart' as pgc;
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/result.dart';
 import 'package:PiliPlus/models_new/video/video_detail/data.dart';
@@ -31,6 +32,7 @@ import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/scroll_offset_helper.dart';
 import 'package:collection/collection.dart';
@@ -231,8 +233,8 @@ class _EpisodePanelState extends State<EpisodePanel>
         }
         _addUgcListener();
 
+        _seasonId = _videoDetail.seasonId!;
         if (Accounts.main.isLogin) {
-          _seasonId = _videoDetail.seasonId!;
           final favState = _ugcController.seasonFavState[_seasonId];
           if (favState != null) {
             _favState = RxnBool(favState);
@@ -249,6 +251,11 @@ class _EpisodePanelState extends State<EpisodePanel>
               },
             );
           }
+        } else {
+          // 未登录：合辑订阅状态以本地收藏为准
+          _favState = RxnBool(
+            LocalFavAction.isFaved(LocalFavType.season, _seasonId),
+          );
         }
 
       case .pgc:
@@ -705,6 +712,25 @@ class _EpisodePanelState extends State<EpisodePanel>
   }
 
   Future<void> _onFavSeason(bool isFav) async {
+    if (!Accounts.main.isLogin) {
+      // 未登录：合辑订阅保存到本地
+      LocalFavAction.toggle(
+        meta: LocalFavMeta(
+          type: LocalFavType.season,
+          oid: _seasonId,
+          subId: _videoDetail.aid,
+          title: _videoDetail.ugcSeason?.title ?? _videoDetail.title ?? '',
+          cover: _videoDetail.ugcSeason?.cover ?? _videoDetail.pic,
+          author: _videoDetail.owner?.name,
+        ),
+        fav: !isFav,
+        onChanged: (value) {
+          _favState!.value = value;
+          _ugcController.seasonFavState[_seasonId] = value;
+        },
+      );
+      return;
+    }
     final res = await FavHttp.seasonFav(
       isFav: isFav,
       seasonId: _seasonId,

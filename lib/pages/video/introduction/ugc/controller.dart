@@ -12,6 +12,7 @@ import 'package:PiliPlus/http/member.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/http/video.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
 import 'package:PiliPlus/models_new/member_card_info/data.dart';
 import 'package:PiliPlus/models_new/relation/data.dart';
@@ -38,6 +39,8 @@ import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
+import 'package:PiliPlus/utils/local_follow_action.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -225,6 +228,13 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
       hasDislike.value = response.dislike!;
       coinNum.value = response.coin!;
       hasFav.value = response.favorite!;
+    }
+    // 未登录：收藏状态以本地收藏为准
+    if (!isLogin) {
+      final meta = localFavMeta;
+      if (meta != null) {
+        hasFav.value = LocalFavAction.isFaved(meta.type, meta.oid);
+      }
     }
   }
 
@@ -451,10 +461,36 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
     );
   }
 
+  /// 未登录时的本地收藏信息
+  @override
+  LocalFavMeta? get localFavMeta {
+    final data = videoDetail.value;
+    final aid = data.aid;
+    if (aid == null || aid == 0) return null;
+    return LocalFavMeta(
+      type: LocalFavType.video,
+      oid: aid,
+      subId: cid.value,
+      title: data.title ?? '',
+      cover: data.pic,
+      author: data.owner?.name,
+      duration: data.duration,
+    );
+  }
+
   // 查询关注状态
   Future<void> queryFollowStatus() async {
     final videoDetail = this.videoDetail.value;
     if (videoDetail.owner == null || videoDetail.staff?.isNotEmpty == true) {
+      return;
+    }
+    // 未登录：使用本地关注状态
+    if (!isLogin) {
+      followStatus
+        ..value.attribute = LocalFollowAction.localAttribute(
+          videoDetail.owner!.mid,
+        )
+        ..refresh();
       return;
     }
     final res = await UserHttp.userRelation(videoDetail.owner!.mid!);
@@ -466,16 +502,27 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
 
   // 关注/取关up
   Future<void> actionRelationMod(BuildContext context) async {
-    if (!isLogin) {
-      SmartDialog.showToast('账号未登录');
-      return;
-    }
     final videoDetail = this.videoDetail.value;
     if (videoDetail.staff?.isNotEmpty == true) {
       return;
     }
     int? mid = videoDetail.owner?.mid;
     if (mid == null) {
+      return;
+    }
+    // 未登录：本地关注/取关
+    if (!isLogin) {
+      LocalFollowAction.handle(
+        mid: mid,
+        name: videoDetail.owner?.name,
+        face: videoDetail.owner?.face,
+        isFollow: (followStatus.value.attribute ?? 0) != 0,
+        onChanged: (attribute) {
+          followStatus
+            ..value.attribute = attribute
+            ..refresh();
+        },
+      );
       return;
     }
     int attr = followStatus.value.attribute ?? 0;

@@ -24,6 +24,7 @@ import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/ios/pip_helper.dart';
 import 'package:PiliPlus/utils/json_file_handler.dart';
+import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/max_screen_size.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -105,6 +106,8 @@ void main() async {
     DeviceUtils.exitApp();
   }
   ScaledWidgetsFlutterBinding.instance.scaleFactor = Pref.uiScale;
+  // 预加载本地关注 / 本地收藏，保证「我的」页计数正确
+  LocalLibrary.ensureLoaded();
   await Future.wait([
     _initDownPath(),
     _initTmpPath(),

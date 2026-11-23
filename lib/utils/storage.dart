@@ -24,6 +24,12 @@ abstract final class GStorage {
   static late final Box<int> watchProgress;
   static late final Box<Uint8List>? reply;
 
+  /// 本地关注（未登录时使用），key = mid
+  static late final Box<dynamic> localFollow;
+
+  /// 本地收藏（未登录时使用），key = "type:oid"
+  static late final Box<dynamic> localFav;
+
   static Future<void> init() async {
     Hive.init(path.join(appSupportDirPath, 'hive'));
     regAdapter();
@@ -54,6 +60,17 @@ abstract final class GStorage {
       ).then((res) => historyWord = res),
       // 视频设置
       Hive.openBox('video').then((res) => video = res),
+      // 本地关注 / 本地收藏（未登录）
+      Hive.openBox(
+        'localFollow',
+        compactionStrategy: (int entries, int deletedEntries) =>
+            deletedEntries > 10,
+      ).then((res) => localFollow = res),
+      Hive.openBox(
+        'localFav',
+        compactionStrategy: (int entries, int deletedEntries) =>
+            deletedEntries > 10,
+      ).then((res) => localFav = res),
       Accounts.init(),
       Hive.openBox<int>(
         'watchProgress',
@@ -118,6 +135,8 @@ abstract final class GStorage {
       Accounts.account.compact(),
       watchProgress.compact(),
       ?reply?.compact(),
+      localFollow.compact(),
+      localFav.compact(),
     ]);
   }
 
@@ -131,6 +150,8 @@ abstract final class GStorage {
       Accounts.account.close(),
       watchProgress.close(),
       ?reply?.close(),
+      localFollow.close(),
+      localFav.close(),
     ]);
   }
 
@@ -144,6 +165,8 @@ abstract final class GStorage {
       Accounts.clear(),
       watchProgress.clear(),
       ?reply?.clear(),
+      localFollow.clear(),
+      localFav.clear(),
     ]);
   }
 

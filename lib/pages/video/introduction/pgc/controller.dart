@@ -9,6 +9,7 @@ import 'package:PiliPlus/http/pgc.dart';
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/http/video.dart';
 import 'package:PiliPlus/models/common/pgc_episode_type.dart';
+import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_info_model/episode.dart';
@@ -26,6 +27,7 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
+import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
@@ -56,6 +58,16 @@ class PgcIntroController extends CommonIntroController {
 
   @override
   (Object, int) get getFavRidType => (epId, 24);
+
+  /// 未登录时的本地收藏信息
+  @override
+  LocalFavMeta? get localFavMeta => LocalFavMeta(
+    type: LocalFavType.pgc,
+    oid: seasonId,
+    subId: epId,
+    title: pgcItem.title ?? '',
+    cover: pgcItem.cover,
+  );
 
   @override
   StatDetail? getStat() => pgcItem.stat;
@@ -98,8 +110,22 @@ class PgcIntroController extends CommonIntroController {
       if (isLogin) {
         queryIsFollowed();
         queryPgcLikeCoinFav();
+      } else {
+        // 未登录：收藏状态以本地收藏为准
+        final meta = localFavMeta;
+        if (meta != null) {
+          hasFav.value = LocalFavAction.isFaved(meta.type, meta.oid);
+        }
       }
       queryVideoTags();
+    } else if (!isLogin) {
+      // 未登录：课堂/合辑收藏状态以本地收藏为准
+      final meta = localFavMeta;
+      if (meta != null) {
+        final faved = LocalFavAction.isFaved(meta.type, meta.oid);
+        hasFav.value = faved;
+        isFav.value = faved;
+      }
     }
   }
 
@@ -509,6 +535,23 @@ class PgcIntroController extends CommonIntroController {
   }
 
   Future<void> onFavPugv(bool isFav) async {
+    if (!isLogin) {
+      // 未登录：课堂/合辑收藏到本地（与播放页收藏共用同一 key）
+      final meta = localFavMeta;
+      if (meta == null) {
+        SmartDialog.showToast('账号未登录');
+        return;
+      }
+      LocalFavAction.toggle(
+        meta: meta,
+        fav: !isFav,
+        onChanged: (value) {
+          this.isFav.value = value;
+          hasFav.value = value;
+        },
+      );
+      return;
+    }
     final res = isFav
         ? await FavHttp.delFavPugv(seasonId)
         : await FavHttp.addFavPugv(seasonId);

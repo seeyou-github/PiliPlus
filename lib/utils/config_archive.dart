@@ -14,6 +14,7 @@ import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/local_blacklist.dart';
+import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/parse_int.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -36,6 +37,9 @@ abstract final class ConfigArchive {
   static const String settingFileName = 'setting.json';
   static const String accountFileName = 'account.json';
   static const String blacklistFileName = 'blacklist.json';
+
+  /// 本地关注 / 本地收藏（未登录时使用）
+  static const String localFileName = 'local.json';
   static const String replyFileName = 'reply.json';
   static const String searchFileName = 'search.json';
   static const String fontFileName = FontUtils.kFontName;
@@ -57,7 +61,8 @@ abstract final class ConfigArchive {
       ..startEncode(stream)
       ..add(ArchiveFile.string(settingFileName, GStorage.exportAllSettings()))
       ..add(ArchiveFile.string(accountFileName, _exportAccount()))
-      ..add(ArchiveFile.string(blacklistFileName, _exportBlacklist()));
+      ..add(ArchiveFile.string(blacklistFileName, _exportBlacklist()))
+      ..add(ArchiveFile.string(localFileName, _exportLocal()));
 
     final reply = _exportReply();
     if (reply != null) {
@@ -138,6 +143,7 @@ abstract final class ConfigArchive {
     await apply(settingFileName, _importSettings);
     await apply(accountFileName, Accounts.importJsonAccount);
     await apply(blacklistFileName, _importBlacklist);
+    await apply(localFileName, _importLocal);
     await apply(replyFileName, _importReply);
     await apply(searchFileName, _importSearch);
 
@@ -205,6 +211,11 @@ abstract final class ConfigArchive {
   static String _exportBlacklist() =>
       jsonEncode([...Pref.blackMids, ...Pref.blackNames]);
 
+  static String _exportLocal() => jsonEncode(LocalLibrary.exportJson());
+
+  static Future<void> _importLocal(Map<String, dynamic> data) =>
+      LocalLibrary.importJson(data);
+
   static String? _exportReply() {
     final box = GStorage.reply;
     if (box == null) return null;
@@ -235,6 +246,7 @@ abstract final class ConfigArchive {
       settingFileName,
       accountFileName,
       blacklistFileName,
+      localFileName,
       if (GStorage.reply != null) replyFileName,
       searchFileName,
       if (FontUtils.fontFile.existsSync()) fontFileName,
