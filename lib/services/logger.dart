@@ -8,13 +8,34 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-final logger = Logger(
-  filter: ProductionFilter(),
-  printer: PrettyLogPrinter(
-    dateTimeFormat: PrettyLogPrinter.toEncodableFallback,
-  ),
-  level: kDebugMode ? .trace : .warning,
-);
+final logger = PiliLogger();
+
+class PiliLogger extends Logger {
+  PiliLogger() : super();
+
+  @override
+  void log(
+    Level level,
+    dynamic message, {
+    Object? error,
+    StackTrace? stackTrace,
+    DateTime? time,
+  }) {
+    if (!_enableLog) return;
+    if (level == Level.error || level == Level.fatal) {
+      Catcher2.reportCheckedError(error, stackTrace);
+    }
+    super.log(level, message, error: error, stackTrace: stackTrace, time: time);
+  }
+
+  bool get _enableLog {
+    try {
+      return Pref.enableLog;
+    } catch (_) {
+      return false;
+    }
+  }
+}
 
 abstract final class LoggerUtils {
   static File? _logFile;
