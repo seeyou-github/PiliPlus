@@ -409,7 +409,22 @@ class _PgcIntroPageState extends State<PgcIntroPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 已隐藏：点赞、投币、收藏
+          // 已隐藏：点赞、投币
+          Obx(
+            () => ActionItem(
+              animation: introController.tripleAnimation,
+              icon: const Icon(FontAwesomeIcons.star),
+              selectIcon: const Icon(FontAwesomeIcons.solidStar),
+              onTap: () => introController.showFavBottomSheet(context),
+              onLongPress: () => introController.showFavBottomSheet(
+                context,
+                isLongPress: true,
+              ),
+              selectStatus: introController.hasFav.value,
+              semanticsLabel: '收藏',
+              text: NumUtils.numFormat(stat.favorite),
+            ),
+          ),
           ActionItem(
             icon: const Icon(CustomIcons.download),
             onTap: () => videoDetailCtr.onDownload(context),

@@ -668,7 +668,26 @@ class _AudioPageState extends State<AudioPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 已隐藏：点赞、投币、收藏
+          // 已隐藏：点赞、投币
+          Obx(
+            () => ActionItem(
+              animation: _controller.tripleAnimation,
+              icon: const Icon(FontAwesomeIcons.star),
+              selectIcon: const Icon(
+                FontAwesomeIcons.solidStar,
+              ),
+              onTap: () => _controller.showFavBottomSheet(context),
+              onLongPress: () => _controller.showFavBottomSheet(
+                context,
+                isLongPress: true,
+              ),
+              selectStatus: _controller.hasFav.value,
+              semanticsLabel: '收藏',
+              text: NumUtils.numFormat(
+                audioItem.stat.favourite,
+              ),
+            ),
+          ),
           ActionItem(
             icon: const Icon(FontAwesomeIcons.comment),
             onTap: _controller.showReply,

@@ -1926,7 +1926,29 @@ class HeaderControlState extends State<HeaderControl>
               mainAxisAlignment: .end,
               crossAxisAlignment: .start,
               children: [
-                // 已隐藏：点赞、投币、收藏
+                // 已隐藏：点赞、投币
+                SizedBox(
+                  width: btnWidth,
+                  height: btnHeight,
+                  child: Obx(
+                    () => ActionItem(
+                      expand: false,
+                      animation: introController.tripleAnimation,
+                      icon: const Icon(
+                        FontAwesomeIcons.star,
+                        color: Colors.white,
+                      ),
+                      selectIcon: const Icon(FontAwesomeIcons.solidStar),
+                      onTap: () => introController.showFavBottomSheet(context),
+                      onLongPress: () => introController.showFavBottomSheet(
+                        context,
+                        isLongPress: true,
+                      ),
+                      selectStatus: introController.hasFav.value,
+                      semanticsLabel: '收藏',
+                    ),
+                  ),
+                ),
                 SizedBox(
                   width: btnWidth,
                   height: btnHeight,
