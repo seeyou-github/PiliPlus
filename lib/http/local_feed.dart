@@ -33,6 +33,7 @@ abstract final class LocalFeedApi {
         ),
       ),
       Error(:final errMsg, :final code) => Error(errMsg, code: code),
+      Loading() => LoadingState.loading(),
     };
   }
 }

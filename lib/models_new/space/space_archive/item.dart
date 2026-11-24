@@ -15,6 +15,7 @@ class SpaceArchiveItem extends BaseSimpleVideoItemModel {
   bool? isPgc;
   bool? isPugv;
   String? publishTimeText;
+  String? subtitle;
   int? pubdate;
   List<Badge>? badges;
   SpaceArchiveSeason? season;
@@ -38,6 +39,7 @@ class SpaceArchiveItem extends BaseSimpleVideoItemModel {
     bvid = json['bvid'];
     cid = json['first_cid'];
     publishTimeText = json['publish_time_text'];
+    subtitle = json['subtitle'];
     pubdate = json['ctime'];
     badges = (json['badges'] as List<dynamic>?)
         ?.map((e) => Badge.fromJson(e as Map<String, dynamic>))
