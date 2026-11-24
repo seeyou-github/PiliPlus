@@ -35,13 +35,16 @@ class _ZoneSetPageState extends State<ZoneSetPage> with ReorderMixin {
         }
       }
     }
-    // 无配置时默认全部勾选
+    // 无配置时使用默认勾选分区及顺序
     final hasCache = order.isNotEmpty;
-    list = RankType.values
+    final defaultChecked = ZoneTabUtils.defaultTypes.toSet();
+    list = (hasCache ? RankType.values : ZoneTabUtils.defaultList)
         .map(
           (e) => Pair<RankType, bool>(
             first: e,
-            second: hasCache ? selected.contains(e.index) : true,
+            second: hasCache
+                ? selected.contains(e.index)
+                : defaultChecked.contains(e),
           ),
         )
         .toList();

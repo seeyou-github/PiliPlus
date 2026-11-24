@@ -12,7 +12,7 @@ class RankController extends GetxController
   RxInt tabIndex = 0.obs;
   late TabController tabController;
 
-  /// 当前显示的分区（受「隐藏指定分区」配置影响，默认全部分区）
+  /// 当前显示的分区（受「隐藏指定分区」配置影响，未配置时使用默认分区及顺序）
   late final List<RankType> types = ZoneTabUtils.visibleTypes;
 
   ZoneController get controller {

@@ -10,11 +10,29 @@ class ZoneTabUtils {
   /// 分区编辑页的存储键
   static const String storageKey = SettingBoxKey.zoneTabSort;
 
-  /// 全部分区（默认全部显示）
+  /// 全部分区
   static List<RankType> get allTypes => RankType.values;
 
+  /// 默认勾选并显示的分区及顺序（无用户配置时生效）
+  static const List<RankType> defaultTypes = [
+    RankType.all,
+    RankType.animal,
+    RankType.music,
+    RankType.knowledge,
+    RankType.tech,
+    RankType.sports,
+    RankType.kichiku,
+    RankType.dance,
+  ];
+
+  /// 分区编辑页的默认列表：勾选分区在前，其余分区保持枚举顺序
+  static List<RankType> get defaultList => [
+    ...defaultTypes,
+    ...allTypes.where((e) => !defaultTypes.contains(e)),
+  ];
+
   /// 读取用户配置的分区列表（已过滤 + 已排序）
-  /// 未配置或配置异常时回退为全部分区
+  /// 未配置或配置异常时回退为默认分区
   static List<RankType> get visibleTypes {
     final cache = GStorage.setting.get(storageKey);
     if (cache is List) {
@@ -27,7 +45,7 @@ class ZoneTabUtils {
       }
       if (list.isNotEmpty) return list;
     }
-    return allTypes;
+    return defaultTypes;
   }
 
   /// 将配置保存为分区枚举 index 列表
