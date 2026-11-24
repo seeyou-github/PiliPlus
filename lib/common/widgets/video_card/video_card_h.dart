@@ -248,6 +248,7 @@ Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
   }
   if (cid != null) {
     PageUtils.toVideoPage(
+      aid: videoItem.aid,
       bvid: videoItem.bvid,
       cid: cid,
       cover: videoItem.cover,
