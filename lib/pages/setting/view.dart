@@ -39,7 +39,6 @@ class SettingPage extends StatefulWidget {
 
 class _SettingPageState extends State<SettingPage> {
   late SettingType _type = .filterSetting;
-  bool _autoOpenedFirst = false;
   final RxBool _noAccount = Accounts.account.isEmpty.obs;
   late bool _isPortrait;
   late ThemeData theme;
@@ -110,13 +109,6 @@ class _SettingPageState extends State<SettingPage> {
     super.didChangeDependencies();
     theme = Theme.of(context);
     _isPortrait = MediaQuery.isPortraitOf(context);
-    // 竖屏为列表+详情两级页面，进入设置页时自动打开第一个分类
-    if (_isPortrait && !_autoOpenedFirst) {
-      _autoOpenedFirst = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _toPage(_items.first.type);
-      });
-    }
   }
 
   @override
