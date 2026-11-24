@@ -1,5 +1,6 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/local_feed.dart';
 import 'package:PiliPlus/http/member.dart';
 import 'package:PiliPlus/models/local/local_follow_item.dart';
 import 'package:PiliPlus/models/member/info.dart' show LiveRoom;
@@ -22,9 +23,6 @@ class LocalFeedController extends GetxController
   /// 每批并发请求的 UP 数量
   static const _batchSize = 5;
 
-  /// 每个 UP 每页拉取数量
-  static const _ps = 30;
-
   /// 缓存有效期
   static const _cacheTtl = Duration(minutes: 5);
 
@@ -42,11 +40,13 @@ class LocalFeedController extends GetxController
   final liveRooms = <int, LiveRoom>{}.obs;
 
   bool _busy = false;
-  int _page = 1;
   bool _initialized = false;
 
   final Map<String, VListItemModel> _map = {};
   final Map<int, int> _lastPubdate = {};
+
+  /// 每个 UP 的下一页游标，App 投稿接口使用 aid 游标而非页码。
+  final Map<int, int?> _cursors = {};
 
   static DateTime? _cacheTime;
   static List<VListItemModel>? _cache;
@@ -143,9 +143,9 @@ class LocalFeedController extends GetxController
     _queryLiveRooms(follows);
 
     if (refresh) {
-      _page = 1;
       isEnd.value = false;
       _busy = true;
+      _cursors.clear();
       if (_cache != null &&
           _cacheTime != null &&
           DateTime.now().difference(_cacheTime!) < _cacheTtl) {
@@ -163,22 +163,25 @@ class LocalFeedController extends GetxController
       _busy = true;
     }
 
-    final page = _page;
     var fetched = 0;
-    var anyFull = false;
+    var anyNext = false;
 
     for (var i = 0; i < follows.length; i += _batchSize) {
-      final chunk = follows.skip(i).take(_batchSize);
+      final chunk = follows.skip(i).take(_batchSize).toList();
       final results = await Future.wait(
         chunk.map(
-          (e) => MemberHttp.searchArchive(mid: e.mid, pn: page, ps: _ps),
+          (e) => LocalFeedApi.archives(
+            mid: e.mid,
+            next: refresh ? null : _cursors[e.mid],
+          ),
         ),
       );
-      for (final res in results) {
+      for (var j = 0; j < results.length; j++) {
+        final res = results[j];
         if (res case Success(:final response)) {
-          final list = response.list?.vlist;
-          if (list == null || list.isEmpty) continue;
-          if (list.length >= _ps) anyFull = true;
+          final list = response.items;
+          if (response.next != null) anyNext = true;
+          if (list.isNotEmpty) _cursors[chunk[j].mid] = response.next;
           for (final item in list) {
             if (Pref.hideUpowerExclusiveVideo && item.badge == '充电专属') {
               continue;
@@ -209,8 +212,7 @@ class LocalFeedController extends GetxController
       isEnd.value = true;
     } else {
       // 没有任何一个 UP 还有下一页时视为到底
-      isEnd.value = !anyFull;
-      _page++;
+      isEnd.value = !anyNext;
     }
   }
 

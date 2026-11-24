@@ -8,6 +8,7 @@ class SpaceArchiveData {
   bool? hasNext;
   bool? hasPrev;
   int? next;
+  int? nextCursor;
 
   SpaceArchiveData({
     this.episodicButton,
@@ -16,6 +17,7 @@ class SpaceArchiveData {
     this.hasNext,
     this.hasPrev,
     this.next,
+    this.nextCursor,
   });
 
   factory SpaceArchiveData.fromJson(Map<String, dynamic> json) =>
@@ -32,5 +34,6 @@ class SpaceArchiveData {
         hasNext: json['has_next'] as bool?,
         hasPrev: json['has_prev'] as bool?,
         next: json['next'],
+        nextCursor: json['next_cursor'],
       );
 }
