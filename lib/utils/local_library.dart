@@ -169,19 +169,14 @@ class LocalLibrary {
     };
   }
 
-  /// 导入（覆盖式），兼容只含其中一项的结构
-  static Future<void> importJson(Object? json, {bool merge = false}) async {
+  /// 导入（合并式），同名项以导入数据为准
+  ///
+  /// 兼容只含其中一项的结构：缺失的那一项保持原样，不会被清空。
+  static Future<void> importJson(Object? json) async {
     _ensureLoaded();
     if (json is! Map) return;
     final follows = json['follows'];
     final favs = json['favs'];
-
-    if (!merge) {
-      _follows.clear();
-      _favs.clear();
-      await _followBox.clear();
-      await _favBox.clear();
-    }
 
     if (follows is List) {
       for (final e in follows) {

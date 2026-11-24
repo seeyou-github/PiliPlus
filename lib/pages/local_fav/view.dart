@@ -29,10 +29,10 @@ class LocalFavPage extends StatelessWidget {
         title: Obx(() => Text('本地收藏 ${LocalLibrary.favCount.value}')),
         actions: [
           IconButton(
-            tooltip: '导入/导出本地数据',
+            tooltip: '导入/导出本地关注/收藏',
             onPressed: () => showImportExportDialog<Map>(
               context,
-              title: '本地数据',
+              title: '本地关注/收藏',
               localFileName: () => 'local',
               onExport: () =>
                   Utils.jsonEncoder.convert(LocalLibrary.exportJson()),

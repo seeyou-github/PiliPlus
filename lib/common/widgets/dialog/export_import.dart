@@ -286,7 +286,7 @@ Future<void> _importAllDataFromArchive(BuildContext context) async {
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('导入所有数据？'),
-      content: const Text('将用压缩包内的设置、账号信息、历史评论、搜索记录、黑名单、自定义字体覆盖当前数据，此操作不可撤销。'),
+      content: const Text('将用压缩包内的设置、账号信息、本地关注/收藏、历史评论、搜索记录、黑名单、自定义字体更新当前数据；其中本地关注/收藏为合并导入，不会删除现有条目，同名项以压缩包为准。此操作不可撤销。'),
       actions: actions,
     ),
   );
