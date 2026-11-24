@@ -297,6 +297,7 @@ class _MainAppState extends PopScopeState<MainApp>
             onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
             icon: const Icon(Icons.settings_outlined),
           ),
+          trailingAtBottom: true,
           backgroundColor: Colors.transparent,
           onDestinationSelected: _mainController.setIndex,
           selectedIndex: _mainController.selectedIndex.value,
