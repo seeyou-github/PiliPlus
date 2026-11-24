@@ -9,6 +9,7 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/pages/main/widgets/desktop_side_bar.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/desktop/tray_controller.dart';
@@ -38,9 +39,6 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   bool get initCanPop => false;
-
-  /// Windows 下三个导航项作为一组整体垂直居中，其他平台保持原有对齐。
-  double get _sideBarGroupAlignment => PlatformUtils.isWindows ? 0.0 : 0.5;
 
   @override
   void initState() {
@@ -239,6 +237,30 @@ class _MainAppState extends PopScopeState<MainApp>
 
   Widget _sideBar() {
     if (_mainController.navigationBars.length > 1) {
+      if (PlatformUtils.isWindows) {
+        return Obx(
+          () => DesktopSideBar(
+            width:
+                (_mainController.hideSideBarLabel ? 80 : 130) + _padding.left,
+            header: Padding(
+              padding: const .only(top: 25),
+              child: userAndSearchVertical(),
+            ),
+            footer: _settingsButton(),
+            destinations: _railDestinations(),
+            selectedIndex: _mainController.selectedIndex.value,
+            onDestinationSelected: _mainController.setIndex,
+            labelType: _mainController.hideSideBarLabel ? .none : .all,
+            indicatorShape: _mainController.hideSideBarLabel
+                ? const RoundedRectangleBorder(
+                    borderRadius: .all(.circular(12)),
+                  )
+                : const RoundedRectangleBorder(
+                    borderRadius: .all(.circular(16)),
+                  ),
+          ),
+        );
+      }
       if (MediaQuery.isTabletOf(context) && _mainController.optTabletNav) {
         return Padding(
           padding: const .only(top: 25),
@@ -293,7 +315,7 @@ class _MainAppState extends PopScopeState<MainApp>
       }
       return Obx(
         () => NavigationRail(
-          groupAlignment: _sideBarGroupAlignment,
+          groupAlignment: 0.5,
           labelType: _mainController.hideSideBarLabel ? .none : .selected,
           leading: userAndSearchVertical(),
           trailing: _settingsButton(),
@@ -301,15 +323,7 @@ class _MainAppState extends PopScopeState<MainApp>
           backgroundColor: Colors.transparent,
           onDestinationSelected: _mainController.setIndex,
           selectedIndex: _mainController.selectedIndex.value,
-          destinations: _mainController.navigationBars
-              .map(
-                (e) => NavigationRailDestination(
-                  label: Text(e.label),
-                  icon: _buildIcon(type: e),
-                  selectedIcon: _buildIcon(type: e, selected: true),
-                ),
-              )
-              .toList(),
+          destinations: _railDestinations(),
         ),
       );
     }
@@ -409,7 +423,19 @@ class _MainAppState extends PopScopeState<MainApp>
         : icon;
   }
 
-  /// 侧栏底部的设置入口，供 NavigationRail 与 NavigationDrawer 共用。
+  List<NavigationRailDestination> _railDestinations() {
+    return _mainController.navigationBars
+        .map(
+          (e) => NavigationRailDestination(
+            label: Text(e.label),
+            icon: _buildIcon(type: e),
+            selectedIcon: _buildIcon(type: e, selected: true),
+          ),
+        )
+        .toList();
+  }
+
+  /// 侧栏底部的设置入口，供 NavigationRail / NavigationDrawer / DesktopSideBar 共用。
   Widget _settingsButton() {
     return IconButton(
       tooltip: '设置',
