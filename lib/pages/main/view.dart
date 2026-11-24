@@ -39,6 +39,9 @@ class _MainAppState extends PopScopeState<MainApp>
   @override
   bool get initCanPop => false;
 
+  /// Windows 下三个导航项作为一组整体垂直居中，其他平台保持原有对齐。
+  double get _sideBarGroupAlignment => PlatformUtils.isWindows ? 0.0 : 0.5;
+
   @override
   void initState() {
     super.initState();
@@ -289,7 +292,7 @@ class _MainAppState extends PopScopeState<MainApp>
       }
       return Obx(
         () => NavigationRail(
-          groupAlignment: 0.5,
+          groupAlignment: _sideBarGroupAlignment,
           labelType: _mainController.hideSideBarLabel ? .none : .selected,
           leading: userAndSearchVertical(),
           trailing: IconButton(
