@@ -28,6 +28,14 @@ import 'package:webview_platform_interface/webview_platform_interface.dart'
 
 final _prefixRegex = RegExp(r'^(?!(https?://))\S+://', caseSensitive: false);
 
+class WebviewRuntimeGuard {
+  const WebviewRuntimeGuard._();
+
+  /// Windows 缺少 WebView2 时不创建 InAppWebView，避免空白页与 controller 空挂。
+  static bool get isUnavailableOnWindows =>
+      Platform.isWindows && webViewEnvironment == null;
+}
+
 class WebviewPage extends StatefulWidget {
   const WebviewPage({
     super.key,
@@ -127,34 +135,42 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
     _LinuxContextMenuButton(onSelected: _handleMenuItem),
   ];
 
+  /// controller 缺失或异常时回退到地址栏 URL，避免菜单按钮静默失效。
+  Future<String> _resolveCurrentUrl() async {
+    try {
+      final uri = await _webViewController?.getUrl();
+      if (uri != null) return uri.toString();
+    } catch (_) {}
+    return _currentUrl;
+  }
+
+  Future<void> _openCurrentUrlInBrowser() async {
+    final url = Platform.isLinux ? _currentUrl : await _resolveCurrentUrl();
+    await PageUtils.launchURL(url);
+  }
+
   Future<void> _handleMenuItem(WebviewMenuItem item) async {
     switch (item) {
       case WebviewMenuItem.refresh:
         if (Platform.isLinux) {
           _linuxController?.reload();
+        } else if (_webViewController != null) {
+          await _webViewController!.reload();
         } else {
-          _webViewController?.reload();
+          SmartDialog.showToast(
+            '应用内网页不可用，已尝试在浏览器中打开',
+            alignment: Alignment.topCenter,
+          );
+          await _openCurrentUrlInBrowser();
         }
         break;
-      case WebviewMenuItem.copy:
-        if (Platform.isLinux) {
-          Utils.copyText(_currentUrl);
-        } else {
-          WebUri? uri = await _webViewController?.getUrl();
-          if (uri != null) {
-            Utils.copyText(uri.toString());
-          }
-        }
+      case WebviewMenuItem.copy: {
+        final url = Platform.isLinux ? _currentUrl : await _resolveCurrentUrl();
+        Utils.copyText(url);
         break;
+      }
       case WebviewMenuItem.openInBrowser:
-        if (Platform.isLinux) {
-          PageUtils.launchURL(_currentUrl);
-        } else {
-          WebUri? uri = await _webViewController?.getUrl();
-          if (uri != null) {
-            PageUtils.launchURL(uri.toString());
-          }
-        }
+        await _openCurrentUrlInBrowser();
         break;
       case WebviewMenuItem.clearCache:
         try {
@@ -335,6 +351,51 @@ document.addEventListener('click', function(e) {
     );
   }
 
+  Widget _buildUnavailableView() {
+    final outline = Theme.of(context).colorScheme.outline;
+    return Center(
+      child: Padding(
+        padding: const .all(24),
+        child: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .center,
+          children: [
+            Icon(Icons.language, size: 48, color: outline),
+            const SizedBox(height: 16),
+            const Text(
+              '当前环境无法在应用内加载网页',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Windows 需要 WebView2 运行时；可安装后重试，或直接在浏览器中打开。',
+              textAlign: .center,
+              style: TextStyle(color: outline),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _currentUrl,
+              textAlign: .center,
+              style: TextStyle(color: outline),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _openCurrentUrlInBrowser,
+              icon: const Icon(Icons.open_in_browser),
+              label: const Text('在浏览器中打开'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => Utils.copyText(_currentUrl),
+              icon: const Icon(Icons.copy),
+              label: const Text('复制链接'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (Platform.isLinux) {
@@ -363,6 +424,8 @@ document.addEventListener('click', function(e) {
             ),
       body: _isPop
           ? null
+          : WebviewRuntimeGuard.isUnavailableOnWindows
+          ? _buildUnavailableView()
           : SafeArea(
               child: InAppWebView(
                 webViewEnvironment: webViewEnvironment,
@@ -408,7 +471,8 @@ document.addEventListener('click', function(e) {
                 },
                 onCloseWindow: (controller) => Get.back(),
                 onLoadStop: (controller, uri) {
-                  final url = uri.toString();
+                  final url = uri?.toString() ?? _currentUrl;
+                  _currentUrl = url;
                   if (url.startsWith('https://www.bilibili.com/h5/note-app')) {
                     controller
                       ..evaluateJavascript(
