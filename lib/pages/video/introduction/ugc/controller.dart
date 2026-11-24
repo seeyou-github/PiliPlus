@@ -41,6 +41,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/local_follow_action.dart';
+import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -59,6 +60,17 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
   // 关注状态 默认未关注
   late final Rx<RelationData> followStatus = Rx(RelationData());
   late final RxMap staffRelations = {}.obs;
+
+  /// 未登录时以本地关注为准，返回 2 对应现有「已关注」文案
+  int get effectiveFollowAttribute {
+    final attr = followStatus.value.attribute ?? 0;
+    if (isLogin) return attr;
+    // 建立响应式依赖，本地关注增删时按钮即时刷新
+    LocalLibrary.followCount.value;
+    final mid = videoDetail.value.owner?.mid;
+    if (mid != null && LocalLibrary.isFollowing(mid)) return 2;
+    return attr;
+  }
 
   // 是否点踩
   final RxBool hasDislike = false.obs;
@@ -151,6 +163,9 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
     if (isLogin) {
       queryAllStatus();
       queryFollowStatus();
+    } else {
+      // 游客态恢复本地收藏状态（本地关注由 effectiveFollowAttribute 直接读取）
+      restoreLocalFavStatus();
     }
   }
 

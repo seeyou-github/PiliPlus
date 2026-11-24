@@ -172,6 +172,15 @@ mixin FavMixin on TripleMixin {
   /// 未登录时收藏到本地所需的元信息；返回 null 表示该页面不支持本地收藏
   LocalFavMeta? get localFavMeta => null;
 
+  /// 未登录时从本地收藏恢复收藏状态；登录态为空操作
+  void restoreLocalFavStatus() {
+    if (Accounts.main.isLogin) return;
+    final meta = localFavMeta;
+    if (meta != null) {
+      hasFav.value = LocalFavAction.isFaved(meta.type, meta.oid);
+    }
+  }
+
   Future<LoadingState<FavFolderData>> queryVideoInFolder() async {
     favIds = null;
     final (rid, type) = getFavRidType;

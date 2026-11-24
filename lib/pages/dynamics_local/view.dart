@@ -1,10 +1,12 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
-import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
-import 'package:PiliPlus/models/common/image_type.dart';
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
+import 'package:PiliPlus/pages/dynamics_local/widgets/local_up_rail.dart';
 import 'package:PiliPlus/utils/local_library.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -26,61 +28,15 @@ class _LocalFeedPageState extends State<LocalFeedPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return refreshIndicator(
+    final colorScheme = Theme.of(context).colorScheme;
+    final feed = refreshIndicator(
+      key: controller.refreshKey,
       onRefresh: controller.onRefresh,
       child: Obx(
         () => CustomScrollView(
+          controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            // 本地关注 UP 列表
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 78,
-                child: Obx(() {
-                  // 监听关注数，新增/取消关注后即时刷新
-                  final count = LocalLibrary.followCount.value;
-                  final follows = LocalLibrary.follows;
-                  return ListView.builder(
-                    scrollDirection: .horizontal,
-                    padding: const .symmetric(horizontal: Style.safeSpace),
-                    itemCount: follows.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == follows.length) {
-                        return _ManageTile(count: count);
-                      }
-                      final item = follows[index];
-                      return Padding(
-                        padding: const .only(right: 12),
-                        child: GestureDetector(
-                          onTap: () => Get.toNamed('/member?mid=${item.mid}'),
-                          child: SizedBox(
-                            width: 56,
-                            child: Column(
-                              mainAxisSize: .min,
-                              children: [
-                                NetworkImgLayer(
-                                  width: 46,
-                                  height: 46,
-                                  type: ImageType.avatar,
-                                  src: item.face,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  item.name,
-                                  maxLines: 1,
-                                  overflow: .ellipsis,
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
-              ),
-            ),
             if (controller.loading.value)
               SliverPadding(
                 padding: const .all(Style.safeSpace),
@@ -131,6 +87,38 @@ class _LocalFeedPageState extends State<LocalFeedPage>
         ),
       ),
     );
+
+    final body = Row(
+      crossAxisAlignment: .stretch,
+      children: [
+        SizedBox(width: 72, child: LocalUpRail(controller: controller)),
+        VerticalDivider(
+          width: 1,
+          color: colorScheme.outline.withValues(alpha: 0.1),
+        ),
+        Expanded(child: feed),
+      ],
+    );
+
+    if (PlatformUtils.isDesktop && Pref.showRefreshFAB) {
+      return ScaffoldLayout(
+        body: body,
+        fab: Padding(
+          padding: const .only(
+            right: kFloatingActionButtonMargin,
+            bottom: 80 + kFloatingActionButtonMargin,
+          ),
+          child: FloatingActionButton(
+            tooltip: '刷新',
+            onPressed: controller.toTopAndRefresh,
+            backgroundColor: colorScheme.secondaryContainer,
+            foregroundColor: colorScheme.onSecondaryContainer,
+            child: const Icon(Icons.refresh),
+          ),
+        ),
+      );
+    }
+    return body;
   }
 }
 
@@ -169,51 +157,6 @@ class _Empty extends StatelessWidget {
                 child: const Text('查看本地关注'),
               ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 头像条末尾的「管理」入口
-class _ManageTile extends StatelessWidget {
-  final int count;
-
-  const _ManageTile({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const .only(right: 12),
-      child: GestureDetector(
-        onTap: () => Get.toNamed('/localFollow'),
-        child: SizedBox(
-          width: 56,
-          child: Column(
-            mainAxisSize: .min,
-            children: [
-              CircleAvatar(
-                radius: 23,
-                backgroundColor: theme.colorScheme.secondaryContainer,
-                child: Icon(
-                  Icons.person_add_alt_1_outlined,
-                  size: 20,
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '管理($count)',
-                maxLines: 1,
-                overflow: .ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

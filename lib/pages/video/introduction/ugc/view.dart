@@ -437,7 +437,7 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
   Widget followButton(BuildContext context) {
     return Obx(
       () {
-        int attr = introController.followStatus.value.attribute ?? 0;
+        int attr = introController.effectiveFollowAttribute;
         return TextButton(
           onPressed: () => introController.actionRelationMod(context),
           style: TextButton.styleFrom(
