@@ -259,6 +259,7 @@ class _MainAppState extends PopScopeState<MainApp>
                   onDestinationSelected: _mainController.setIndex,
                   selectedIndex: _mainController.selectedIndex.value,
                   header: Expanded(flex: 4, child: userAndSearchVertical()),
+                  footer: PlatformUtils.isDesktop ? _settingsButton() : null,
                   tilePadding: const .symmetric(vertical: 5, horizontal: 12),
                   indicatorShape: _mainController.hideSideBarLabel
                       ? const RoundedRectangleBorder(
@@ -295,11 +296,7 @@ class _MainAppState extends PopScopeState<MainApp>
           groupAlignment: _sideBarGroupAlignment,
           labelType: _mainController.hideSideBarLabel ? .none : .selected,
           leading: userAndSearchVertical(),
-          trailing: IconButton(
-            tooltip: '设置',
-            onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
-            icon: const Icon(Icons.settings_outlined),
-          ),
+          trailing: _settingsButton(),
           trailingAtBottom: true,
           backgroundColor: Colors.transparent,
           onDestinationSelected: _mainController.setIndex,
@@ -410,6 +407,15 @@ class _MainAppState extends PopScopeState<MainApp>
             },
           )
         : icon;
+  }
+
+  /// 侧栏底部的设置入口，供 NavigationRail 与 NavigationDrawer 共用。
+  Widget _settingsButton() {
+    return IconButton(
+      tooltip: '设置',
+      onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
+      icon: const Icon(Icons.settings_outlined),
+    );
   }
 
   Widget userAndSearchVertical() {
