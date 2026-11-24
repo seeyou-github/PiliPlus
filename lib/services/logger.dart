@@ -52,6 +52,9 @@ abstract final class LoggerUtils {
     return _logFile = file;
   }
 
+  /// 平台路径覆盖安装后调用，避免类初始化过早把日志锁定到系统 Documents。
+  static void resetLogFileCache() => _logFile = null;
+
   static Future<bool> clearLogs() async {
     try {
       if (Pref.enableLog) {

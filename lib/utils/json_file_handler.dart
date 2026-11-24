@@ -12,10 +12,16 @@ class JsonFileHandler extends ReportHandler {
   final bool printLogs;
   final bool handleWhenRejected;
 
-  static Future<RandomAccessFile> _future = LoggerUtils.getLogsPath()
-      .then((file) => file.open(mode: FileMode.writeOnlyAppend))
-      .then((raf) => raf.writeFrom(const []))
-      .then(_flush);
+  static Future<RandomAccessFile>? _future;
+
+  static Future<RandomAccessFile> _ensureFuture() =>
+      _future ??= LoggerUtils.getLogsPath()
+          .then((file) => file.open(mode: FileMode.writeOnlyAppend))
+          .then((raf) => raf.writeFrom(const []))
+          .then(_flush);
+
+  /// 平台路径覆盖安装后调用，避免静态初始化过早锁定日志路径。
+  static void reset() => _future = null;
 
   JsonFileHandler._({
     this.enableDeviceParameters = true,
@@ -35,7 +41,7 @@ class JsonFileHandler extends ReportHandler {
     bool handleWhenRejected = false,
   }) async {
     try {
-      await _future;
+      await _ensureFuture();
       return JsonFileHandler._(
         enableDeviceParameters: enableDeviceParameters,
         enableApplicationParameters: enableApplicationParameters,
@@ -55,7 +61,7 @@ class JsonFileHandler extends ReportHandler {
   static Future<RandomAccessFile> add(
     Future<RandomAccessFile> Function(RandomAccessFile) onValue,
   ) {
-    return _future = _future.then(onValue).then(_flush);
+    return _future = _ensureFuture().then(onValue).then(_flush);
   }
 
   @override

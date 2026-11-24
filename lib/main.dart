@@ -96,6 +96,9 @@ Future<void> _initAppPath() async {
 void main() async {
   ScaledWidgetsFlutterBinding.ensureInitialized();
   WindowsPathProvider.usePortableAppData();
+  // 清掉路径覆盖前可能已经缓存的日志路径，保证日志只落在便携 AppData。
+  LoggerUtils.resetLogFileCache();
+  JsonFileHandler.reset();
   MediaKit.ensureInitialized();
   await _initAppPath();
   try {
