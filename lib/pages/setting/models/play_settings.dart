@@ -161,7 +161,7 @@ List<SettingsModel> get playSettings => [
     title: '视频页显示相关视频',
     leading: Icon(MdiIcons.motionPlayOutline),
     setKey: SettingBoxKey.showRelatedVideo,
-    defaultVal: true,
+    defaultVal: false,
   ),
   const SwitchModel(
     title: '默认展开视频简介',

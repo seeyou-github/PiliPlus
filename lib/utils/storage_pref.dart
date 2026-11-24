@@ -407,7 +407,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.showViewPoints, defaultValue: true);
 
   static bool get showRelatedVideo =>
-      _setting.get(SettingBoxKey.showRelatedVideo, defaultValue: true);
+      _setting.get(SettingBoxKey.showRelatedVideo, defaultValue: false);
 
   static bool get showVideoReply =>
       _setting.get(SettingBoxKey.showVideoReply, defaultValue: true);
