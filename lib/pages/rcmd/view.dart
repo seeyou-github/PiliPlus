@@ -1,13 +1,12 @@
-import 'package:PiliPlus/common/skeleton/video_card_v.dart';
-import 'package:PiliPlus/common/sliver_single_child_delegate.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
-import 'package:PiliPlus/common/widgets/video_card/video_card_v.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart'
+    show VideoCardVCompactGridMixin;
+import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact_rcmd.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
-import 'package:PiliPlus/utils/grid.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:get/get.dart';
@@ -21,7 +20,7 @@ class RcmdPage extends StatefulWidget {
 }
 
 class _RcmdPageState extends State<RcmdPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, VideoCardVCompactGridMixin {
   final controller = Get.put(RcmdController());
 
   @override
@@ -73,20 +72,12 @@ class _RcmdPageState extends State<RcmdPage>
     return child;
   }
 
-  late final gridDelegate = SliverGridDelegateWithExtentAndRatio(
-    mainAxisSpacing: Style.cardSpace,
-    crossAxisSpacing: Style.cardSpace,
-    maxCrossAxisExtent: Pref.recommendCardWidth,
-    childAspectRatio: Style.aspectRatio,
-    mainAxisExtent: MediaQuery.textScalerOf(context).scale(90),
-  );
-
   Widget _buildBody(
     ColorScheme colorScheme,
     LoadingState<List<dynamic>?> loadingState,
   ) {
     return switch (loadingState) {
-      Loading() => _buildSkeleton,
+      Loading() => gridSkeleton,
       Success(:final response) =>
         response != null && response.isNotEmpty
             ? SliverGrid.builder(
@@ -119,7 +110,7 @@ class _RcmdPageState extends State<RcmdPage>
                     final actualIndex = index > controller.lastRefreshAt!
                         ? index - 1
                         : index;
-                    return VideoCardV(
+                    return VideoCardVCompactRcmd(
                       videoItem: response[actualIndex],
                       onRemove: () {
                         if (controller.lastRefreshAt != null &&
@@ -133,7 +124,7 @@ class _RcmdPageState extends State<RcmdPage>
                       },
                     );
                   } else {
-                    return VideoCardV(
+                    return VideoCardVCompactRcmd(
                       videoItem: response[index],
                       onRemove: () => controller.loadingState
                         ..value.data!.removeAt(index)
@@ -152,12 +143,4 @@ class _RcmdPageState extends State<RcmdPage>
       ),
     };
   }
-
-  Widget get _buildSkeleton => SliverGrid(
-    gridDelegate: gridDelegate,
-    delegate: const SliverSingleChildDelegate(
-      count: 10,
-      child: VideoCardVSkeleton(),
-    ),
-  );
 }
