@@ -216,6 +216,7 @@ void main() async {
         ..minimumSize = DeviceUtils.desktopMinSize
         ..isVisibleInTaskbar = true
         ..title = Constants.appName;
+      window.centerOnWorkArea();
       if (useContentUnderTitleBar) window.setContentUnderTitleBar(true);
       if (Pref.isWindowMaximized) window.maximize();
       void show([_]) => window

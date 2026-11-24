@@ -1,3 +1,4 @@
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart' show Offset, Size;
@@ -56,4 +57,11 @@ Offset calcWindowPosition(Size windowSize) {
     visibleStartX + (visibleWidth / 2) - (windowSize.width / 2),
     visibleStartY + ((visibleHeight / 2) - (windowSize.height / 2)),
   );
+}
+
+extension WindowWorkAreaExtension on nativeapi.Window {
+  /// Windows 下改用系统原生的工作区居中（排除任务栏），其他平台不处理。
+  void centerOnWorkArea() {
+    if (PlatformUtils.isWindows) center();
+  }
 }
