@@ -57,8 +57,10 @@ class LocalFavPage extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        // 读取 Rx 计数以注册依赖，否则 Obx 零依赖会抛异常导致 body 空白
+        final count = LocalLibrary.favCount.value;
         final favs = LocalLibrary.favs;
-        if (favs.isEmpty) {
+        if (count == 0 || favs.isEmpty) {
           return const _Empty();
         }
         final children = <Widget>[];

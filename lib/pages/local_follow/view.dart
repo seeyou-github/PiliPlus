@@ -41,8 +41,10 @@ class LocalFollowPage extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        // 读取 Rx 计数以注册依赖，否则 Obx 零依赖会抛异常导致 body 空白
+        final count = LocalLibrary.followCount.value;
         final follows = LocalLibrary.follows;
-        if (follows.isEmpty) {
+        if (count == 0 || follows.isEmpty) {
           return const _Empty();
         }
         return ListView.builder(
