@@ -81,13 +81,6 @@ List<SettingsModel> get recommendFilterSettings => [
     },
     banScope: 'App推荐、热门、分区',
   ),
-  const SwitchModel(
-    title: '隐藏充电专属视频',
-    subtitle: 'UP主页、投稿列表、视频页、首页、动态页、热门和分区不显示充电专属视频',
-    leading: Icon(Icons.bolt_outlined),
-    setKey: SettingBoxKey.hideUpowerExclusiveVideo,
-    defaultVal: true,
-  ),
   getVideoFilterSelectModel(
     title: '视频时长',
     suffix: 's',
