@@ -143,7 +143,7 @@ List<SettingsModel> get playSettings => [
     subtitle: '高能进度条反应了在时域上，单位时间内弹幕发送量的变化趋势',
     leading: Icon(Icons.show_chart),
     setKey: SettingBoxKey.showDmChart,
-    defaultVal: true,
+    defaultVal: false,
   ),
   const SwitchModel(
     title: '启用双指缩小视频',

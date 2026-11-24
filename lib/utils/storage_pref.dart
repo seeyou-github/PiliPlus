@@ -533,7 +533,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.showSeekPreview, defaultValue: true);
 
   static bool get showDmChart =>
-      _setting.get(SettingBoxKey.showDmChart, defaultValue: true);
+      _setting.get(SettingBoxKey.showDmChart, defaultValue: false);
 
   static bool get enableCommAntifraud =>
       _setting.get(SettingBoxKey.enableCommAntifraud, defaultValue: false);
