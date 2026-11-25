@@ -1,19 +1,19 @@
 import 'package:PiliPlus/pages/webdav/sync_status.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// 自动同步 / 自动备份进行中的底部提示条
+/// WebDAV 后台任务进行中的底部提示条
 ///
-/// 由 [WebDavTaskCenter] 驱动：自动任务开始时从底部展开并显示进度动画，
-/// 任务结束后收起。
+/// 由 [WebDavTaskCenter] 驱动：同步 / 备份任务开始真正执行时从底部展开并显示
+/// 进度动画，任务结束后收起。提示条挂在 App 根部，切换页面不会消失。
 class WebDavStatusBar extends StatelessWidget {
   const WebDavStatusBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<WebDavTask?>(
-      valueListenable: WebDavTaskCenter.current,
-      builder: (context, task, _) {
-        final show = task != null && task.automatic;
+    return ValueListenableBuilder<List<WebDavTask>>(
+      valueListenable: WebDavTaskCenter.active,
+      builder: (context, _, _) {
+        final task = WebDavTaskCenter.executing;
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           switchInCurve: Curves.easeOutCubic,
@@ -23,9 +23,9 @@ class WebDavStatusBar extends StatelessWidget {
             axisAlignment: 1,
             child: FadeTransition(opacity: animation, child: child),
           ),
-          child: show
-              ? _TaskBar(task: task, key: ValueKey(task))
-              : const SizedBox.shrink(key: ValueKey('webdavStatusEmpty')),
+          child: task == null
+              ? const SizedBox.shrink(key: ValueKey('webdavStatusEmpty'))
+              : _TaskBar(task: task, key: ValueKey(task)),
         );
       },
     );

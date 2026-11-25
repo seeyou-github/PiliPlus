@@ -6,6 +6,7 @@ import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/local/local_follow_item.dart';
 import 'package:PiliPlus/pages/webdav/feedback.dart';
 import 'package:PiliPlus/pages/webdav/sync_status.dart';
+import 'package:PiliPlus/pages/webdav/task_lock.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/local_blacklist.dart';
@@ -26,6 +27,9 @@ const _tombstoneTtlMs = 180 * 24 * 60 * 60 * 1000;
 ///
 /// 同步本地关注 / 本地收藏 / 本地黑名单到 `<WebDAV 地址>/PiliPlus/Sync_Piliplus.json`，
 /// 全平台共用一份数据。按条目合并：修改时间较新者生效，删除以墓碑记录传播。
+///
+/// 任务在静态服务层执行，与页面生命周期无关，切换页面不会中断；
+/// 自动同步、手动同步与备份共用 [WebDavTaskLock] 串行执行。
 abstract final class WebDavAutoSync {
   /// 冷启动后延迟同步（非精确定时）
   static const _appStartDelay = Duration(minutes: 1);
@@ -142,8 +146,25 @@ abstract final class WebDavAutoSync {
   static Future<WebDavSyncResult> _sync({required bool automatic}) async {
     final task = WebDavTask(WebDavTaskKind.sync, automatic: automatic);
     WebDavTaskCenter.start(task);
+    // 先占住「同步中」，排队等待锁期间也不会再起第二次同步
     _running = true;
     try {
+      return await WebDavTaskLock.run(() {
+        WebDavTaskCenter.begin(task);
+        return _perform(automatic: automatic);
+      });
+    } finally {
+      _running = false;
+      WebDavTaskCenter.finish(task);
+    }
+  }
+
+  static Future<WebDavSyncResult> _perform({required bool automatic}) async {
+    try {
+      // 排队期间可能进入恢复备份流程，拿到锁后再确认一次
+      if (_paused || (automatic && !_enabled)) {
+        return const WebDavSyncResult.skipped();
+      }
       final baseline = _SyncState.load();
 
       // 先拉取远端，再读取本机数据，避免下载期间的本机修改被旧快照覆盖
@@ -182,9 +203,6 @@ abstract final class WebDavAutoSync {
     } catch (e) {
       debugPrint('[WebDavAutoSync] 同步失败: $e');
       return WebDavSyncResult.failure(describeWebDavError(e));
-    } finally {
-      _running = false;
-      WebDavTaskCenter.finish(task);
     }
   }
 }

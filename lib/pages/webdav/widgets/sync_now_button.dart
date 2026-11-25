@@ -20,8 +20,8 @@ class WebDavSyncNowIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<WebDavTask?>(
-      valueListenable: WebDavTaskCenter.current,
+    return ValueListenableBuilder<List<WebDavTask>>(
+      valueListenable: WebDavTaskCenter.active,
       builder: (context, _, _) {
         final syncing = WebDavTaskCenter.isRunning(WebDavTaskKind.sync);
         return IconButton(
@@ -48,8 +48,8 @@ class WebDavSyncNowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<WebDavTask?>(
-      valueListenable: WebDavTaskCenter.current,
+    return ValueListenableBuilder<List<WebDavTask>>(
+      valueListenable: WebDavTaskCenter.active,
       builder: (context, _, _) {
         final syncing = WebDavTaskCenter.isRunning(WebDavTaskKind.sync);
         return FilledButton.tonalIcon(

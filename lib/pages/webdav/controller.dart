@@ -1,5 +1,6 @@
 import 'package:PiliPlus/pages/webdav/auto_backup.dart';
 import 'package:PiliPlus/pages/webdav/auto_sync.dart';
+import 'package:PiliPlus/pages/webdav/task_lock.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/pages/webdav/widgets/remote_backup_sheet.dart';
 import 'package:PiliPlus/utils/config_archive.dart';
@@ -31,8 +32,11 @@ class WebDavController extends GetxController {
     if (busy) return;
     backingUp.value = true;
     try {
-      final bytes = ConfigArchive.exportAllBytes();
-      await WebDav().uploadBackup(bytes, WebDav.buildBackupFileName());
+      // 与自动备份 / 同步串行，避免同时访问远端
+      await WebDavTaskLock.run(() async {
+        final bytes = ConfigArchive.exportAllBytes();
+        await WebDav().uploadBackup(bytes, WebDav.buildBackupFileName());
+      });
       SmartDialog.showToast('备份成功');
     } catch (e) {
       _showFailure('备份失败', describeWebDavError(e), retry: backup);
@@ -75,16 +79,19 @@ class WebDavController extends GetxController {
     WebDavAutoBackup.pause();
     WebDavAutoSync.pause();
     try {
-      final bytes = await WebDav().downloadBackup(file.name);
-      final message = await ConfigArchive.import(
-        bytes,
-        onWarning: _confirmWarning,
-        mergeBlacklist: true,
-      );
-      if (message == null) return;
-      // 恢复出的数据以备份文件的修改时间为基准，避免覆盖云端较新的记录
-      WebDavAutoSync.markRestored(file.modified?.millisecondsSinceEpoch ?? 0);
-      SmartDialog.showToast(message.isEmpty ? '恢复成功' : '恢复成功，但$message');
+      // 与同步 / 备份串行，避免恢复期间还有任务读写远端或本地数据
+      await WebDavTaskLock.run(() async {
+        final bytes = await WebDav().downloadBackup(file.name);
+        final message = await ConfigArchive.import(
+          bytes,
+          onWarning: _confirmWarning,
+          mergeBlacklist: true,
+        );
+        if (message == null) return;
+        // 恢复出的数据以备份文件的修改时间为基准，避免覆盖云端较新的记录
+        WebDavAutoSync.markRestored(file.modified?.millisecondsSinceEpoch ?? 0);
+        SmartDialog.showToast(message.isEmpty ? '恢复成功' : '恢复成功，但$message');
+      });
     } catch (e) {
       _showFailure('恢复失败', describeWebDavError(e));
     } finally {
