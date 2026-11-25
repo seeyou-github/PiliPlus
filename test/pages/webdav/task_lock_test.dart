@@ -38,4 +38,16 @@ void main() {
     final result = await WebDavTaskLock.run(() async => 42);
     expect(result, 42);
   });
+
+  test('持有锁期间重入会立即报错，不会互相等待', () async {
+    await expectLater(
+      WebDavTaskLock.run<void>(() async {
+        await WebDavTaskLock.run<void>(() async {});
+      }),
+      throwsStateError,
+    );
+
+    // 报错的嵌套任务不能影响锁本身：后续任务仍然可以正常执行
+    expect(await WebDavTaskLock.run(() async => 'ok'), 'ok');
+  });
 }

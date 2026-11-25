@@ -88,18 +88,25 @@ abstract final class LocalFieldCodec {
   /// 还原 [seal] 的结果
   ///
   /// 不带前缀的值按历史明文原样返回（兼容旧版本与旧备份）；
-  /// 内容损坏时返回空串，避免一条坏字段让整份配置读不出来。
-  static String unseal(Object? stored) {
+  /// 密文损坏 / 口令变化导致无法解密时返回 `null`，与「未设置」（空串）区分，
+  /// 便于调用方提示用户重新填写，而不是静默当成空值。
+  static String? tryUnseal(Object? stored) {
     if (stored is! String) return '';
     if (!stored.startsWith(_tag)) return stored;
     try {
       final bytes = base64Url.decode(stored.substring(_tag.length));
-      if (bytes.length <= 16) return '';
+      if (bytes.length <= 16) return null;
       final iv = enc.IV(Uint8List.sublistView(bytes, 0, 16));
       final body = enc.Encrypted(Uint8List.sublistView(bytes, 16));
       return _encrypter.decrypt(body, iv: iv);
     } catch (_) {
-      return '';
+      return null;
     }
   }
+
+  /// 还原 [seal] 的结果
+  ///
+  /// 无法解密时返回空串，避免一条坏字段让整份配置读不出来；
+  /// 需要区分「解不出来」时用 [tryUnseal]。
+  static String unseal(Object? stored) => tryUnseal(stored) ?? '';
 }

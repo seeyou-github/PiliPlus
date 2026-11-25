@@ -1,5 +1,6 @@
 import 'package:PiliPlus/pages/webdav/auto_backup.dart';
 import 'package:PiliPlus/pages/webdav/auto_sync.dart';
+import 'package:PiliPlus/pages/webdav/sync_status.dart';
 import 'package:PiliPlus/pages/webdav/task_lock.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/pages/webdav/widgets/remote_backup_sheet.dart';
@@ -31,9 +32,12 @@ class WebDavController extends GetxController {
   Future<void> backup() async {
     if (busy) return;
     backingUp.value = true;
+    final task = WebDavTask(WebDavTaskKind.backup);
+    WebDavTaskCenter.start(task);
     try {
       // 与自动备份 / 同步串行，避免同时访问远端
       await WebDavTaskLock.run(() async {
+        WebDavTaskCenter.begin(task);
         final bytes = ConfigArchive.exportAllBytes();
         await WebDav().uploadBackup(bytes, WebDav.buildBackupFileName());
       });
@@ -42,6 +46,7 @@ class WebDavController extends GetxController {
       _showFailure('备份失败', describeWebDavError(e), retry: backup);
     } finally {
       backingUp.value = false;
+      WebDavTaskCenter.finish(task);
     }
   }
 

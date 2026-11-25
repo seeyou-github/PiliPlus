@@ -18,7 +18,8 @@ abstract final class WebDavSyncAction {
           retry: () => runNow(saveConfig: saveConfig),
         );
       case WebDavSyncOutcome.skipped:
-        break;
+        // 同步已在执行（或正在恢复备份）：给出反馈，避免点了「立即同步」毫无反应
+        SmartDialog.showToast(result.message ?? '同步进行中，请稍候');
     }
   }
 }

@@ -181,7 +181,18 @@ class WebDav {
     if (updates.isNotEmpty) {
       await box.putAll(updates);
     }
+    // 口令变更 / 数据损坏时解不出来，记录下来供启动时提示用户重新填写，
+    // 避免看起来「配置是空的」却完全没有反馈
+    unreadableSecrets
+      ..clear()
+      ..addAll([
+        for (final key in _secretKeys)
+          if (LocalFieldCodec.tryUnseal(box.get(key)) == null) key,
+      ]);
   }
+
+  /// 加密字段无法解密的设置项（启动时由 [migrateSecrets] 检测）
+  static final List<String> unreadableSecrets = [];
 
   static const _secretKeys = [
     SettingBoxKey.webdavUri,

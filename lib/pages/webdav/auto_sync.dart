@@ -135,11 +135,15 @@ abstract final class WebDavAutoSync {
 
   /// 手动「立即同步」：不受自动同步开关、防抖与最小间隔限制
   static Future<WebDavSyncResult> syncNow() async {
-    if (_paused) return const WebDavSyncResult.skipped();
+    if (_paused) {
+      return const WebDavSyncResult.skipped('正在恢复备份，请稍后再试');
+    }
     if (!WebDav().isConfigured) {
       return const WebDavSyncResult.failure('请先在「设置 - 备份还原」中配置 WebDAV 地址');
     }
-    if (_running) return const WebDavSyncResult.skipped();
+    if (_running) {
+      return const WebDavSyncResult.skipped('同步进行中，请稍候');
+    }
     return _sync(automatic: false);
   }
 
@@ -214,16 +218,15 @@ class WebDavSyncResult {
   const WebDavSyncResult.success()
     : outcome = WebDavSyncOutcome.success,
       message = null;
-  const WebDavSyncResult.skipped()
-    : outcome = WebDavSyncOutcome.skipped,
-      message = null;
+  const WebDavSyncResult.skipped([this.message])
+    : outcome = WebDavSyncOutcome.skipped;
   const WebDavSyncResult.failure(String message)
     : outcome = WebDavSyncOutcome.failure,
       message = message;
 
   final WebDavSyncOutcome outcome;
 
-  /// 失败原因（仅 [WebDavSyncOutcome.failure] 时有值）
+  /// 失败 / 跳过原因（成功时为 null）
   final String? message;
 }
 

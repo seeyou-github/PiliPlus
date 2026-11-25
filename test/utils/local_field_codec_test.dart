@@ -19,4 +19,14 @@ void main() {
     expect(LocalFieldCodec.unseal(null), '');
     expect(LocalFieldCodec.unseal('pp1:not-base64!!'), '');
   });
+
+  test('tryUnseal 区分「未设置」与「解不出来」', () {
+    expect(LocalFieldCodec.tryUnseal(''), '');
+    expect(LocalFieldCodec.tryUnseal(null), '');
+    expect(LocalFieldCodec.tryUnseal('alice'), 'alice');
+    // 损坏的密文返回 null，方便调用方提示重新填写，而不是静默当成空值
+    expect(LocalFieldCodec.tryUnseal('pp1:not-base64!!'), isNull);
+    final sealed = LocalFieldCodec.seal('secret');
+    expect(LocalFieldCodec.tryUnseal('${sealed.substring(0, 8)}A'), isNull);
+  });
 }

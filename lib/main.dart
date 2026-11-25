@@ -97,6 +97,18 @@ Future<void> _initAppPath() async {
   appSupportDirPath = (await getApplicationSupportDirectory()).path;
 }
 
+/// WebDAV 加密字段解不出来时提示一次，避免配置静默变空
+void _warnUnreadableWebDavSecrets() {
+  final keys = WebDav.unreadableSecrets;
+  if (keys.isEmpty) return;
+  debugPrint('[WebDav] 加密字段解密失败: $keys');
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.delayed(const Duration(seconds: 2), () {
+      SmartDialog.showToast('WebDAV 配置无法解密，请重新填写地址与账号密码');
+    });
+  });
+}
+
 void main() async {
   ScaledWidgetsFlutterBinding.ensureInitialized();
   WindowsPathProvider.usePortableAppData();
@@ -213,6 +225,8 @@ void main() async {
   } else {
     runApp(const MyApp());
   }
+
+  _warnUnreadableWebDavSecrets();
 
   if (PlatformUtils.isDesktop) {
     final window = WindowManager.instance.getCurrent();
@@ -368,17 +382,13 @@ class MyApp extends StatelessWidget {
         child: child!,
       );
     }
-    // 全局挂载自动同步 / 自动备份的底部进度条，任何页面都能看到
-    final content = Stack(
-      fit: StackFit.expand,
+    // 全局挂载自动同步 / 自动备份的底部进度条，任何页面都能看到；
+    // 用 Column 占位而不是 Stack 叠加，避免遮住底部导航栏 / 迷你播放器 / 弹层
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        child,
-        const Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: IgnorePointer(child: WebDavStatusBar()),
-        ),
+        Expanded(child: child),
+        const WebDavStatusBar(),
       ],
     );
     if (PlatformUtils.isDesktop) {
