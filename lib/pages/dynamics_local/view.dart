@@ -53,7 +53,8 @@ class _LocalFeedPageState extends State<LocalFeedPage>
       );
       if (dynIndex != -1) {
         _tabWorker = ever<int>(mainController.selectedIndex, (value) {
-          if (value == dynIndex) controller.onRefresh();
+          // 数据还新就只刷新直播状态，避免每次切 tab 都全量请求
+          if (value == dynIndex) controller.refreshIfStale();
         });
       }
     }
@@ -131,19 +132,25 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                     ),
                   ),
                 ],
-                if (!controller.isEnd.value)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: .symmetric(vertical: 12),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                // 只订阅 isEnd：翻页状态切换时不重建整片网格
+                Obx(
+                  () => controller.isEnd.value
+                      ? const SliverToBoxAdapter(child: SizedBox.shrink())
+                      : const SliverToBoxAdapter(
+                          child: Padding(
+                            padding: .symmetric(vertical: 12),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
+                ),
                 const SliverPadding(padding: .only(bottom: 100)),
               ],
             ],

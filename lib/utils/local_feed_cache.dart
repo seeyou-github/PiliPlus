@@ -21,6 +21,13 @@ abstract final class LocalFeedCache {
   static final Map<int, int> _baselines = {};
   static final Set<String> _dirtyDays = {};
 
+  /// 启动时先解最近这些天的桶，其余留到滚动时按需加载，
+  /// 避免冷启动时把 90 天的数据一次性反序列化成对象。
+  static const int _initialDays = 7;
+
+  /// 尚未加载的日期桶（从新到旧）
+  static final List<String> _pendingBuckets = [];
+
   static Box<dynamic> get _box => GStorage.localFeed;
 
   static Map<String, VListItemModel> get itemsMap => _items;
@@ -45,6 +52,7 @@ abstract final class LocalFeedCache {
   static void ensureLoaded() {
     if (_loaded) return;
     _loaded = true;
+    final buckets = <String, List>{};
     for (final entry in _box.toMap().entries) {
       final key = entry.key;
       final value = entry.value;
@@ -53,10 +61,7 @@ abstract final class LocalFeedCache {
         // 无法按天归档的旧数据不再加载，交由 prune/flush 清掉
         if (key == '$_dayPrefix$_unknownDay') continue;
         if (value is! List) continue;
-        for (final raw in value) {
-          final item = _fromMap(raw);
-          if (item != null) _items[keyOf(item)] = item;
-        }
+        buckets[key] = value;
       } else if (key == _cursorsKey && value is Map) {
         value.forEach((k, v) {
           final mid = int.tryParse('$k');
@@ -71,6 +76,57 @@ abstract final class LocalFeedCache {
         });
       }
     }
+    // 日期桶名可直接按字符串比较大小，从新到旧只解前 `_initialDays` 天
+    final days = buckets.keys.toList()..sort((a, b) => b.compareTo(a));
+    for (var i = 0; i < days.length; i++) {
+      if (i < _initialDays) {
+        _loadBucket(buckets[days[i]]);
+      } else {
+        _pendingBuckets.add(days[i]);
+      }
+    }
+  }
+
+  static void _loadBucket(List? raw) {
+    if (raw == null) return;
+    for (final entry in raw) {
+      final item = _fromMap(entry);
+      if (item == null) continue;
+      _items[keyOf(item)] = item;
+    }
+  }
+
+  /// 是否还有更早的日期桶没加载
+  static bool get hasPending => _pendingBuckets.isNotEmpty;
+
+  /// 放出下一个（次新）未加载的日期桶，返回新加入内存的条目
+  static List<VListItemModel> loadNextBucket() {
+    if (_pendingBuckets.isEmpty) return const [];
+    final key = _pendingBuckets.removeAt(0);
+    final raw = _box.get(key);
+    final added = <VListItemModel>[];
+    if (raw is List) {
+      for (final entry in raw) {
+        final item = _fromMap(entry);
+        if (item == null) continue;
+        final k = keyOf(item);
+        if (_items.containsKey(k)) continue;
+        _items[k] = item;
+        added.add(item);
+      }
+    }
+    return added;
+  }
+
+  /// 从日期桶名解析日期（`d:yyyy-MM-dd`）
+  static DateTime? _bucketDay(String key) {
+    const start = _dayPrefix.length;
+    if (key.length != start + 10) return null;
+    final y = int.tryParse(key.substring(start, start + 4));
+    final m = int.tryParse(key.substring(start + 5, start + 7));
+    final d = int.tryParse(key.substring(start + 8, start + 10));
+    if (y == null || m == null || d == null) return null;
+    return DateTime(y, m, d);
   }
 
   static int? cursorOf(int mid) => _cursors[mid];
@@ -134,6 +190,13 @@ abstract final class LocalFeedCache {
     // 清理历史版本遗留的 unknown 桶
     final unknownBucket = '$_dayPrefix$_unknownDay';
     if (_box.containsKey(unknownBucket)) _dirtyDays.add(unknownBucket);
+    // 还没加载的过期日桶直接删掉，避免一直挂在待加载列表里
+    _pendingBuckets.removeWhere((key) {
+      final day = _bucketDay(key);
+      if (day == null || !day.isBefore(cutoff)) return false;
+      _dirtyDays.add(key);
+      return true;
+    });
     _cursors.removeWhere((mid, _) => !followedMids.contains(mid));
     _baselines.removeWhere((mid, _) => !followedMids.contains(mid));
   }
@@ -150,9 +213,15 @@ abstract final class LocalFeedCache {
   /// 增量落盘：只写变更的日桶（空桶即删除），并同步游标与基线。
   /// 快照在调用时同步生成，写入异步串行，不阻塞刷新。
   static Future<void> flush() {
+    // 一次遍历把脏桶装满，避免「每个脏桶都扫一遍全量条目」
     final buckets = <String, List<Map<String, dynamic>>>{
-      for (final key in _dirtyDays) key: _bucketItems(key),
+      for (final key in _dirtyDays) key: <Map<String, dynamic>>[],
     };
+    if (buckets.isNotEmpty) {
+      for (final item in _items.values) {
+        buckets[_bucketKey(item.pubdate)]?.add(_toMap(item));
+      }
+    }
     _dirtyDays.clear();
     final cursors = {
       for (final entry in _cursors.entries) '${entry.key}': entry.value,
@@ -174,16 +243,12 @@ abstract final class LocalFeedCache {
     });
   }
 
-  static List<Map<String, dynamic>> _bucketItems(String key) => [
-    for (final item in _items.values)
-      if (_bucketKey(item.pubdate) == key) _toMap(item),
-  ];
-
   static Future<void> clear() {
     _items.clear();
     _cursors.clear();
     _baselines.clear();
     _dirtyDays.clear();
+    _pendingBuckets.clear();
     return _enqueue(() => _box.clear());
   }
 
