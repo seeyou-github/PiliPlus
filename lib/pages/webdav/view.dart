@@ -7,6 +7,7 @@ import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/pages/webdav/auto_sync.dart';
 import 'package:PiliPlus/pages/webdav/controller.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
+import 'package:PiliPlus/pages/webdav/widgets/sync_now_button.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/local_feed_cache.dart';
@@ -201,6 +202,13 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
                 subtitle: const Text('在设备间同步本地关注 / 收藏 / 黑名单'),
                 value: _autoSync,
                 onChanged: _setAutoSync,
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: WebDavSyncNowButton(),
+                ),
               ),
             ]),
             _section('导入导出', labelStyle, [

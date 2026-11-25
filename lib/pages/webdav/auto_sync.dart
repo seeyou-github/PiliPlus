@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/local/local_follow_item.dart';
+import 'package:PiliPlus/pages/webdav/sync_status.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/local_blacklist.dart';
@@ -118,13 +119,31 @@ abstract final class WebDavAutoSync {
       _timer = Timer(_debounce, _run);
       return;
     }
+    await _sync(automatic: true);
+  }
+
+  /// 手动「立即同步」：不受自动同步开关、防抖与最小间隔限制
+  static Future<WebDavSyncResult> syncNow() async {
+    if (_paused) return const WebDavSyncResult.skipped();
+    if (!WebDav().isConfigured) {
+      return const WebDavSyncResult.failure('请先在「设置 - 备份还原」中配置 WebDAV 地址');
+    }
+    if (_running) return const WebDavSyncResult.skipped();
+    return _sync(automatic: false);
+  }
+
+  static Future<WebDavSyncResult> _sync({required bool automatic}) async {
+    final task = WebDavTask(WebDavTaskKind.sync, automatic: automatic);
+    WebDavTaskCenter.start(task);
     _running = true;
     try {
       final baseline = _SyncState.load();
 
       // 先拉取远端，再读取本机数据，避免下载期间的本机修改被旧快照覆盖
       final bytes = await WebDav().downloadIfExists(WebDav.syncFileName);
-      if (_paused || !_enabled) return;
+      if (_paused || (automatic && !_enabled)) {
+        return const WebDavSyncResult.skipped();
+      }
       final remote = bytes == null ? null : _SyncState.decode(bytes);
 
       final now = DateTime.now().millisecondsSinceEpoch;
@@ -136,7 +155,7 @@ abstract final class WebDavAutoSync {
       final merged = _SyncState.merge(local, remote);
       merged.prune(now - _tombstoneTtlMs);
 
-      if (_paused) return;
+      if (_paused) return const WebDavSyncResult.skipped();
       _applying = true;
       try {
         merged.applyToLocal();
@@ -152,12 +171,35 @@ abstract final class WebDavAutoSync {
         await WebDav().uploadBackup(merged.encode(), WebDav.syncFileName);
       }
       _lastSyncAt = DateTime.now();
+      return const WebDavSyncResult.success();
     } catch (e) {
       debugPrint('[WebDavAutoSync] 同步失败: $e');
+      return WebDavSyncResult.failure(describeWebDavError(e));
     } finally {
       _running = false;
+      WebDavTaskCenter.finish(task);
     }
   }
+}
+
+/// 一次同步的结果
+enum WebDavSyncOutcome { success, skipped, failure }
+
+class WebDavSyncResult {
+  const WebDavSyncResult.success()
+    : outcome = WebDavSyncOutcome.success,
+      message = null;
+  const WebDavSyncResult.skipped()
+    : outcome = WebDavSyncOutcome.skipped,
+      message = null;
+  const WebDavSyncResult.failure(String message)
+    : outcome = WebDavSyncOutcome.failure,
+      message = message;
+
+  final WebDavSyncOutcome outcome;
+
+  /// 失败原因（仅 [WebDavSyncOutcome.failure] 时有值）
+  final String? message;
 }
 
 class _Record {

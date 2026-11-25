@@ -18,6 +18,7 @@ import 'package:PiliPlus/pages/mine/widgets/fav_item.dart';
 import 'package:PiliPlus/pages/mine/widgets/history_item.dart';
 import 'package:PiliPlus/pages/mine/widgets/later_item.dart';
 import 'package:PiliPlus/pages/mine/widgets/sub_item.dart';
+import 'package:PiliPlus/pages/webdav/widgets/sync_now_button.dart';
 import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
@@ -204,6 +205,7 @@ class _MediaPageState extends CommonPageState<MinePage>
               );
             },
           ),
+          const WebDavSyncNowIconButton(),
           IconButton(
             iconSize: iconSize,
             padding: padding,
