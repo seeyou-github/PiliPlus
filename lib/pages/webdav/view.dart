@@ -77,6 +77,12 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
     await controller.backup();
   }
 
+  /// 恢复同样要先保存配置，否则读取远端列表时用的还是旧的（可能是空的）地址
+  Future<void> _restore() async {
+    await _saveConfig();
+    await controller.restore();
+  }
+
   Future<void> _setAutoBackup(bool value) async {
     setState(() => _autoBackup = value);
     await GStorage.setting.put(SettingBoxKey.webdavAutoBackup, value);
@@ -334,7 +340,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
         style: FilledButton.styleFrom(
           shape: const RoundedRectangleBorder(borderRadius: Style.mdRadius),
         ),
-        onPressed: busy ? null : controller.restore,
+        onPressed: busy ? null : _restore,
         child: controller.restoring.value
             ? const Row(
                 mainAxisAlignment: .center,
