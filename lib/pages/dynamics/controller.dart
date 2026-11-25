@@ -5,6 +5,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/dynamics/up.dart';
 import 'package:PiliPlus/pages/common/common_data_controller.dart';
+import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
@@ -43,6 +44,14 @@ class DynamicsController
     } catch (_) {
       return null;
     }
+  }
+
+  /// 未登录时动态页展示的是本地投稿流，回顶/刷新交给它处理
+  LocalFeedController? get _localFeed {
+    if (accountService.isLogin.value) return null;
+    return Get.isRegistered<LocalFeedController>()
+        ? Get.find<LocalFeedController>()
+        : null;
   }
 
   @override
@@ -105,6 +114,8 @@ class DynamicsController
 
   @override
   Future<void> showRefresh() {
+    final local = _localFeed;
+    if (local != null) return local.showRefresh();
     final controller = this.controller;
     if (controller != null) {
       singleRefresh();
@@ -115,12 +126,22 @@ class DynamicsController
 
   @override
   void animateToTop() {
+    final local = _localFeed;
+    if (local != null) {
+      local.animateToTop();
+      return;
+    }
     controller?.animateToTop();
     scrollController.animToTop();
   }
 
   @override
   void toTopOrRefresh() {
+    final local = _localFeed;
+    if (local != null) {
+      local.toTopOrRefresh();
+      return;
+    }
     final ctr = controller;
     if (ctr?.scrollController.hasClients == true) {
       if (ctr!.scrollController.position.pixels == 0) {
