@@ -43,31 +43,39 @@ class LocalUpRail extends StatelessWidget {
           return b.addTime.compareTo(a.addTime);
         });
 
-      // 用 builder 懒加载头像，避免关注很多时一次性创建全部 tile
-      final entries = <Widget>[
-        if (liveFollows.isNotEmpty) ...[
-          _RailLabel('直播', color: theme.colorScheme.error),
-          for (final item in liveFollows)
-            _LiveTile(item: item, room: rooms[item.mid]!),
-          const SizedBox(height: 12),
-        ],
-        _RailLabel('关注', color: theme.colorScheme.outline),
-        for (final item in normalFollows)
-          _UpTile(
-            item: item,
-            count: updates[item.mid] ?? 0,
-            selected: selected == item.mid,
-            onTap: () => controller.toggleFilter(item.mid),
-          ),
-      ];
+      // 分段索引：直播分组（标题 + 头像 + 间隔）→ 关注标题 → 关注头像
+      final liveCount = liveFollows.length;
+      final liveSectionCount = liveCount > 0 ? liveCount + 2 : 0;
+      final itemCount = liveSectionCount + 1 + normalFollows.length;
+
+      Widget buildEntry(int index) {
+        var i = index;
+        if (liveSectionCount > 0) {
+          if (i == 0) return _RailLabel('直播', color: theme.colorScheme.error);
+          if (i <= liveCount) {
+            final item = liveFollows[i - 1];
+            return _LiveTile(item: item, room: rooms[item.mid]!);
+          }
+          if (i == liveCount + 1) return const SizedBox(height: 12);
+          i -= liveSectionCount;
+        }
+        if (i == 0) return _RailLabel('关注', color: theme.colorScheme.outline);
+        final item = normalFollows[i - 1];
+        return _UpTile(
+          item: item,
+          count: updates[item.mid] ?? 0,
+          selected: selected == item.mid,
+          onTap: () => controller.toggleFilter(item.mid),
+        );
+      }
 
       return Column(
         children: [
           Expanded(
             child: ListView.builder(
               padding: const .only(bottom: 8),
-              itemCount: entries.length,
-              itemBuilder: (context, index) => entries[index],
+              itemCount: itemCount,
+              itemBuilder: (context, index) => buildEntry(index),
             ),
           ),
           Divider(

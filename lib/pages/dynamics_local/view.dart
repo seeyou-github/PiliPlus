@@ -6,6 +6,7 @@ import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart'
 import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart'
     show NavigationBarType;
+import 'package:PiliPlus/pages/common/near_bottom_load_more_mixin.dart';
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/pages/dynamics_local/widgets/local_up_rail.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
@@ -26,10 +27,20 @@ class LocalFeedPage extends StatefulWidget {
 }
 
 class _LocalFeedPageState extends State<LocalFeedPage>
-    with AutomaticKeepAliveClientMixin, VideoCardVCompactGridMixin {
+    with
+        AutomaticKeepAliveClientMixin,
+        VideoCardVCompactGridMixin,
+        NearBottomLoadMoreMixin {
   final controller = Get.putOrFind(LocalFeedController.new);
 
   Worker? _tabWorker;
+
+  @override
+  ScrollController get scrollControllerForLoadMore =>
+      controller.scrollController;
+
+  @override
+  void loadMore() => controller.onLoadMore();
 
   @override
   void initState() {
@@ -57,32 +68,13 @@ class _LocalFeedPageState extends State<LocalFeedPage>
   @override
   bool get wantKeepAlive => true;
 
-  /// 距底部还有 600 像素时触发加载，避免在 itemBuilder 里做副作用
-  bool _onScroll(ScrollNotification notification) {
-    if (notification.depth == 0 &&
-        notification.metrics.axis == Axis.vertical &&
-        notification.metrics.extentAfter < 600) {
-      controller.onLoadMore();
-    }
-    return false;
-  }
-
-  /// 首屏内容不足一屏时也继续加载下一页
-  void _fillViewport() {
-    if (!mounted) return;
-    final scroll = controller.scrollController;
-    if (scroll.hasClients && scroll.position.extentAfter < 600) {
-      controller.onLoadMore();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fillViewport());
+    scheduleFillViewport();
     final colorScheme = Theme.of(context).colorScheme;
     final feed = NotificationListener<ScrollNotification>(
-      onNotification: _onScroll,
+      onNotification: onNearBottomScroll,
       child: refreshIndicator(
         key: controller.refreshKey,
         onRefresh: controller.onRefresh,

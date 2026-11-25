@@ -5,6 +5,7 @@ import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
+import 'package:PiliPlus/pages/common/near_bottom_load_more_mixin.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
@@ -25,12 +26,22 @@ class DynamicsTabPage extends StatefulWidget {
 }
 
 class _DynamicsTabPageState extends State<DynamicsTabPage>
-    with AutomaticKeepAliveClientMixin, DynMixin {
+    with
+        AutomaticKeepAliveClientMixin,
+        DynMixin,
+        NearBottomLoadMoreMixin {
   final dynamicsController = Get.putOrFind(DynamicsController.new);
   late final DynamicsTabController controller;
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  ScrollController get scrollControllerForLoadMore =>
+      controller.scrollController;
+
+  @override
+  void loadMore() => controller.onLoadMore();
 
   @override
   void initState() {
@@ -46,34 +57,15 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
     return controller.onRefresh();
   }
 
-  /// 距底部还有 600 像素时触发加载，避免在 itemBuilder 里做副作用
-  bool _onScroll(ScrollNotification notification) {
-    if (notification.depth == 0 &&
-        notification.metrics.axis == Axis.vertical &&
-        notification.metrics.extentAfter < 600) {
-      controller.onLoadMore();
-    }
-    return false;
-  }
-
-  /// 首屏内容不足一屏时也继续加载下一页
-  void _fillViewport() {
-    if (!mounted) return;
-    final scroll = controller.scrollController;
-    if (scroll.hasClients && scroll.position.extentAfter < 600) {
-      controller.onLoadMore();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fillViewport());
+    scheduleFillViewport();
     return refreshIndicator(
       key: controller.refreshKey,
       onRefresh: onRefresh,
       child: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
+        onNotification: onNearBottomScroll,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           controller: controller.scrollController,
