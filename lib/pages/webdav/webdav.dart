@@ -117,6 +117,9 @@ class WebDav {
   static String get autoBackupFileName =>
       '${platformPrefix}AutoBackup_Piliplus.zip';
 
+  /// 跨设备同步数据文件名（全平台共用）
+  static const syncFileName = 'Sync_Piliplus.json';
+
   /// 旧版「路径」设置项，已废弃，仅用于升级迁移
   static const _legacyDirectoryKey = 'webdavDirectory';
 
@@ -291,6 +294,16 @@ class WebDav {
     if (data is Uint8List) return data;
     if (data is List<int>) return Uint8List.fromList(data);
     throw const WebDavException('下载失败：服务器没有返回数据');
+  }
+
+  /// 读取同步文件；不存在时返回 null
+  Future<Uint8List?> downloadIfExists(String name) async {
+    try {
+      return await downloadBackup(name);
+    } on WebDavException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<void> deleteBackup(String name) async {

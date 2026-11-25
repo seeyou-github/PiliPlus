@@ -10,6 +10,7 @@ import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
 import 'package:PiliPlus/pages/webdav/auto_backup.dart';
+import 'package:PiliPlus/pages/webdav/auto_sync.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
@@ -116,6 +117,7 @@ void main() async {
   // 迁移旧版 WebDAV「地址 + 路径」配置（须在自动备份监听启动前完成）
   await WebDav.migrateLegacyConfig();
   WebDavAutoBackup.init();
+  WebDavAutoSync.init();
   await Future.wait([
     _initDownPath(),
     _initTmpPath(),

@@ -651,6 +651,9 @@ abstract final class Pref {
   static bool get webdavAutoBackup =>
       _setting.get(SettingBoxKey.webdavAutoBackup, defaultValue: true);
 
+  static bool get webdavAutoSync =>
+      _setting.get(SettingBoxKey.webdavAutoSync, defaultValue: true);
+
   static bool get showPgcTimeline =>
       _setting.get(SettingBoxKey.showPgcTimeline, defaultValue: true);
 

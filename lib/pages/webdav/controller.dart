@@ -1,4 +1,5 @@
 import 'package:PiliPlus/pages/webdav/auto_backup.dart';
+import 'package:PiliPlus/pages/webdav/auto_sync.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/pages/webdav/widgets/remote_backup_sheet.dart';
 import 'package:PiliPlus/utils/config_archive.dart';
@@ -66,25 +67,29 @@ class WebDavController extends GetxController {
     );
     if (picked == null) return;
     if (!await _confirmRestore(picked.name)) return;
-    await _restoreFile(picked.name);
+    await _restoreFile(picked);
   }
 
-  Future<void> _restoreFile(String name) async {
+  Future<void> _restoreFile(WebDavBackupFile file) async {
     restoring.value = true;
     WebDavAutoBackup.pause();
+    WebDavAutoSync.pause();
     try {
-      final bytes = await WebDav().downloadBackup(name);
+      final bytes = await WebDav().downloadBackup(file.name);
       final message = await ConfigArchive.import(
         bytes,
         onWarning: _confirmWarning,
         mergeBlacklist: true,
       );
       if (message == null) return;
+      // 恢复出的数据以备份文件的修改时间为基准，避免覆盖云端较新的记录
+      WebDavAutoSync.markRestored(file.modified?.millisecondsSinceEpoch ?? 0);
       SmartDialog.showToast(message.isEmpty ? '恢复成功' : '恢复成功，但$message');
     } catch (e) {
       _showFailure('恢复失败', describeWebDavError(e));
     } finally {
       WebDavAutoBackup.resume();
+      WebDavAutoSync.resume();
       restoring.value = false;
     }
   }

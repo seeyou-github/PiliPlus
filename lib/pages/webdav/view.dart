@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
+import 'package:PiliPlus/pages/webdav/auto_sync.dart';
 import 'package:PiliPlus/pages/webdav/controller.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -29,6 +30,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
       : Get.put(WebDavController(), permanent: true);
   bool _obscureText = true;
   bool _autoBackup = Pref.webdavAutoBackup;
+  bool _autoSync = Pref.webdavAutoSync;
 
   @override
   void dispose() {
@@ -55,6 +57,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
     SmartDialog.dismiss();
     if (error == null) {
       SmartDialog.showToast('配置成功');
+      WebDavAutoSync.schedule(force: true);
     } else {
       SmartDialog.showToast('配置失败：$error');
     }
@@ -69,8 +72,25 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
   Future<void> _setAutoBackup(bool value) async {
     setState(() => _autoBackup = value);
     await GStorage.setting.put(SettingBoxKey.webdavAutoBackup, value);
-    if (value && _uriCtr.text.trim().isEmpty) {
+    if (value) {
+      if (_uriCtr.text.trim().isEmpty) {
+        SmartDialog.showToast('请先填写并保存 WebDAV 地址');
+      } else {
+        WebDavAutoSync.schedule(force: true);
+      }
+    }
+  }
+
+  Future<void> _setAutoSync(bool value) async {
+    setState(() => _autoSync = value);
+    await GStorage.setting.put(SettingBoxKey.webdavAutoSync, value);
+    if (!value) return;
+    if (!_autoBackup) {
+      SmartDialog.showToast('请先开启自动备份');
+    } else if (_uriCtr.text.trim().isEmpty) {
       SmartDialog.showToast('请先填写并保存 WebDAV 地址');
+    } else {
+      WebDavAutoSync.schedule(force: true);
     }
   }
 
@@ -129,6 +149,13 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
               subtitle: const Text('设置变更或本地关注 / 收藏 / 黑名单变化后自动备份'),
               value: _autoBackup,
               onChanged: _setAutoBackup,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('自动同步'),
+              subtitle: const Text('自动备份开启后，在设备间同步本地关注 / 收藏 / 黑名单'),
+              value: _autoSync,
+              onChanged: _setAutoSync,
             ),
             const SizedBox(height: 12),
             Row(

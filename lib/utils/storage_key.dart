@@ -198,7 +198,8 @@ abstract final class SettingBoxKey {
   static const String webdavUri = 'webdavUri',
       webdavUsername = 'webdavUsername',
       webdavPassword = 'webdavPassword',
-      webdavAutoBackup = 'webdavAutoBackup';
+      webdavAutoBackup = 'webdavAutoBackup',
+      webdavAutoSync = 'webdavAutoSync';
 
   static const String enableSponsorBlock = 'enableSponsorBlock',
       blockSettings = 'blockSettings',
@@ -269,7 +270,8 @@ abstract final class LocalCacheKey {
       danmakuFilterRules = 'danmakuFilterRules',
       mixinKey = 'mixinKey',
       timeStamp = 'timeStamp',
-      blackNames = 'blackNames';
+      blackNames = 'blackNames',
+      webdavSyncState = 'webdavSyncState';
 }
 
 abstract final class VideoBoxKey {
