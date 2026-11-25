@@ -203,7 +203,10 @@ class LivePopupMenu extends StatelessWidget {
                     const Icon(MdiIcons.accountCircleOutline, size: 16),
                     () => Get.toNamed('/member?mid=$uid'),
                   ),
-                if (roomid != null && feedback != null && feedback!.isNotEmpty)
+                if (Accounts.main.isLogin &&
+                    roomid != null &&
+                    feedback != null &&
+                    feedback!.isNotEmpty)
                   _LiveCustomAction(
                     '不感兴趣',
                     const Icon(MdiIcons.thumbDownOutline, size: 16),
@@ -215,13 +218,14 @@ class LivePopupMenu extends StatelessWidget {
                     const Icon(MdiIcons.cancel, size: 16),
                     () => _showBlockDialog(context),
                   ),
-                _LiveCustomAction(
-                  "${MineController.anonymity.value ? '退出' : '进入'}无痕模式",
-                  MineController.anonymity.value
-                      ? const Icon(MdiIcons.incognitoOff, size: 16)
-                      : const Icon(MdiIcons.incognito, size: 16),
-                  MineController.onChangeAnonymity,
-                ),
+                if (Accounts.main.isLogin)
+                  _LiveCustomAction(
+                    "${MineController.anonymity.value ? '退出' : '进入'}无痕模式",
+                    MineController.anonymity.value
+                        ? const Icon(MdiIcons.incognitoOff, size: 16)
+                        : const Icon(MdiIcons.incognito, size: 16),
+                    MineController.onChangeAnonymity,
+                  ),
               ]
               .map(
                 (e) => PopupMenuItem(
