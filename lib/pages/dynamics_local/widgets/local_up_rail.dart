@@ -25,6 +25,7 @@ class LocalUpRail extends StatelessWidget {
       final follows = LocalLibrary.follows;
       final rooms = controller.liveRooms.value;
       final updates = controller.updateCounts;
+      final pinned = controller.updatedMids;
       final selected = controller.filteredMid.value;
 
       final liveFollows = follows
@@ -32,6 +33,10 @@ class LocalUpRail extends StatelessWidget {
           .toList();
       final normalFollows = follows.toList()
         ..sort((a, b) {
+          // 有新增投稿的 UP 置顶，其余按未读数量、关注时间排序
+          final byPinned = (pinned.contains(b.mid) ? 1 : 0)
+              .compareTo(pinned.contains(a.mid) ? 1 : 0);
+          if (byPinned != 0) return byPinned;
           final byUpdate = (updates[b.mid] ?? 0).compareTo(updates[a.mid] ?? 0);
           if (byUpdate != 0) return byUpdate;
           return b.addTime.compareTo(a.addTime);

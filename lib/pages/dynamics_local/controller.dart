@@ -55,6 +55,9 @@ class LocalFeedController extends GetxController
   /// 本次运行期间新增的投稿 key（点击播放即移除，退出应用自动清空）
   final newKeys = <String>{}.obs;
 
+  /// 本次运行期间有新增投稿的 UP（关注分组置顶用，不随已读移除）
+  final updatedMids = <int>{}.obs;
+
   /// 本地关注中正在直播的 UP（mid -> 直播间）
   final liveRooms = <int, LiveRoom>{}.obs;
 
@@ -214,6 +217,7 @@ class LocalFeedController extends GetxController
       _map.clear();
       items.clear();
       newKeys.clear();
+      updatedMids.clear();
       liveRooms.clear();
       loading.value = false;
       isEnd.value = true;
@@ -306,6 +310,7 @@ class LocalFeedController extends GetxController
       for (final item in fetched) {
         if ((item.pubdate ?? 0) > oldBaseline) {
           newKeys.add(LocalFeedCache.keyOf(item));
+          updatedMids.add(mid);
         }
       }
     }
