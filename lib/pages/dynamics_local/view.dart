@@ -158,12 +158,33 @@ class _LocalFeedPageState extends State<LocalFeedPage>
             right: kFloatingActionButtonMargin,
             bottom: 80 + kFloatingActionButtonMargin,
           ),
-          child: FloatingActionButton(
-            tooltip: '刷新',
-            onPressed: controller.toTopAndRefresh,
-            backgroundColor: colorScheme.secondaryContainer,
-            foregroundColor: colorScheme.onSecondaryContainer,
-            child: const Icon(Icons.refresh),
+          child: Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .end,
+            children: [
+              Obx(
+                () => !controller.showBackToTop.value
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const .only(bottom: 12),
+                        child: FloatingActionButton.small(
+                          heroTag: null,
+                          tooltip: '回到顶部',
+                          onPressed: controller.animateToTop,
+                          backgroundColor: colorScheme.secondaryContainer,
+                          foregroundColor: colorScheme.onSecondaryContainer,
+                          child: const Icon(Icons.arrow_upward),
+                        ),
+                      ),
+              ),
+              FloatingActionButton(
+                tooltip: '刷新',
+                onPressed: controller.toTopAndRefresh,
+                backgroundColor: colorScheme.secondaryContainer,
+                foregroundColor: colorScheme.onSecondaryContainer,
+                child: const Icon(Icons.refresh),
+              ),
+            ],
           ),
         ),
       );

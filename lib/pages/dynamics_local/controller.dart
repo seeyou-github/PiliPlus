@@ -61,8 +61,14 @@ class LocalFeedController extends GetxController
   /// 当前筛选的 UP（null 表示显示全部）
   final filteredMid = RxnInt();
 
+  /// 滚动离开顶部时显示「回到顶部」按钮
+  final showBackToTop = false.obs;
+
   final Map<String, VListItemModel> _map = {};
   bool _busy = false;
+
+  /// 离开顶部超过该距离后显示回顶按钮
+  static const _backToTopOffset = 400;
 
   Worker? _followWorker;
 
@@ -117,6 +123,12 @@ class LocalFeedController extends GetxController
     });
     // 进入本地关注模式即刷新投稿，同时刷新 UP 的直播状态
     onRefresh();
+    scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final show = scrollController.position.pixels > _backToTopOffset;
+    if (show != showBackToTop.value) showBackToTop.value = show;
   }
 
   @override
