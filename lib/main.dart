@@ -117,6 +117,8 @@ void main() async {
   LocalLibrary.ensureLoaded();
   // 迁移旧版 WebDAV「地址 + 路径」配置（须在自动备份监听启动前完成）
   await WebDav.migrateLegacyConfig();
+  // 历史明文的 WebDAV 地址 / 用户名 / 密码改为加密保存
+  await WebDav.migrateSecrets();
   WebDavAutoBackup.init();
   WebDavAutoSync.init();
   await Future.wait([

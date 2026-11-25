@@ -36,6 +36,7 @@ import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/local_field_codec.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -639,14 +640,17 @@ abstract final class Pref {
   static bool get recordSearchHistory =>
       _setting.get(SettingBoxKey.recordSearchHistory, defaultValue: true);
 
-  static String get webdavUri =>
-      _setting.get(SettingBoxKey.webdavUri, defaultValue: '');
+  static String get webdavUri => LocalFieldCodec.unseal(
+    _setting.get(SettingBoxKey.webdavUri, defaultValue: ''),
+  );
 
-  static String get webdavUsername =>
-      _setting.get(SettingBoxKey.webdavUsername, defaultValue: '');
+  static String get webdavUsername => LocalFieldCodec.unseal(
+    _setting.get(SettingBoxKey.webdavUsername, defaultValue: ''),
+  );
 
-  static String get webdavPassword =>
-      _setting.get(SettingBoxKey.webdavPassword, defaultValue: '');
+  static String get webdavPassword => LocalFieldCodec.unseal(
+    _setting.get(SettingBoxKey.webdavPassword, defaultValue: ''),
+  );
 
   static bool get webdavAutoBackup =>
       _setting.get(SettingBoxKey.webdavAutoBackup, defaultValue: true);

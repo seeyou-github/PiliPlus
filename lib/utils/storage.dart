@@ -9,8 +9,10 @@ import 'package:PiliPlus/utils/accounts/account_adapter.dart';
 import 'package:PiliPlus/utils/accounts/account_type_adapter.dart';
 import 'package:PiliPlus/utils/accounts/cookie_jar_adapter.dart';
 import 'package:PiliPlus/utils/filter_settings_merge.dart';
+import 'package:PiliPlus/utils/local_field_codec.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/set_int_adapter.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:hive_ce/hive.dart';
@@ -122,10 +124,29 @@ abstract final class GStorage {
     final mergedSetting = settingData is Map
         ? FilterSettingsMerge.mergeSettings(settingData, setting.toMap())
         : settingData;
+    if (mergedSetting is Map) {
+      // 旧备份 / 外部导入可能带明文 WebDAV 配置，落盘前统一加密
+      _sealWebDavSecrets(mergedSetting);
+    }
     return Future.wait([
       setting.clear().then((_) => setting.putAll(mergedSetting)),
       video.clear().then((_) => video.putAll(map[video.name])),
     ]);
+  }
+
+  static void _sealWebDavSecrets(Map<dynamic, dynamic> settings) {
+    for (final key in const [
+      SettingBoxKey.webdavUri,
+      SettingBoxKey.webdavUsername,
+      SettingBoxKey.webdavPassword,
+    ]) {
+      final value = settings[key];
+      if (value is String &&
+          value.isNotEmpty &&
+          !LocalFieldCodec.isSealed(value)) {
+        settings[key] = LocalFieldCodec.seal(value);
+      }
+    }
   }
 
   static void regAdapter() {

@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:PiliPlus/common/constants.dart';
+import 'package:PiliPlus/utils/local_field_codec.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -137,19 +138,56 @@ class WebDav {
         uri.host.isNotEmpty;
   }
 
+  /// 地址 / 用户名 / 密码加密后写盘；只在内容变化时写入，
+  /// 避免每次保存都生成新的随机 IV 触发自动备份
   Future<void> saveConfig({
     required String uri,
     required String username,
     required String password,
   }) async {
-    await GStorage.setting.putAll({
-      SettingBoxKey.webdavUri: uri.trim(),
-      SettingBoxKey.webdavUsername: username.trim(),
-      SettingBoxKey.webdavPassword: password,
-    });
+    final normalizedUri = uri.trim();
+    final normalizedUsername = username.trim();
+    final updates = <String, dynamic>{};
+    if (Pref.webdavUri != normalizedUri) {
+      updates[SettingBoxKey.webdavUri] = LocalFieldCodec.seal(normalizedUri);
+    }
+    if (Pref.webdavUsername != normalizedUsername) {
+      updates[SettingBoxKey.webdavUsername] = LocalFieldCodec.seal(
+        normalizedUsername,
+      );
+    }
+    if (Pref.webdavPassword != password) {
+      updates[SettingBoxKey.webdavPassword] = LocalFieldCodec.seal(password);
+    }
+    if (updates.isNotEmpty) {
+      await GStorage.setting.putAll(updates);
+    }
     _clientConfig = null;
     _client = null;
   }
+
+  /// 历史明文配置迁移为加密保存；已加密或空值保持不变
+  static Future<void> migrateSecrets() async {
+    final box = GStorage.setting;
+    final updates = <String, dynamic>{};
+    for (final key in _secretKeys) {
+      final value = box.get(key);
+      if (value is String &&
+          value.isNotEmpty &&
+          !LocalFieldCodec.isSealed(value)) {
+        updates[key] = LocalFieldCodec.seal(value);
+      }
+    }
+    if (updates.isNotEmpty) {
+      await box.putAll(updates);
+    }
+  }
+
+  static const _secretKeys = [
+    SettingBoxKey.webdavUri,
+    SettingBoxKey.webdavUsername,
+    SettingBoxKey.webdavPassword,
+  ];
 
   /// 升级迁移：旧版把路径单独存一项，最终目录为 `<地址>/<路径>/PiliPlus`。
   /// 这里把路径并入地址，保持备份落在原来的位置；迁移完成后删除旧键。
@@ -158,14 +196,17 @@ class WebDav {
     final legacy = box.get(_legacyDirectoryKey);
     if (legacy == null) return;
     final dir = '$legacy'.replaceAll(RegExp(r'^/+|/+$'), '').trim();
-    final uri = '${box.get(SettingBoxKey.webdavUri) ?? ''}'.trim();
+    final uri = LocalFieldCodec.unseal(box.get(SettingBoxKey.webdavUri)).trim();
     if (dir.isNotEmpty && uri.isNotEmpty) {
       final parsed = Uri.tryParse(uri);
       if (parsed != null && parsed.host.isNotEmpty) {
         final base = uri.endsWith('/') ? uri.substring(0, uri.length - 1) : uri;
         // 幂等：地址已经包含该路径时不再重复拼接
         if (base != dir && !base.endsWith('/$dir')) {
-          await box.put(SettingBoxKey.webdavUri, '$base/$dir');
+          await box.put(
+            SettingBoxKey.webdavUri,
+            LocalFieldCodec.seal('$base/$dir'),
+          );
         }
       }
     }
