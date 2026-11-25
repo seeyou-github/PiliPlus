@@ -203,22 +203,24 @@ class _DayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const .fromLTRB(Style.safeSpace, 12, Style.safeSpace, 6),
+      padding: const .fromLTRB(Style.safeSpace, 24, Style.safeSpace, 12),
       child: Row(
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              // 视频标题为 14，这里大 2 号
+              fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Divider(
               height: 1,
-              color: colorScheme.outline.withValues(alpha: 0.12),
+              thickness: 1,
+              color: colorScheme.primary.withValues(alpha: 0.3),
             ),
           ),
         ],
