@@ -18,6 +18,7 @@ import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
+import 'package:PiliPlus/utils/local_feed_cache.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -286,6 +287,7 @@ Commit Hash: ${BuildConfig.commitHash}''',
                       onPressed: () async {
                         Get.back();
                         await GStorage.clear();
+                        await LocalFeedCache.clear();
                         SmartDialog.showToast('重置成功');
                       },
                       child: const Text('重置所有数据（含登录信息）', style: style),

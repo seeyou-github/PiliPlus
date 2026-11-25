@@ -50,6 +50,8 @@ abstract final class LocalFeedCache {
       final value = entry.value;
       if (key is! String) continue;
       if (key.startsWith(_dayPrefix)) {
+        // 无法按天归档的旧数据不再加载，交由 prune/flush 清掉
+        if (key == '$_dayPrefix$_unknownDay') continue;
         if (value is! List) continue;
         for (final raw in value) {
           final item = _fromMap(raw);
@@ -87,6 +89,8 @@ abstract final class LocalFeedCache {
 
   static void merge(Iterable<VListItemModel> list) {
     for (final item in list) {
+      // 没有发布时间无法按天归档，只留在内存里展示，不落盘
+      if (dayOf(item.pubdate) == null) continue;
       final key = keyOf(item);
       if (key.isEmpty) continue;
       _items[key] = item;
@@ -106,10 +110,20 @@ abstract final class LocalFeedCache {
     ).subtract(Duration(days: keepDays));
     _items.removeWhere((_, item) {
       final mid = item.owner.mid;
-      if (mid == null || !followedMids.contains(mid)) return true;
+      if (mid == null || !followedMids.contains(mid)) {
+        _dirtyDays.add(_bucketKey(item.pubdate));
+        return true;
+      }
       final day = dayOf(item.pubdate);
-      return day != null && day.isBefore(cutoff);
+      if (day == null || day.isBefore(cutoff)) {
+        _dirtyDays.add(_bucketKey(item.pubdate));
+        return true;
+      }
+      return false;
     });
+    // 清理历史版本遗留的 unknown 桶
+    final unknownBucket = '$_dayPrefix$_unknownDay';
+    if (_box.containsKey(unknownBucket)) _dirtyDays.add(unknownBucket);
     _cursors.removeWhere((mid, _) => !followedMids.contains(mid));
     _baselines.removeWhere((mid, _) => !followedMids.contains(mid));
   }
@@ -181,6 +195,8 @@ abstract final class LocalFeedCache {
     'author': item.owner.name,
     'is_lesson_video': item.isPugv == true ? 1 : 0,
     'badge': item.badge,
+    'season_id': item.seasonId,
+    'jump_url': item.redirectUrl,
   };
 
   static VListItemModel? _fromMap(Object? raw) {

@@ -89,9 +89,11 @@ class _LocalFeedPageState extends State<LocalFeedPage>
             else ...[
               for (var i = 0; i < dayGroups.length; i++) ...[
                 SliverToBoxAdapter(
+                  key: ValueKey('h-${dayGroups[i].key}'),
                   child: _DayHeader(label: dayGroups[i].label),
                 ),
                 SliverPadding(
+                  key: ValueKey('g-${dayGroups[i].key}'),
                   padding: const .fromLTRB(
                     Style.safeSpace,
                     0,

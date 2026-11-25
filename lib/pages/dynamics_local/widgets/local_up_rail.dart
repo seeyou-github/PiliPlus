@@ -10,7 +10,8 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 本地关注 UP 左侧竖列：直播分类在上，关注列表在下，管理按钮固定在底部。
-/// 正在直播的 UP 会同时出现在直播分组与关注分组中。
+/// 正在直播的 UP 会同时出现在直播分组与关注分组中；
+/// 关注分组里点击头像筛选该 UP 的投稿，长按进入 UP 主页。
 class LocalUpRail extends StatelessWidget {
   final LocalFeedController controller;
 
@@ -114,77 +115,82 @@ class _UpTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: SizedBox(
-        width: 72,
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                NetworkImgLayer(
-                  width: 46,
-                  height: 46,
-                  type: ImageType.avatar,
-                  src: item.face,
-                ),
-                if (selected)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: theme.colorScheme.primary,
-                            width: 2,
+    return Tooltip(
+      message: '点击筛选，长按进入 UP 主页',
+      waitDuration: const Duration(seconds: 1),
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: () => Get.toNamed('/member?mid=${item.mid}'),
+        child: SizedBox(
+          width: 72,
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  NetworkImgLayer(
+                    width: 46,
+                    height: 46,
+                    type: ImageType.avatar,
+                    src: item.face,
+                  ),
+                  if (selected)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.primary,
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (count > 0)
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      padding: const .symmetric(horizontal: 3, vertical: 1),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: .all(.circular(8)),
-                      ),
-                      child: Text(
-                        '$count',
-                        textAlign: .center,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          height: 1.2,
-                          color: Colors.white,
+                  if (count > 0)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        padding: const .symmetric(horizontal: 3, vertical: 1),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: .all(.circular(8)),
+                        ),
+                        child: Text(
+                          '$count',
+                          textAlign: .center,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            height: 1.2,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.name,
-              maxLines: 1,
-              overflow: .ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: selected ? FontWeight.w600 : null,
-                color: selected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface,
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                item.name,
+                maxLines: 1,
+                overflow: .ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w600 : null,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
