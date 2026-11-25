@@ -165,6 +165,7 @@ class ArticleController extends CommonDynController
           status: response.favorite,
         ),
       );
+      _syncLocalFavStatus();
       return true;
     }
     if (isGetCover) {
@@ -182,6 +183,7 @@ class ArticleController extends CommonDynController
       isLoaded.value = await queryRead(commentId);
     }
     if (isLoaded.value) {
+      _syncLocalFavStatus();
       queryData();
       if (Accounts.heartbeat.isLogin && !Pref.historyPause) {
         VideoHttp.historyReport(aid: commentId, type: 5);
@@ -189,13 +191,22 @@ class ArticleController extends CommonDynController
     }
   }
 
+  /// 未登录：专栏（含图文动态中的文章）收藏状态以本地收藏为准
+  void _syncLocalFavStatus() {
+    if (Accounts.main.isLogin || commentType != 12) return;
+    final favorite = stats.value?.favorite;
+    if (favorite == null) return;
+    favorite.status = LocalFavAction.isFaved(LocalFavType.article, commentId);
+    stats.refresh();
+  }
+
   Future<void> onFav() async {
     final favorite = stats.value?.favorite;
     if (favorite == null) return;
     final isFav = favorite.status ?? false;
     if (!Accounts.main.isLogin) {
-      // 未登录：专栏收藏到本地（图文动态暂不支持本地收藏）
-      if (type != .read) {
+      // 未登录：专栏（含图文动态中的文章）收藏到本地
+      if (commentType != 12) {
         SmartDialog.showToast('账号未登录');
         return;
       }
@@ -203,7 +214,9 @@ class ArticleController extends CommonDynController
         meta: LocalFavMeta(
           type: LocalFavType.article,
           oid: commentId,
-          title: articleData?.title ?? '',
+          title: summary.title ?? articleData?.title ?? '',
+          cover: summary.cover ?? articleData?.originImageUrls?.firstOrNull,
+          author: summary.author?.name ?? articleData?.author?.name,
         ),
         fav: !isFav,
         onChanged: (isFav) {
