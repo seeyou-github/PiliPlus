@@ -26,6 +26,7 @@ import 'package:PiliPlus/pages/member/widget/header_layout_widget.dart';
 import 'package:PiliPlus/pages/member/widget/medal_widget.dart';
 import 'package:PiliPlus/pages/member_guard/view.dart';
 import 'package:PiliPlus/pages/member_upower_rank/view.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/bili_colors.dart';
@@ -464,34 +465,38 @@ class UserInfoCard extends StatelessWidget {
         mainAxisSize: .min,
         children: [
           if (!isOwner)
-            IconButton.outlined(
-              onPressed: () {
-                if (Accounts.main.isLogin) {
-                  int mid = int.parse(card.mid!);
-                  Get.toNamed(
-                    '/whisperDetail',
-                    arguments: {
-                      'talkerId': mid,
-                      'name': card.name,
-                      'face': card.face,
-                      'mid': mid,
-                      'isLive': live?.liveStatus == 1,
-                    },
-                  );
-                }
-              },
-              icon: const Icon(Icons.mail_outline, size: 21),
-              style: ButtonStyle(
-                side: WidgetStatePropertyAll(
-                  BorderSide(
-                    width: 1.0,
-                    color: colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                padding: const WidgetStatePropertyAll(.zero),
-                tapTargetSize: .shrinkWrap,
-                visualDensity: .compact,
-              ),
+            Obx(
+              () => Get.find<AccountService>().isLogin.value
+                  ? IconButton.outlined(
+                      onPressed: () {
+                        if (Accounts.main.isLogin) {
+                          int mid = int.parse(card.mid!);
+                          Get.toNamed(
+                            '/whisperDetail',
+                            arguments: {
+                              'talkerId': mid,
+                              'name': card.name,
+                              'face': card.face,
+                              'mid': mid,
+                              'isLive': live?.liveStatus == 1,
+                            },
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.mail_outline, size: 21),
+                      style: ButtonStyle(
+                        side: WidgetStatePropertyAll(
+                          BorderSide(
+                            width: 1.0,
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        padding: const WidgetStatePropertyAll(.zero),
+                        tapTargetSize: .shrinkWrap,
+                        visualDensity: .compact,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           Expanded(
             child: FilledButton.tonal(

@@ -35,6 +35,7 @@ import 'package:PiliPlus/utils/duration_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
@@ -501,15 +502,20 @@ class _UgcIntroPanelState extends State<UgcIntroPanel> {
             semanticsLabel: '缓存',
           ),
           Obx(
-            () => ActionItem(
-              icon: const Icon(FontAwesomeIcons.clock),
-              selectIcon: const Icon(FontAwesomeIcons.solidClock),
-              onTap: () =>
-                  introController.handleAction(introController.viewLater),
-              selectStatus: introController.hasLater.value,
-              semanticsLabel: '再看',
-              text: '再看',
-            ),
+            () {
+              if (!Get.find<AccountService>().isLogin.value) {
+                return const SizedBox.shrink();
+              }
+              return ActionItem(
+                icon: const Icon(FontAwesomeIcons.clock),
+                selectIcon: const Icon(FontAwesomeIcons.solidClock),
+                onTap: () =>
+                    introController.handleAction(introController.viewLater),
+                selectStatus: introController.hasLater.value,
+                semanticsLabel: '再看',
+                text: '再看',
+              );
+            },
           ),
           ActionItem(
             icon: const Icon(FontAwesomeIcons.shareFromSquare),

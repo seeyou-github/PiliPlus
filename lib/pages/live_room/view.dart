@@ -52,6 +52,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:canvas_danmaku/danmaku_screen.dart';
@@ -850,7 +851,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     );
   }
 
-  Widget get _buildInputWidget {
+  Widget get _buildInputWidget => Obx(() {
+    if (!kDebugMode && !Get.find<AccountService>().isLogin.value) {
+      return const SizedBox.shrink();
+    }
     final child = Container(
       padding: .only(top: 5, left: 10, right: 10, bottom: padding.bottom),
       height: 70 + padding.bottom,
@@ -1004,7 +1008,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       );
     }
     return child;
-  }
+  });
 
   WidgetStateProperty<Color?>? _overlayColor(ColorScheme colorScheme) =>
       WidgetStateProperty.resolveWith((Set<WidgetState> states) {

@@ -114,37 +114,41 @@ class _MediaPageState extends CommonPageState<MinePage>
   }
 
   Widget _buildActions(Color primary) {
-    return Row(
-      mainAxisAlignment: .spaceEvenly,
-      children: controller.list
-          .map(
-            (e) => Flexible(
-              child: InkWell(
-                onTap: e.onTap,
-                borderRadius: Style.mdRadius,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 80),
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: Column(
-                      spacing: 6,
-                      mainAxisSize: .min,
-                      mainAxisAlignment: .center,
-                      children: [
-                        Icon(e.icon, color: primary),
-                        Text(
-                          e.title,
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ],
+    return Obx(() {
+      final isLogin = controller.accountService.isLogin.value;
+      return Row(
+        mainAxisAlignment: .spaceEvenly,
+        children: controller.list
+            .where((e) => isLogin || e.title == '离线缓存')
+            .map(
+              (e) => Flexible(
+                child: InkWell(
+                  onTap: e.onTap,
+                  borderRadius: Style.mdRadius,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 80),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Column(
+                        spacing: 6,
+                        mainAxisSize: .min,
+                        mainAxisAlignment: .center,
+                        children: [
+                          Icon(e.icon, color: primary),
+                          Text(
+                            e.title,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          )
-          .toList(),
-    );
+            )
+            .toList(),
+      );
+    });
   }
 
   Widget get _buildHeaderActions {
@@ -184,6 +188,9 @@ class _MediaPageState extends CommonPageState<MinePage>
             ),
           Obx(
             () {
+              if (!controller.accountService.isLogin.value) {
+                return const SizedBox.shrink();
+              }
               final anonymity = MineController.anonymity.value;
               return IconButton(
                 iconSize: iconSize,

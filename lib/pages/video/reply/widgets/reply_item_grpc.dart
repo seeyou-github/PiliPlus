@@ -45,6 +45,7 @@ import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -813,18 +814,22 @@ class ReplyItemGrpc extends StatelessWidget {
       noPad: noPad,
       leftButtons: [
         if (onReply != null)
-          _replyTextButton(
-            label: '回复',
-            textStyle: textStyle,
-            icon: Icon(
-              Icons.reply,
-              size: 18,
-              color: colorScheme.outline.withValues(alpha: 0.8),
-            ),
-            onPressed: () {
-              feedBack();
-              onReply!(replyItem);
-            },
+          Obx(
+            () => Get.find<AccountService>().isLogin.value
+                ? _replyTextButton(
+                    label: '回复',
+                    textStyle: textStyle,
+                    icon: Icon(
+                      Icons.reply,
+                      size: 18,
+                      color: colorScheme.outline.withValues(alpha: 0.8),
+                    ),
+                    onPressed: () {
+                      feedBack();
+                      onReply!(replyItem);
+                    },
+                  )
+                : const SizedBox.shrink(),
           ),
         if (replyControl.translationSwitch ==
             .TRANSLATION_SWITCH_SHOW_TRANSLATION)

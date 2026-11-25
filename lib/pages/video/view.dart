@@ -53,6 +53,7 @@ import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/plugin/pl_player/view/view.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/services/service_locator.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart'
     show shutdownTimerService;
@@ -1396,21 +1397,25 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                   ),
                 ),
               ),
-            SizedBox(
-              height: 32,
-              child: TextButton(
-                style: const ButtonStyle(
-                  padding: WidgetStatePropertyAll(.zero),
-                ),
-                onPressed: videoDetailController.showShootDanmakuSheet,
-                child: Text(
-                  '发弹幕',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
+            Obx(
+              () => Get.find<AccountService>().isLogin.value
+                  ? SizedBox(
+                      height: 32,
+                      child: TextButton(
+                        style: const ButtonStyle(
+                          padding: WidgetStatePropertyAll(.zero),
+                        ),
+                        onPressed: videoDetailController.showShootDanmakuSheet,
+                        child: Text(
+                          '发弹幕',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
             SizedBox.square(
               dimension: 38,

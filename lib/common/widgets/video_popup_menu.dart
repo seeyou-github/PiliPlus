@@ -96,8 +96,9 @@ class VideoPopupMenu extends StatelessWidget {
                     const Icon(MdiIcons.accountCircleOutline, size: 16),
                     () => Get.toNamed('/member?mid=${videoItem.owner.mid}'),
                   ),
-                  _VideoCustomAction(
-                    '不感兴趣',
+                  if (Accounts.main.isLogin)
+                    _VideoCustomAction(
+                      '不感兴趣',
                     const Icon(MdiIcons.thumbDownOutline, size: 16),
                     () {
                       final rcmd = Accounts.get(.recommend);
