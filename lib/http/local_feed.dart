@@ -37,9 +37,9 @@ abstract final class LocalFeedApi {
         .toList();
     int? next;
     if (response.hasNext != false) {
-      next = response.nextCursor ?? response.next;
-      // 个别响应缺少 next_cursor 时，用本页最后一条的 aid 兜底
-      if (next == null && items.isNotEmpty) next = items.last.aid;
+      // next_cursor 是 aid 游标；缺失时用本页最后一条的 aid 兜底。
+      // response.next 是续页 token，不能当 aid 再次传回。
+      next = response.nextCursor ?? (items.isEmpty ? null : items.last.aid);
     }
     return Success(LocalFeedArchiveResult(items, next));
   }
