@@ -240,8 +240,8 @@ class _MainAppState extends PopScopeState<MainApp>
       if (PlatformUtils.isWindows) {
         return Obx(
           () => DesktopSideBar(
-            width:
-                (_mainController.hideSideBarLabel ? 80 : 130) + _padding.left,
+            // 显示/隐藏文字标签时保持同一宽度，避免切换时侧栏变宽
+            width: 80 + _padding.left,
             header: Padding(
               padding: const .only(top: 25),
               child: userAndSearchVertical(),
