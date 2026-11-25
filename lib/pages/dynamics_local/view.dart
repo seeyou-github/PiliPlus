@@ -9,6 +9,7 @@ import 'package:PiliPlus/models/common/nav_bar_config.dart'
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/pages/dynamics_local/widgets/local_up_rail.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/local_feed_cache.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';

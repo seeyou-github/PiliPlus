@@ -63,7 +63,7 @@ class DesktopSideBar extends StatelessWidget {
   }
 
   /// 复用 NavigationDrawer 的选中指示器，恢复改动前的圆角矩形按钮样式。
-  NavigationDrawer _drawer(BuildContext context) {
+  Widget _drawer(BuildContext context) {
     return DrawerTheme(
       data: DrawerThemeData(width: width),
       child: NavigationDrawer(
