@@ -48,6 +48,9 @@ class MemberVideoCtr
   final String? username;
   final String? title;
 
+  /// 被「隐藏充电专属视频」过滤掉的条数，整页为空时用于给出明确提示
+  int hiddenCount = 0;
+
   String? firstAid;
   String? lastAid;
   String? fromViewAid;
@@ -106,7 +109,13 @@ class MemberVideoCtr
   ) {
     final data = response.response;
     if (Pref.hideUpowerExclusiveVideo && type != ContributeType.charging) {
-      data.item?.removeWhere((item) => item.isUpowerExclusive);
+      final items = data.item;
+      if (items != null && items.isNotEmpty) {
+        final before = items.length;
+        items.removeWhere((item) => item.isUpowerExclusive);
+        final removed = before - items.length;
+        hiddenCount = (page == 0 ? 0 : hiddenCount) + removed;
+      }
     }
     episodicButton = data.episodicButton;
     next = data.next;

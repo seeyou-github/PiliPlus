@@ -235,7 +235,14 @@ class _MemberVideoState extends State<MemberVideo>
                   ),
                 ],
               )
-            : HttpError(onReload: _controller.onReload),
+            : HttpError(
+                errMsg: _controller.hiddenCount > 0
+                    ? '共 ${_controller.hiddenCount} 个视频为充电专属，'
+                          '已按「隐藏充电专属视频」设置隐藏\n'
+                          '可在 设置-动态设置 中关闭该开关'
+                    : null,
+                onReload: _controller.onReload,
+              ),
       Error(:final errMsg) => HttpError(
         errMsg: errMsg,
         onReload: _controller.onReload,

@@ -34,6 +34,9 @@ class SpaceArchiveData {
         hasNext: json['has_next'] as bool?,
         hasPrev: json['has_prev'] as bool?,
         next: json['next'],
-        nextCursor: json['next_cursor'],
+        // 注意: 服务端返回的 next_cursor 是字符串（如 "910689"），
+        // 直接赋给 int? 会抛 type 'String' is not a subtype of type 'int?'，
+        // 导致整个 fromJson 失败、列表一直停在 loading。这里做兼容解析。
+        nextCursor: int.tryParse('${json['next_cursor']}'),
       );
 }
