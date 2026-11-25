@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/utils/config_archive.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
@@ -16,6 +17,7 @@ abstract final class WebDavAutoBackup {
 
   static Timer? _timer;
   static bool _running = false;
+  static bool _paused = false;
   static final List<StreamSubscription<dynamic>> _subs = [];
 
   static void init() {
@@ -23,25 +25,42 @@ abstract final class WebDavAutoBackup {
     for (final box in [
       GStorage.setting,
       GStorage.video,
-      GStorage.localCache,
       GStorage.localFollow,
       GStorage.localFav,
     ]) {
       _subs.add(box.watch().listen((_) => schedule()));
     }
+    // 黑名单存在 localCache，其它键（WBI、弹幕过滤等）不属于备份内容，只响应黑名单键
+    _subs.add(
+      GStorage.localCache.watch().listen((event) {
+        final key = event.key;
+        if (key == LocalCacheKey.blackMids || key == LocalCacheKey.blackNames) {
+          schedule();
+        }
+      }),
+    );
   }
 
   static bool get _enabled => Pref.webdavAutoBackup && WebDav().isConfigured;
 
+  /// 恢复备份期间暂停，避免把刚恢复的数据再自动上传一遍
+  static void pause() {
+    _paused = true;
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  static void resume() => _paused = false;
+
   static void schedule() {
-    if (!_enabled) return;
+    if (_paused || !_enabled) return;
     _timer?.cancel();
     _timer = Timer(_debounce, _run);
   }
 
   static Future<void> _run() async {
     _timer = null;
-    if (!_enabled || _running) return;
+    if (_paused || !_enabled || _running) return;
     _running = true;
     try {
       final bytes = ConfigArchive.exportLocalBytes();

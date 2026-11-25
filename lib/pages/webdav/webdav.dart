@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:PiliPlus/common/constants.dart';
@@ -33,6 +34,9 @@ class WebDavException implements Exception {
 
 /// 把网络 / WebDAV 异常转换成用户可读的文案
 String describeWebDavError(Object error) {
+  if (_mentionsNoHost(error)) {
+    return 'WebDAV 地址不正确（缺少主机名），请填写完整地址';
+  }
   if (error is WebDavException) {
     final code = error.statusCode;
     if (code == null || error.message.contains('HTTP $code')) {
@@ -65,10 +69,15 @@ String describeWebDavError(Object error) {
     }
   }
   final text = '$error';
-  if (text.contains('No host specified')) {
-    return 'WebDAV 地址不正确（缺少主机名），请填写完整地址';
-  }
   return text.length > 200 ? '${text.substring(0, 200)}…' : text;
+}
+
+bool _mentionsNoHost(Object error) {
+  if ('$error'.contains('No host specified')) return true;
+  if (error is dio.DioException) {
+    return '${error.message}${error.error ?? ''}'.contains('No host specified');
+  }
+  return false;
 }
 
 String _causeOf(dio.DioException error) {
@@ -96,8 +105,12 @@ class WebDav {
   /// 自动备份的固定文件名（每次覆盖）
   static const autoBackupFileName = 'AutoBackup_Piliplus.zip';
 
+  /// 旧版「路径」设置项，已废弃，仅用于升级迁移
+  static const _legacyDirectoryKey = 'webdavDirectory';
+
   webdav.Client? _client;
   ({String uri, String username, String password})? _clientConfig;
+  Future<void> _uploadChain = Future<void>.value();
   bool _uploading = false;
 
   bool get uploading => _uploading;
@@ -123,6 +136,27 @@ class WebDav {
     _client = null;
   }
 
+  /// 升级迁移：旧版把路径单独存一项，最终目录为 `<地址>/<路径>/PiliPlus`。
+  /// 这里把路径并入地址，保持备份落在原来的位置；迁移完成后删除旧键。
+  static Future<void> migrateLegacyConfig() async {
+    final box = GStorage.setting;
+    final legacy = box.get(_legacyDirectoryKey);
+    if (legacy == null) return;
+    final dir = '$legacy'.replaceAll(RegExp(r'^/+|/+$'), '').trim();
+    final uri = '${box.get(SettingBoxKey.webdavUri) ?? ''}'.trim();
+    if (dir.isNotEmpty && uri.isNotEmpty) {
+      final parsed = Uri.tryParse(uri);
+      if (parsed != null && parsed.host.isNotEmpty) {
+        final base = uri.endsWith('/') ? uri.substring(0, uri.length - 1) : uri;
+        // 幂等：地址已经包含该路径时不再重复拼接
+        if (base != dir && !base.endsWith('/$dir')) {
+          await box.put(SettingBoxKey.webdavUri, '$base/$dir');
+        }
+      }
+    }
+    await box.delete(_legacyDirectoryKey);
+  }
+
   String get _folderPath => '/$folderName';
   String _filePath(String name) => '$_folderPath/$name';
 
@@ -138,15 +172,16 @@ class WebDav {
     final cached = _client;
     if (!force && cached != null && _clientConfig == config) return cached;
 
-    final client = webdav.newClient(
-      config.uri,
-      user: config.username,
-      password: config.password,
-    )
-      ..setHeaders({'accept-charset': 'utf-8'})
-      ..setConnectTimeout(15000)
-      ..setReceiveTimeout(30000)
-      ..setSendTimeout(30000);
+    final client =
+        webdav.newClient(
+            config.uri,
+            user: config.username,
+            password: config.password,
+          )
+          ..setHeaders({'accept-charset': 'utf-8'})
+          ..setConnectTimeout(15000)
+          ..setReceiveTimeout(30000)
+          ..setSendTimeout(30000);
     _client = client;
     _clientConfig = config;
     return client;
@@ -163,16 +198,23 @@ class WebDav {
     }
   }
 
-  Future<void> uploadBackup(Uint8List bytes, String fileName) async {
-    if (_uploading) throw const WebDavException('正在备份，请稍候');
-    _uploading = true;
-    try {
-      final client = await _connect();
-      await client.mkdirAll(_folderPath);
-      await client.write(_filePath(fileName), bytes);
-    } finally {
-      _uploading = false;
-    }
+  /// 串行执行上传：自动备份与手动备份同时触发时排队，避免相互打断
+  Future<void> uploadBackup(Uint8List bytes, String fileName) {
+    final completer = Completer<void>();
+    _uploadChain = _uploadChain.then((_) async {
+      _uploading = true;
+      try {
+        final client = await _connect();
+        await client.mkdirAll(_folderPath);
+        await client.write(_filePath(fileName), bytes);
+        completer.complete();
+      } catch (e, st) {
+        completer.completeError(e, st);
+      } finally {
+        _uploading = false;
+      }
+    });
+    return completer.future;
   }
 
   /// 远端备份列表（按修改时间倒序）
@@ -209,10 +251,32 @@ class WebDav {
     return list;
   }
 
+  /// 直接 GET 下载，绕过 `client.read()` 的 OPTIONS 预检（部分服务器会 301），
+  /// 并放宽空闲超时，避免大文件被误判超时
   Future<Uint8List> downloadBackup(String name) async {
     final client = await _connect();
-    final bytes = await client.read(_filePath(name));
-    return Uint8List.fromList(bytes);
+    final response = await client.c.req<dynamic>(
+      client,
+      'GET',
+      _filePath(name),
+      optionsHandler: (options) {
+        options.responseType = dio.ResponseType.bytes;
+        options.followRedirects = true;
+        options.validateStatus = (status) => status != null;
+        options.receiveTimeout = const Duration(minutes: 2);
+      },
+    );
+    final status = response.statusCode ?? 0;
+    if (status != 200) {
+      if (status == 404) {
+        throw const WebDavException('远端文件不存在（HTTP 404）', statusCode: 404);
+      }
+      throw WebDavException('下载失败：HTTP $status', statusCode: status);
+    }
+    final data = response.data;
+    if (data is Uint8List) return data;
+    if (data is List<int>) return Uint8List.fromList(data);
+    throw const WebDavException('下载失败：服务器没有返回数据');
   }
 
   Future<void> deleteBackup(String name) async {
@@ -224,7 +288,7 @@ class WebDav {
   static String buildBackupFileName([DateTime? now]) {
     final t = now ?? DateTime.now();
     String two(int v) => v.toString().padLeft(2, '0');
-    return '$backupNamePrefix${t.year}.${t.month}.${t.day}-'
+    return '$backupNamePrefix${t.year}.${two(t.month)}.${two(t.day)}-'
         '${two(t.hour)}:${two(t.minute)}:${two(t.second)}.zip';
   }
 }

@@ -1,3 +1,4 @@
+import 'package:PiliPlus/pages/webdav/auto_backup.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/pages/webdav/widgets/remote_backup_sheet.dart';
 import 'package:PiliPlus/utils/config_archive.dart';
@@ -21,11 +22,7 @@ class WebDavController extends GetxController {
     required String uri,
     required String username,
     required String password,
-  }) => WebDav().saveConfig(
-    uri: uri,
-    username: username,
-    password: password,
-  );
+  }) => WebDav().saveConfig(uri: uri, username: username, password: password);
 
   Future<String?> testConnection() => WebDav().testConnection();
 
@@ -74,6 +71,7 @@ class WebDavController extends GetxController {
 
   Future<void> _restoreFile(String name) async {
     restoring.value = true;
+    WebDavAutoBackup.pause();
     try {
       final bytes = await WebDav().downloadBackup(name);
       final message = await ConfigArchive.import(
@@ -85,6 +83,7 @@ class WebDavController extends GetxController {
     } catch (e) {
       _showFailure('恢复失败', describeWebDavError(e));
     } finally {
+      WebDavAutoBackup.resume();
       restoring.value = false;
     }
   }
@@ -97,8 +96,8 @@ class WebDavController extends GetxController {
           builder: (context) => AlertDialog(
             title: const Text('恢复设置'),
             content: Text(
-              '将用「$name」中的本地关注、本地收藏与黑名单合并到当前数据，'
-              '同名项以备份为准。此操作不可撤销。',
+              '将用「$name」中的本地关注、本地收藏合并到当前数据（同名项以备份为准）；'
+              '黑名单将以备份为准整体覆盖。此操作不可撤销。',
             ),
             actions: [
               TextButton(

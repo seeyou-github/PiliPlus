@@ -31,10 +31,7 @@ class _RemoteBackupSheetState extends State<RemoteBackupSheet> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    '选择备份文件',
-                    style: theme.textTheme.titleMedium,
-                  ),
+                  child: Text('选择备份文件', style: theme.textTheme.titleMedium),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -60,11 +57,7 @@ class _RemoteBackupSheetState extends State<RemoteBackupSheet> {
                   final file = _files[index];
                   final deleting = _deleting.contains(file.name);
                   return ListTile(
-                    title: Text(
-                      file.name,
-                      maxLines: 1,
-                      overflow: .ellipsis,
-                    ),
+                    title: Text(file.name, maxLines: 1, overflow: .ellipsis),
                     subtitle: Text(
                       _subtitleOf(file),
                       style: TextStyle(

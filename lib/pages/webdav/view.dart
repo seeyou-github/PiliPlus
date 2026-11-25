@@ -11,10 +11,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class WebDavSettingPage extends StatefulWidget {
-  const WebDavSettingPage({
-    super.key,
-    this.showAppBar = true,
-  });
+  const WebDavSettingPage({super.key, this.showAppBar = true});
 
   final bool showAppBar;
 
@@ -50,9 +47,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
   Future<void> _save() async {
     await _saveConfig();
     if (!WebDav().isConfigured) {
-      SmartDialog.showToast(
-        _uriCtr.text.trim().isEmpty ? '已保存' : '地址格式不正确',
-      );
+      SmartDialog.showToast(_uriCtr.text.trim().isEmpty ? '已保存' : '地址格式不正确');
       return;
     }
     SmartDialog.showLoading();
