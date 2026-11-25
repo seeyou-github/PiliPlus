@@ -216,7 +216,10 @@ class VideoCardH extends StatelessWidget {
   }
 }
 
-Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
+Future<void> pushVideoH(
+  HorizontalVideoModel videoItem, {
+  bool openSeasonPanel = false,
+}) async {
   if (videoItem.isPugv ?? false) {
     PageUtils.viewPugv(seasonId: videoItem.seasonId);
     return;
@@ -254,6 +257,9 @@ Future<void> pushVideoH(HorizontalVideoModel videoItem) async {
       cover: videoItem.cover,
       title: videoItem.title,
       dimension: dimension,
+      extraArguments: openSeasonPanel
+          ? const {'openSeasonPanel': true}
+          : null,
     );
   }
 }

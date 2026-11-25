@@ -713,12 +713,21 @@ class _EpisodePanelState extends State<EpisodePanel>
 
   Future<void> _onFavSeason(bool isFav) async {
     if (!Accounts.main.isLogin) {
-      // 未登录：合辑订阅保存到本地
+      // 未登录：合辑订阅保存到本地，记录第一条视频用于从本地收藏进入
+      var subId = _videoDetail.aid;
+      if (_videoDetail.ugcSeason?.sections case final sections?
+          when sections.isNotEmpty) {
+        final section = sections.first;
+        if (section.episodes case final episodes? when episodes.isNotEmpty) {
+          final first = section.isReversed ? episodes.last : episodes.first;
+          subId = first.aid ?? subId;
+        }
+      }
       LocalFavAction.toggle(
         meta: LocalFavMeta(
           type: LocalFavType.season,
           oid: _seasonId,
-          subId: _videoDetail.aid,
+          subId: subId,
           title: _videoDetail.ugcSeason?.title ?? _videoDetail.title ?? '',
           cover: _videoDetail.ugcSeason?.cover ?? _videoDetail.pic,
           author: _videoDetail.owner?.name,

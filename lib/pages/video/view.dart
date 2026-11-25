@@ -1317,6 +1317,26 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       );
     }
 
+    // 本地收藏合集入口：详情加载后默认选中播放列表；无侧栏（竖屏等）则展开合集面板
+    if (videoDetailController.openSeasonPanel) {
+      final seasonIndex = tabs.indexOf('播放列表');
+      if (seasonIndex != -1) {
+        videoDetailController.openSeasonPanel = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final ctr = videoDetailController.tabCtr;
+          if (mounted && seasonIndex < ctr.length) {
+            ctr.index = seasonIndex;
+          }
+        });
+      } else if (videoDetailController.isUgc &&
+          ugcIntroController.videoDetail.value.hasSeason) {
+        videoDetailController.openSeasonPanel = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) showEpisodes(type: .season);
+        });
+      }
+    }
+
     Widget tabBar() {
       final flag = !needIndicator || tabs.length == 1;
       return TabBar(

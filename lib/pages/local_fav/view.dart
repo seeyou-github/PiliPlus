@@ -134,7 +134,7 @@ class _FavItemCard extends StatelessWidget {
   /// 本地收藏不保证有 cid/bvid，缺失时由 [pushVideoH] 自行补全；
   /// 但 duration 必须是非空 int，否则 HotVideoItemModel.fromJson 会抛
   /// 类型异常，异步跳转被中断，表现为点击无反应。
-  void _openVideo(int? aid, {int? cid}) {
+  void _openVideo(int? aid, {int? cid, bool openSeasonPanel = false}) {
     if (aid == null || aid <= 0) {
       SmartDialog.showToast('收藏信息不完整，无法播放');
       return;
@@ -149,6 +149,7 @@ class _FavItemCard extends StatelessWidget {
         'owner': {'name': item.author},
         'stat': const <String, dynamic>{},
       }),
+      openSeasonPanel: openSeasonPanel,
     );
   }
 
@@ -169,8 +170,8 @@ class _FavItemCard extends StatelessWidget {
           parameters: {'id': '${item.oid}', 'name': item.title},
         );
       case LocalFavType.season:
-        // UGC 合集：按收藏时记录的入口视频 aid 跳转
-        _openVideo(item.subId);
+        // UGC 合集：打开第一条视频并默认展开播放列表
+        _openVideo(item.subId, openSeasonPanel: true);
       case LocalFavType.favFolder:
         Get.toNamed(
           '/favDetail',

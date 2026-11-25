@@ -114,6 +114,9 @@ class VideoDetailController extends GetxController
   /// tabs相关配置
   late TabController tabCtr;
 
+  /// 从本地收藏合集进入时，默认展开播放列表
+  bool openSeasonPanel = false;
+
   // 请求返回的视频信息
   late PlayUrlModel data;
   final RxBool videoState = false.obs;
@@ -415,6 +418,7 @@ class VideoDetailController extends GetxController
     seasonId = args['seasonId'];
     pgcType = args['pgcType'];
     heroTag = args['heroTag'];
+    openSeasonPanel = args['openSeasonPanel'] == true;
     cover = RxString(args['cover'] ?? '');
     isVertical = RxBool(args['isVertical'] ?? false);
 
