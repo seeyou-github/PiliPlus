@@ -203,11 +203,11 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
                 value: _autoSync,
                 onChanged: _setAutoSync,
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: WebDavSyncNowButton(),
+                  child: WebDavSyncNowButton(beforeSync: _saveConfig),
                 ),
               ),
             ]),

@@ -41,7 +41,10 @@ class WebDavSyncNowIconButton extends StatelessWidget {
 
 /// 「立即同步」按钮（备份还原设置页）
 class WebDavSyncNowButton extends StatelessWidget {
-  const WebDavSyncNowButton({super.key});
+  const WebDavSyncNowButton({super.key, this.beforeSync});
+
+  /// 同步前执行，用于保存设置页输入框中的 WebDAV 配置
+  final Future<void> Function()? beforeSync;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +56,9 @@ class WebDavSyncNowButton extends StatelessWidget {
           style: FilledButton.styleFrom(
             shape: const RoundedRectangleBorder(borderRadius: Style.mdRadius),
           ),
-          onPressed: syncing ? null : WebDavSyncAction.runNow,
+          onPressed: syncing
+              ? null
+              : () => WebDavSyncAction.runNow(saveConfig: beforeSync),
           icon: syncing
               ? const _SpinningSyncIcon(size: 16)
               : const Icon(Icons.sync, size: 18),
