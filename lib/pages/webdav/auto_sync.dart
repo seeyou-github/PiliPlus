@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/local/local_follow_item.dart';
+import 'package:PiliPlus/pages/webdav/feedback.dart';
 import 'package:PiliPlus/pages/webdav/sync_status.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/utils/global_data.dart';
@@ -14,6 +15,7 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart'
     show debugPrint, listEquals, mapEquals, setEquals;
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 const _syncFileVersion = 1;
 
@@ -119,7 +121,12 @@ abstract final class WebDavAutoSync {
       _timer = Timer(_debounce, _run);
       return;
     }
-    await _sync(automatic: true);
+    final result = await _sync(automatic: true);
+    if (result.outcome == WebDavSyncOutcome.success) {
+      SmartDialog.showToast('自动同步成功');
+    } else if (result.outcome == WebDavSyncOutcome.failure) {
+      showWebDavFailure('自动同步失败', result.message ?? '未知错误');
+    }
   }
 
   /// 手动「立即同步」：不受自动同步开关、防抖与最小间隔限制

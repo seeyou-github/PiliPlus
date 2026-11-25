@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:PiliPlus/pages/webdav/feedback.dart';
+import 'package:PiliPlus/pages/webdav/sync_status.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
 import 'package:PiliPlus/utils/config_archive.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 /// WebDAV 自动备份
 ///
@@ -62,13 +65,18 @@ abstract final class WebDavAutoBackup {
     _timer = null;
     if (_paused || !_enabled || _running) return;
     _running = true;
+    final task = WebDavTask(WebDavTaskKind.backup, automatic: true);
+    WebDavTaskCenter.start(task);
     try {
       final bytes = ConfigArchive.exportAllBytes();
       await WebDav().uploadBackup(bytes, WebDav.autoBackupFileName);
+      SmartDialog.showToast('自动备份成功');
     } catch (e) {
       debugPrint('[WebDavAutoBackup] 自动备份失败: $e');
+      showWebDavFailure('自动备份失败', describeWebDavError(e));
     } finally {
       _running = false;
+      WebDavTaskCenter.finish(task);
     }
   }
 }

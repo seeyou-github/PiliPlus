@@ -12,6 +12,7 @@ import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
 import 'package:PiliPlus/pages/webdav/auto_backup.dart';
 import 'package:PiliPlus/pages/webdav/auto_sync.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
+import 'package:PiliPlus/pages/webdav/widgets/webdav_status_bar.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -365,13 +366,26 @@ class MyApp extends StatelessWidget {
         child: child!,
       );
     }
+    // 全局挂载自动同步 / 自动备份的底部进度条，任何页面都能看到
+    final content = Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        const Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: IgnorePointer(child: WebDavStatusBar()),
+        ),
+      ],
+    );
     if (PlatformUtils.isDesktop) {
       return BackDetector(
         onBack: _onBack,
-        child: child,
+        child: content,
       );
     }
-    return child;
+    return content;
   }
 
   /// from [DynamicColorBuilderState.initPlatformState]
