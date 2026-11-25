@@ -32,7 +32,8 @@ class LocalFeedDayGroup {
 /// 本地关注投稿流（未登录时使用）
 ///
 /// 缓存优先：进入页面先展示本地缓存，再在线抓取新增投稿并标记「新视频」，
-/// 同时把每个 UP 的翻页游标落盘，触底时按游标继续取下一页。
+/// 同时把每个 UP 的翻页游标落盘，触底时按游标继续取下一页；
+/// 触底翻到保留窗口（[_cacheDays]）之外即视为该 UP 到底。
 class LocalFeedController extends GetxController
     with ScrollOrRefreshMixin, RefreshImplMixin {
   /// 每批并发请求的 UP 数量
@@ -46,6 +47,9 @@ class LocalFeedController extends GetxController
 
   /// 缓存保留天数
   static const _cacheDays = 30;
+
+  /// 触底装载的最小间隔，避免列表重建时链式连发
+  static const _loadMoreInterval = Duration(seconds: 1);
 
   @override
   final ScrollController scrollController = ScrollController();
@@ -74,6 +78,9 @@ class LocalFeedController extends GetxController
 
   /// 刷新期间被丢弃的刷新请求，结束当前批量请求后补跑
   bool _pendingRefresh = false;
+
+  DateTime _lastLoadMore = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _loadMoreTimer;
 
   /// 离开顶部超过该距离后显示回顶按钮
   static const _backToTopOffset = 400;
@@ -143,6 +150,7 @@ class LocalFeedController extends GetxController
   @override
   void onClose() {
     _followWorker?.dispose();
+    _loadMoreTimer?.cancel();
     scrollController.dispose();
     super.onClose();
   }
@@ -271,7 +279,7 @@ class LocalFeedController extends GetxController
         await _fetchMore(follows);
       }
       _applyItems();
-      await LocalFeedCache.flush(full: refresh);
+      unawaited(LocalFeedCache.flush());
     } finally {
       loading.value = false;
       _busy = false;
@@ -284,15 +292,21 @@ class LocalFeedController extends GetxController
 
   /// 刷新：每个 UP 从最新一页开始，翻到与旧内容重叠为止
   Future<void> _fetchLatest(List<LocalFollowItem> follows) async {
+    final cutoff = LocalFeedCache.cutoffOf(_cacheDays);
     for (var i = 0; i < follows.length; i += _batchSize) {
       final chunk = follows.skip(i).take(_batchSize).toList();
       final results = await Future.wait(
         chunk.map((e) => _fetchUpLatest(e.mid)),
       );
       for (final list in results) {
-        if (list.isEmpty) continue;
-        LocalFeedCache.merge(list);
-        for (final item in list) {
+        // 超过保留窗口的投稿不展示也不落盘
+        final fresh = [
+          for (final item in list)
+            if (!LocalFeedCache.expired(item.pubdate, cutoff)) item,
+        ];
+        if (fresh.isEmpty) continue;
+        LocalFeedCache.merge(fresh);
+        for (final item in fresh) {
           _map[LocalFeedCache.keyOf(item)] = item;
         }
       }
@@ -301,12 +315,12 @@ class LocalFeedController extends GetxController
 
   Future<List<VListItemModel>> _fetchUpLatest(int mid) async {
     final oldBaseline = LocalFeedCache.baselineOf(mid);
-    final oldCursor = LocalFeedCache.cursorOf(mid);
     final fetched = <VListItemModel>[];
     int? aid;
     int? next;
     var first = true;
     var success = false;
+    var reachedBaseline = false;
     var maxPubdate = 0;
 
     for (var page = 0; page < _maxRefreshPages; page++) {
@@ -328,7 +342,10 @@ class LocalFeedController extends GetxController
       // 首次抓取没有历史基线，只取一页
       if (oldBaseline == null) break;
       // 本页已没有比上次更晚的投稿，说明已追平缓存
-      if (!list.any((e) => (e.pubdate ?? 0) > oldBaseline)) break;
+      if (!list.any((e) => (e.pubdate ?? 0) > oldBaseline)) {
+        reachedBaseline = true;
+        break;
+      }
       aid = next;
       first = false;
     }
@@ -341,19 +358,22 @@ class LocalFeedController extends GetxController
         }
       }
     }
-    // 请求全部失败时不要写游标，避免把未取到的分页误标为已取完
+    // 请求一页都没成功时不要写基线/游标，避免把没取到的内容当作已同步
     if (!success) return fetched;
     if (maxPubdate > 0) LocalFeedCache.setBaseline(mid, maxPubdate);
-    // 深层游标只在从未建立时初始化，避免刷新把已翻到的位置重置
     if (next == null) {
+      // 该 UP 的投稿已全部取完
       LocalFeedCache.setCursor(mid, -1);
-    } else if (oldCursor == null || oldCursor == -1) {
+    } else if (!reachedBaseline) {
+      // 没追平缓存（首次抓取 / 命中续抓页数上限 / 中途失败）：
+      // 游标必须停在已抓取区间的末尾，否则中间这段投稿永远取不到
       LocalFeedCache.setCursor(mid, next);
     }
+    // 已追平缓存时保持原游标（含 -1），下次刷新不会重复回扫历史
     return fetched;
   }
 
-  /// 触底：每个 UP 按持久化游标继续取下一页
+  /// 触底：每个 UP 按持久化游标继续取下一页，翻到保留窗口外即视为到底
   Future<void> _fetchMore(List<LocalFollowItem> follows) async {
     final targets = follows
         .where((e) => LocalFeedCache.cursorOf(e.mid) != -1)
@@ -363,6 +383,7 @@ class LocalFeedController extends GetxController
       return;
     }
 
+    final cutoff = LocalFeedCache.cutoffOf(_cacheDays);
     var anyNext = false;
     for (var i = 0; i < targets.length; i += _batchSize) {
       final chunk = targets.skip(i).take(_batchSize).toList();
@@ -378,15 +399,25 @@ class LocalFeedController extends GetxController
       for (final result in results) {
         final res = result.res;
         if (res case Success(:final response)) {
-          if (response.items.isNotEmpty) {
-            LocalFeedCache.merge(response.items);
-            for (final item in response.items) {
+          final items = response.items;
+          final fresh = [
+            for (final item in items)
+              if (!LocalFeedCache.expired(item.pubdate, cutoff)) item,
+          ];
+          if (fresh.isNotEmpty) {
+            LocalFeedCache.merge(fresh);
+            for (final item in fresh) {
               _map[LocalFeedCache.keyOf(item)] = item;
             }
           }
+          // 本页已出现超期投稿，说明再往前只有更旧的，直接结束该 UP
+          final reachedRetention = fresh.length < items.length;
           final next = response.next;
-          LocalFeedCache.setCursor(result.mid, next ?? -1);
-          if (next != null) anyNext = true;
+          LocalFeedCache.setCursor(
+            result.mid,
+            reachedRetention ? -1 : (next ?? -1),
+          );
+          if (!reachedRetention && next != null) anyNext = true;
         } else {
           // 失败保留原游标，下次触底重试
           anyNext = true;
@@ -401,6 +432,17 @@ class LocalFeedController extends GetxController
 
   void onLoadMore() {
     if (_busy || isEnd.value) return;
+    final now = DateTime.now();
+    final elapsed = now.difference(_lastLoadMore);
+    if (elapsed < _loadMoreInterval) {
+      // 列表重建会反复触发，用一次性定时器补上最后一次，避免链式连发
+      _loadMoreTimer ??= Timer(_loadMoreInterval - elapsed, () {
+        _loadMoreTimer = null;
+        onLoadMore();
+      });
+      return;
+    }
+    _lastLoadMore = now;
     queryData();
   }
 }

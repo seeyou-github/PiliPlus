@@ -100,22 +100,32 @@ abstract final class LocalFeedCache {
 
   static String _bucketKey(int? pubdate) => '$_dayPrefix${dayKeyOf(pubdate)}';
 
-  /// 清理已取关的 UP 与过期日桶，只在刷新时调用
-  static void prune({required Set<int> followedMids, required int keepDays}) {
+  /// 保留窗口的起始日（本地时区，按天对齐）
+  static DateTime cutoffOf(int keepDays) {
     final now = DateTime.now();
-    final cutoff = DateTime(
+    return DateTime(
       now.year,
       now.month,
       now.day,
     ).subtract(Duration(days: keepDays));
+  }
+
+  /// 无发布时间或早于保留窗口即视为过期
+  static bool expired(int? pubdate, DateTime cutoff) {
+    final day = dayOf(pubdate);
+    return day == null || day.isBefore(cutoff);
+  }
+
+  /// 清理已取关的 UP 与过期日桶，只在刷新时调用
+  static void prune({required Set<int> followedMids, required int keepDays}) {
+    final cutoff = cutoffOf(keepDays);
     _items.removeWhere((_, item) {
       final mid = item.owner.mid;
       if (mid == null || !followedMids.contains(mid)) {
         _dirtyDays.add(_bucketKey(item.pubdate));
         return true;
       }
-      final day = dayOf(item.pubdate);
-      if (day == null || day.isBefore(cutoff)) {
+      if (expired(item.pubdate, cutoff)) {
         _dirtyDays.add(_bucketKey(item.pubdate));
         return true;
       }
@@ -128,55 +138,53 @@ abstract final class LocalFeedCache {
     _baselines.removeWhere((mid, _) => !followedMids.contains(mid));
   }
 
-  /// [full] 为 true 时整表重写（刷新/清理后使用），否则只写变更的日桶
-  static Future<void> flush({bool full = false}) async {
-    final box = _box;
-    if (full) {
-      final buckets = <String, List<VListItemModel>>{};
-      for (final item in _items.values) {
-        buckets.putIfAbsent(_bucketKey(item.pubdate), () => []).add(item);
-      }
-      final oldKeys = box.keys
-          .whereType<String>()
-          .where((e) => e.startsWith(_dayPrefix))
-          .toSet();
+  /// 串行写入队列，保证多次 flush/clear 按调用顺序落盘
+  static Future<void> _writeQueue = Future<void>.value();
+
+  static Future<void> _enqueue(Future<void> Function() task) {
+    final future = _writeQueue.catchError((_) {}).then((_) => task());
+    _writeQueue = future.catchError((_) {});
+    return future;
+  }
+
+  /// 增量落盘：只写变更的日桶（空桶即删除），并同步游标与基线。
+  /// 快照在调用时同步生成，写入异步串行，不阻塞刷新。
+  static Future<void> flush() {
+    final buckets = <String, List<Map<String, dynamic>>>{
+      for (final key in _dirtyDays) key: _bucketItems(key),
+    };
+    _dirtyDays.clear();
+    final cursors = {
+      for (final entry in _cursors.entries) '${entry.key}': entry.value,
+    };
+    final baselines = {
+      for (final entry in _baselines.entries) '${entry.key}': entry.value,
+    };
+    return _enqueue(() async {
+      final box = _box;
       for (final entry in buckets.entries) {
-        await box.put(entry.key, [
-          for (final item in entry.value) _toMap(item),
-        ]);
-      }
-      for (final key in oldKeys.difference(buckets.keys.toSet())) {
-        await box.delete(key);
-      }
-      _dirtyDays.clear();
-    } else {
-      for (final key in _dirtyDays) {
-        final bucket = [
-          for (final item in _items.values)
-            if (_bucketKey(item.pubdate) == key) item,
-        ];
-        if (bucket.isEmpty) {
-          await box.delete(key);
+        if (entry.value.isEmpty) {
+          await box.delete(entry.key);
         } else {
-          await box.put(key, [for (final item in bucket) _toMap(item)]);
+          await box.put(entry.key, entry.value);
         }
       }
-      _dirtyDays.clear();
-    }
-    await box.put(_cursorsKey, {
-      for (final entry in _cursors.entries) '${entry.key}': entry.value,
-    });
-    await box.put(_baselineKey, {
-      for (final entry in _baselines.entries) '${entry.key}': entry.value,
+      await box.put(_cursorsKey, cursors);
+      await box.put(_baselineKey, baselines);
     });
   }
 
-  static Future<void> clear() async {
+  static List<Map<String, dynamic>> _bucketItems(String key) => [
+    for (final item in _items.values)
+      if (_bucketKey(item.pubdate) == key) _toMap(item),
+  ];
+
+  static Future<void> clear() {
     _items.clear();
     _cursors.clear();
     _baselines.clear();
     _dirtyDays.clear();
-    await _box.clear();
+    return _enqueue(() => _box.clear());
   }
 
   static Map<String, dynamic> _toMap(VListItemModel item) => {
