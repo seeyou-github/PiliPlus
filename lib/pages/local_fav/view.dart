@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/audio/view.dart' show AudioPage;
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -128,20 +129,33 @@ class _FavItemCard extends StatelessWidget {
 
   const _FavItemCard({required this.item});
 
+  /// 打开收藏记录的视频
+  ///
+  /// 本地收藏不保证有 cid/bvid，缺失时由 [pushVideoH] 自行补全；
+  /// 但 duration 必须是非空 int，否则 HotVideoItemModel.fromJson 会抛
+  /// 类型异常，异步跳转被中断，表现为点击无反应。
+  void _openVideo(int? aid, {int? cid}) {
+    if (aid == null || aid <= 0) {
+      SmartDialog.showToast('收藏信息不完整，无法播放');
+      return;
+    }
+    pushVideoH(
+      HotVideoItemModel.fromJson({
+        'aid': aid,
+        'cid': cid,
+        'title': item.title,
+        'pic': item.cover,
+        'duration': item.duration ?? 0,
+        'owner': {'name': item.author},
+        'stat': const <String, dynamic>{},
+      }),
+    );
+  }
+
   void _onTap() {
     switch (item.type) {
       case LocalFavType.video:
-        pushVideoH(
-          HotVideoItemModel.fromJson({
-            'aid': item.oid,
-            'cid': item.subId,
-            'title': item.title,
-            'pic': item.cover,
-            'duration': item.duration,
-            'owner': {'name': item.author},
-            'stat': const <String, dynamic>{},
-          }),
-        );
+        _openVideo(item.oid, cid: item.subId);
       case LocalFavType.pgc:
         PageUtils.viewPgc(seasonId: item.oid, epId: item.subId);
       case LocalFavType.article:
@@ -156,15 +170,7 @@ class _FavItemCard extends StatelessWidget {
         );
       case LocalFavType.season:
         // UGC 合集：按收藏时记录的入口视频 aid 跳转
-        pushVideoH(
-          HotVideoItemModel.fromJson({
-            'aid': item.subId,
-            'title': item.title,
-            'pic': item.cover,
-            'owner': {'name': item.author},
-            'stat': const <String, dynamic>{},
-          }),
-        );
+        _openVideo(item.subId);
       case LocalFavType.favFolder:
         Get.toNamed(
           '/favDetail',

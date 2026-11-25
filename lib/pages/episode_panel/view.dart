@@ -722,6 +722,7 @@ class _EpisodePanelState extends State<EpisodePanel>
           title: _videoDetail.ugcSeason?.title ?? _videoDetail.title ?? '',
           cover: _videoDetail.ugcSeason?.cover ?? _videoDetail.pic,
           author: _videoDetail.owner?.name,
+          duration: _videoDetail.duration,
         ),
         fav: !isFav,
         onChanged: (value) {
