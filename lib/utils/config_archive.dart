@@ -97,7 +97,6 @@ abstract final class ConfigArchive {
   static Future<String?> import(
     Uint8List bytes, {
     required Future<bool> Function(String warning) onWarning,
-    bool mergeBlacklist = false,
   }) async {
     if (bytes.length > _maxTotalBytes) {
       throw UnsupportedError('数据包过大');
@@ -152,10 +151,7 @@ abstract final class ConfigArchive {
 
     await apply(settingFileName, _importSettings);
     await apply(accountFileName, Accounts.importJsonAccount);
-    await apply<List<dynamic>>(
-      blacklistFileName,
-      (data) => _importBlacklist(data, merge: mergeBlacklist),
-    );
+    await apply<List<dynamic>>(blacklistFileName, _importBlacklist);
     await apply(localFileName, _importLocal);
     await apply(replyFileName, _importReply);
     await apply(searchFileName, _importSearch);
@@ -275,23 +271,13 @@ abstract final class ConfigArchive {
     await GStorage.importAllJsonSettings(data);
   }
 
-  static void _importBlacklist(List<dynamic> list, {bool merge = false}) {
+  /// 合并导入黑名单：保留本机已有条目，只补充备份中多出的项
+  static void _importBlacklist(List<dynamic> list) {
     // 兼容旧数据：数组项仅含 UID；新数据还包含昵称字符串
     final mids = list.whereType<int>();
     final names = list.whereType<String>();
-    if (merge) {
-      // 合并导入：保留现有条目，只补充备份中多出的项
-      Pref.blackMids = GlobalData().blackMids..addAll(mids);
-      LocalBlacklist.setNames([...LocalBlacklist.names, ...names]);
-      return;
-    }
-    // 就地覆盖，保持已有引用
-    final set = GlobalData().blackMids
-      ..clear()
-      ..addAll(mids);
-    Pref.blackMids = set;
-    Pref.blackNames = names.toList();
-    LocalBlacklist.reload();
+    Pref.blackMids = GlobalData().blackMids..addAll(mids);
+    LocalBlacklist.setNames([...LocalBlacklist.names, ...names]);
   }
 
   static void _importReply(List<dynamic> list) {

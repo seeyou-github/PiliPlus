@@ -85,7 +85,6 @@ class WebDavController extends GetxController {
         final message = await ConfigArchive.import(
           bytes,
           onWarning: _confirmWarning,
-          mergeBlacklist: true,
         );
         if (message == null) return;
         // 恢复出的数据以备份文件的修改时间为基准，避免覆盖云端较新的记录
@@ -109,9 +108,9 @@ class WebDavController extends GetxController {
           builder: (context) => AlertDialog(
             title: const Text('恢复设置'),
             content: Text(
-              '将用「$name」中的设置、账号信息、评论、搜索记录、自定义字体覆盖当前数据；'
-              '本地关注、本地收藏、黑名单为合并导入'
-              '（同名/重复项以备份为准，不删除现有条目）。此操作不可撤销。',
+              '将用「$name」中的设置、账号信息、评论、搜索记录、自定义字体更新当前数据；'
+              '其中本地关注、本地收藏、黑名单、标题/分区/评论/动态关键词过滤为合并导入'
+              '（不会删除现有条目，本地关注/收藏的同名项以备份为准）。此操作不可撤销。',
             ),
             actions: [
               TextButton(

@@ -8,6 +8,7 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account_adapter.dart';
 import 'package:PiliPlus/utils/accounts/account_type_adapter.dart';
 import 'package:PiliPlus/utils/accounts/cookie_jar_adapter.dart';
+import 'package:PiliPlus/utils/filter_settings_merge.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/set_int_adapter.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -116,8 +117,13 @@ abstract final class GStorage {
   static Future<List<void>> importAllJsonSettings(
     Map<String, dynamic> map,
   ) {
+    final settingData = map[setting.name];
+    // 屏蔽过滤设置（标题/分区/评论/动态关键词）按并集合并，避免覆盖本机已有内容
+    final mergedSetting = settingData is Map
+        ? FilterSettingsMerge.mergeSettings(settingData, setting.toMap())
+        : settingData;
     return Future.wait([
-      setting.clear().then((_) => setting.putAll(map[setting.name])),
+      setting.clear().then((_) => setting.putAll(mergedSetting)),
       video.clear().then((_) => video.putAll(map[video.name])),
     ]);
   }
