@@ -30,7 +30,7 @@ class WebDavController extends GetxController {
     if (busy) return;
     backingUp.value = true;
     try {
-      final bytes = ConfigArchive.exportLocalBytes();
+      final bytes = ConfigArchive.exportAllBytes();
       await WebDav().uploadBackup(bytes, WebDav.buildBackupFileName());
       SmartDialog.showToast('备份成功');
     } catch (e) {
@@ -77,6 +77,7 @@ class WebDavController extends GetxController {
       final message = await ConfigArchive.import(
         bytes,
         onWarning: _confirmWarning,
+        mergeBlacklist: true,
       );
       if (message == null) return;
       SmartDialog.showToast(message.isEmpty ? '恢复成功' : '恢复成功，但$message');
@@ -96,8 +97,9 @@ class WebDavController extends GetxController {
           builder: (context) => AlertDialog(
             title: const Text('恢复设置'),
             content: Text(
-              '将用「$name」中的本地关注、本地收藏合并到当前数据（同名项以备份为准）；'
-              '黑名单将以备份为准整体覆盖。此操作不可撤销。',
+              '将用「$name」中的设置、账号信息、评论、搜索记录、自定义字体覆盖当前数据；'
+              '本地关注、本地收藏、黑名单为合并导入'
+              '（同名/重复项以备份为准，不删除现有条目）。此操作不可撤销。',
             ),
             actions: [
               TextButton(

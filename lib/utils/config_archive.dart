@@ -85,24 +85,10 @@ abstract final class ConfigArchive {
     return;
   }
 
-  /// WebDAV 备份：只打包本地关注 / 收藏与黑名单
-  static void exportLocal(OutputStream stream) {
-    ZipEncoder()
-      ..startEncode(stream)
-      ..add(ArchiveFile.string(blacklistFileName, _exportBlacklist()))
-      ..add(ArchiveFile.string(localFileName, _exportLocal()))
-      ..add(
-        ArchiveFile.string(
-          metaFileName,
-          _buildMeta([blacklistFileName, localFileName]),
-        ),
-      )
-      ..endEncode();
-  }
-
-  static Uint8List exportLocalBytes() {
+  /// WebDAV 备份：与「导入/导出所有数据」内容一致
+  static Uint8List exportAllBytes() {
     final out = OutputMemoryStream();
-    exportLocal(out);
+    export(out);
     final bytes = out.getBytes();
     out.closeSync();
     return bytes;
@@ -111,6 +97,7 @@ abstract final class ConfigArchive {
   static Future<String?> import(
     Uint8List bytes, {
     required Future<bool> Function(String warning) onWarning,
+    bool mergeBlacklist = false,
   }) async {
     if (bytes.length > _maxTotalBytes) {
       throw UnsupportedError('数据包过大');
@@ -165,7 +152,10 @@ abstract final class ConfigArchive {
 
     await apply(settingFileName, _importSettings);
     await apply(accountFileName, Accounts.importJsonAccount);
-    await apply(blacklistFileName, _importBlacklist);
+    await apply<List<dynamic>>(
+      blacklistFileName,
+      (data) => _importBlacklist(data, merge: mergeBlacklist),
+    );
     await apply(localFileName, _importLocal);
     await apply(replyFileName, _importReply);
     await apply(searchFileName, _importSearch);
@@ -252,7 +242,7 @@ abstract final class ConfigArchive {
     return jsonEncode(list ?? const <String>[]);
   }
 
-  static String _buildMeta([List<String>? files]) => jsonEncode({
+  static String _buildMeta() => jsonEncode({
     'type': _type,
     'formatVersion': const VersionCode.fromMajorMinor(
       _majorVersion,
@@ -265,17 +255,15 @@ abstract final class ConfigArchive {
     'buildTime': BuildConfig.buildTime,
     'platform': DeviceUtils.platformName,
     'exportTime': DateTime.now().toIso8601String(),
-    'files':
-        files ??
-        [
-          settingFileName,
-          accountFileName,
-          blacklistFileName,
-          localFileName,
-          if (GStorage.reply != null) replyFileName,
-          searchFileName,
-          if (FontUtils.fontFile.existsSync()) fontFileName,
-        ],
+    'files': [
+      settingFileName,
+      accountFileName,
+      blacklistFileName,
+      localFileName,
+      if (GStorage.reply != null) replyFileName,
+      searchFileName,
+      if (FontUtils.fontFile.existsSync()) fontFileName,
+    ],
   });
 
   static Future<void> _importSettings(Map<String, dynamic> data) async {
@@ -287,14 +275,22 @@ abstract final class ConfigArchive {
     await GStorage.importAllJsonSettings(data);
   }
 
-  static void _importBlacklist(List<dynamic> list) {
-    // 就地覆盖，保持已有引用
+  static void _importBlacklist(List<dynamic> list, {bool merge = false}) {
     // 兼容旧数据：数组项仅含 UID；新数据还包含昵称字符串
+    final mids = list.whereType<int>();
+    final names = list.whereType<String>();
+    if (merge) {
+      // 合并导入：保留现有条目，只补充备份中多出的项
+      Pref.blackMids = GlobalData().blackMids..addAll(mids);
+      LocalBlacklist.setNames([...LocalBlacklist.names, ...names]);
+      return;
+    }
+    // 就地覆盖，保持已有引用
     final set = GlobalData().blackMids
       ..clear()
-      ..addAll(list.whereType<int>());
+      ..addAll(mids);
     Pref.blackMids = set;
-    Pref.blackNames = list.whereType<String>().toList();
+    Pref.blackNames = names.toList();
     LocalBlacklist.reload();
   }
 

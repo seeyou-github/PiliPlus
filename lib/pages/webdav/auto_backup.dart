@@ -63,7 +63,7 @@ abstract final class WebDavAutoBackup {
     if (_paused || !_enabled || _running) return;
     _running = true;
     try {
-      final bytes = ConfigArchive.exportLocalBytes();
+      final bytes = ConfigArchive.exportAllBytes();
       await WebDav().uploadBackup(bytes, WebDav.autoBackupFileName);
     } catch (e) {
       debugPrint('[WebDavAutoBackup] 自动备份失败: $e');

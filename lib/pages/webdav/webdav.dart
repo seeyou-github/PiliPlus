@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:typed_data';
 
 import 'package:PiliPlus/common/constants.dart';
@@ -102,8 +103,19 @@ class WebDav {
   /// 手动备份的文件名前缀
   static const backupNamePrefix = 'PiliPlus_backup_';
 
+  /// 当前平台的备份文件名前缀，用于隔离各平台的备份
+  static String get platformPrefix {
+    if (Platform.isWindows) return 'Windows_';
+    if (Platform.isAndroid) return 'Android_';
+    if (Platform.isIOS) return 'iOS_';
+    if (Platform.isMacOS) return 'macOS_';
+    if (Platform.isLinux) return 'Linux_';
+    return '';
+  }
+
   /// 自动备份的固定文件名（每次覆盖）
-  static const autoBackupFileName = 'AutoBackup_Piliplus.zip';
+  static String get autoBackupFileName =>
+      '${platformPrefix}AutoBackup_Piliplus.zip';
 
   /// 旧版「路径」设置项，已废弃，仅用于升级迁移
   static const _legacyDirectoryKey = 'webdavDirectory';
@@ -236,6 +248,8 @@ class WebDav {
       final name = item.name ?? '';
       if (name.isEmpty || name == '.' || name == '..') continue;
       if (!name.toLowerCase().endsWith('.zip')) continue;
+      // 只显示当前平台的备份
+      if (!name.startsWith(platformPrefix)) continue;
       list.add(
         WebDavBackupFile(
           name: name,
@@ -288,7 +302,8 @@ class WebDav {
   static String buildBackupFileName([DateTime? now]) {
     final t = now ?? DateTime.now();
     String two(int v) => v.toString().padLeft(2, '0');
-    return '$backupNamePrefix${t.year}.${two(t.month)}.${two(t.day)}-'
+    return '$platformPrefix$backupNamePrefix'
+        '${t.year}.${two(t.month)}.${two(t.day)}-'
         '${two(t.hour)}:${two(t.minute)}:${two(t.second)}.zip';
   }
 }
