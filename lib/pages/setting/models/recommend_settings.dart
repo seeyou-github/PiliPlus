@@ -40,7 +40,7 @@ List<SettingsModel> get recommendSettings => [
     subtitle: '保留上次推荐时，在上次刷新位置显示提示',
     leading: const Icon(Icons.tips_and_updates_outlined),
     setKey: SettingBoxKey.savedRcmdTip,
-    defaultVal: true,
+    defaultVal: false,
     onChanged: (value) {
       try {
         Get.find<RcmdController>()
