@@ -146,6 +146,15 @@ class LocalFeedController extends GetxController
     showRefresh();
   }
 
+  /// 参考主页按钮：离开顶部时回到顶部，已在顶部时刷新投稿与直播状态
+  void backToTopOrRefresh() {
+    if (scrollController.hasClients && scrollController.position.pixels > 0) {
+      animateToTop();
+    } else {
+      showRefresh();
+    }
+  }
+
   /// 点击左侧关注 UP 头像：筛选/取消筛选该 UP 的投稿
   void toggleFilter(int mid) {
     filteredMid.value = filteredMid.value == mid ? null : mid;

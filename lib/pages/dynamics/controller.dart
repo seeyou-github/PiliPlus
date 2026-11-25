@@ -139,7 +139,8 @@ class DynamicsController
   void toTopOrRefresh() {
     final local = _localFeed;
     if (local != null) {
-      local.toTopOrRefresh();
+      // 不走 EasyThrottle，避免与主页共用 topOrRefresh 节流键导致点击被吞
+      local.backToTopOrRefresh();
       return;
     }
     final ctr = controller;
