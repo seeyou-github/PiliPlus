@@ -9,6 +9,7 @@ import 'package:PiliPlus/common/widgets/scale_app.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
+import 'package:PiliPlus/pages/webdav/auto_backup.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -111,6 +112,7 @@ void main() async {
   ScaledWidgetsFlutterBinding.instance.scaleFactor = Pref.uiScale;
   // 预加载本地关注 / 本地收藏，保证「我的」页计数正确
   LocalLibrary.ensureLoaded();
+  WebDavAutoBackup.init();
   await Future.wait([
     _initDownPath(),
     _initTmpPath(),

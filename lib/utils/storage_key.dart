@@ -198,7 +198,7 @@ abstract final class SettingBoxKey {
   static const String webdavUri = 'webdavUri',
       webdavUsername = 'webdavUsername',
       webdavPassword = 'webdavPassword',
-      webdavDirectory = 'webdavDirectory';
+      webdavAutoBackup = 'webdavAutoBackup';
 
   static const String enableSponsorBlock = 'enableSponsorBlock',
       blockSettings = 'blockSettings',

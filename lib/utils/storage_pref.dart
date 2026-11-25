@@ -648,8 +648,8 @@ abstract final class Pref {
   static String get webdavPassword =>
       _setting.get(SettingBoxKey.webdavPassword, defaultValue: '');
 
-  static String get webdavDirectory =>
-      _setting.get(SettingBoxKey.webdavDirectory, defaultValue: '/');
+  static bool get webdavAutoBackup =>
+      _setting.get(SettingBoxKey.webdavAutoBackup, defaultValue: true);
 
   static bool get showPgcTimeline =>
       _setting.get(SettingBoxKey.showPgcTimeline, defaultValue: true);

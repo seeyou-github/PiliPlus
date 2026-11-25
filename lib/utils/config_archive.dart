@@ -85,6 +85,29 @@ abstract final class ConfigArchive {
     return;
   }
 
+  /// WebDAV 备份：只打包本地关注 / 收藏与黑名单
+  static void exportLocal(OutputStream stream) {
+    ZipEncoder()
+      ..startEncode(stream)
+      ..add(ArchiveFile.string(blacklistFileName, _exportBlacklist()))
+      ..add(ArchiveFile.string(localFileName, _exportLocal()))
+      ..add(
+        ArchiveFile.string(
+          metaFileName,
+          _buildMeta([blacklistFileName, localFileName]),
+        ),
+      )
+      ..endEncode();
+  }
+
+  static Uint8List exportLocalBytes() {
+    final out = OutputMemoryStream();
+    exportLocal(out);
+    final bytes = out.getBytes();
+    out.closeSync();
+    return bytes;
+  }
+
   static Future<String?> import(
     Uint8List bytes, {
     required Future<bool> Function(String warning) onWarning,
@@ -229,7 +252,7 @@ abstract final class ConfigArchive {
     return jsonEncode(list ?? const <String>[]);
   }
 
-  static String _buildMeta() => jsonEncode({
+  static String _buildMeta([List<String>? files]) => jsonEncode({
     'type': _type,
     'formatVersion': const VersionCode.fromMajorMinor(
       _majorVersion,
@@ -242,15 +265,17 @@ abstract final class ConfigArchive {
     'buildTime': BuildConfig.buildTime,
     'platform': DeviceUtils.platformName,
     'exportTime': DateTime.now().toIso8601String(),
-    'files': [
-      settingFileName,
-      accountFileName,
-      blacklistFileName,
-      localFileName,
-      if (GStorage.reply != null) replyFileName,
-      searchFileName,
-      if (FontUtils.fontFile.existsSync()) fontFileName,
-    ],
+    'files':
+        files ??
+        [
+          settingFileName,
+          accountFileName,
+          blacklistFileName,
+          localFileName,
+          if (GStorage.reply != null) replyFileName,
+          searchFileName,
+          if (FontUtils.fontFile.existsSync()) fontFileName,
+        ],
   });
 
   static Future<void> _importSettings(Map<String, dynamic> data) async {
