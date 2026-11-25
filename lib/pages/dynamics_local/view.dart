@@ -57,88 +57,107 @@ class _LocalFeedPageState extends State<LocalFeedPage>
   @override
   bool get wantKeepAlive => true;
 
+  /// 距底部还有 600 像素时触发加载，避免在 itemBuilder 里做副作用
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth == 0 &&
+        notification.metrics.axis == Axis.vertical &&
+        notification.metrics.extentAfter < 600) {
+      controller.onLoadMore();
+    }
+    return false;
+  }
+
+  /// 首屏内容不足一屏时也继续加载下一页
+  void _fillViewport() {
+    if (!mounted) return;
+    final scroll = controller.scrollController;
+    if (scroll.hasClients && scroll.position.extentAfter < 600) {
+      controller.onLoadMore();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fillViewport());
     final colorScheme = Theme.of(context).colorScheme;
-    final feed = refreshIndicator(
-      key: controller.refreshKey,
-      onRefresh: controller.onRefresh,
-      child: Obx(() {
-        final dayGroups = controller.feedDays;
-        // 在 Obx 内同步读取 newKeys，列表项的 itemBuilder 在布局阶段执行，
-        // 那时读取不会被追踪，会导致点击播放后「新视频」标签无法及时消失
-        final newKeys = Set<String>.of(controller.newKeys);
-        return CustomScrollView(
-          controller: controller.scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            if (controller.loading.value)
-              SliverPadding(
-                padding: const .all(Style.safeSpace),
-                sliver: gridSkeleton,
-              )
-            else if (dayGroups.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _Empty(
-                  hasFollow: LocalLibrary.follows.isNotEmpty,
-                  filtered: controller.filteredMid.value != null,
-                ),
-              )
-            else ...[
-              for (var i = 0; i < dayGroups.length; i++) ...[
-                SliverToBoxAdapter(
-                  key: ValueKey('h-${dayGroups[i].key}'),
-                  child: _DayHeader(label: dayGroups[i].label),
-                ),
+    final feed = NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      child: refreshIndicator(
+        key: controller.refreshKey,
+        onRefresh: controller.onRefresh,
+        child: Obx(() {
+          final dayGroups = controller.feedDays;
+          // 读取普通快照而不是 newKeys（RxSet）：刷新期间新增标记不会反复触发
+          // 整页重建，标签会在 items 更新后的同一次重建中显示
+          final newKeys = controller.newKeysSnapshot;
+          return CustomScrollView(
+            controller: controller.scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              if (controller.loading.value)
                 SliverPadding(
-                  key: ValueKey('g-${dayGroups[i].key}'),
-                  padding: const .fromLTRB(
-                    Style.safeSpace,
-                    0,
-                    Style.safeSpace,
-                    Style.cardSpace,
+                  padding: const .all(Style.safeSpace),
+                  sliver: gridSkeleton,
+                )
+              else if (dayGroups.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _Empty(
+                    hasFollow: LocalLibrary.follows.isNotEmpty,
+                    filtered: controller.filteredMid.value != null,
                   ),
-                  sliver: SliverGrid.builder(
-                    gridDelegate: gridDelegate,
-                    itemCount: dayGroups[i].items.length,
-                    itemBuilder: (context, index) {
-                      if (i == dayGroups.length - 1 &&
-                          index == dayGroups[i].items.length - 1) {
-                        controller.onLoadMore();
-                      }
-                      final item = dayGroups[i].items[index];
-                      return VideoCardVCompact(
-                        videoItem: item,
-                        isNew: newKeys.contains(LocalFeedCache.keyOf(item)),
-                        onTap: () {
-                          controller.markNewRead(item);
-                          pushVideoH(item);
-                        },
-                      );
-                    },
+                )
+              else ...[
+                for (var i = 0; i < dayGroups.length; i++) ...[
+                  SliverToBoxAdapter(
+                    key: ValueKey('h-${dayGroups[i].key}'),
+                    child: _DayHeader(label: dayGroups[i].label),
                   ),
-                ),
-              ],
-              if (!controller.isEnd.value)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: .symmetric(vertical: 12),
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                  SliverPadding(
+                    key: ValueKey('g-${dayGroups[i].key}'),
+                    padding: const .fromLTRB(
+                      Style.safeSpace,
+                      0,
+                      Style.safeSpace,
+                      Style.cardSpace,
+                    ),
+                    sliver: SliverGrid.builder(
+                      gridDelegate: gridDelegate,
+                      itemCount: dayGroups[i].items.length,
+                      itemBuilder: (context, index) {
+                        final item = dayGroups[i].items[index];
+                        return VideoCardVCompact(
+                          videoItem: item,
+                          isNew: newKeys.contains(LocalFeedCache.keyOf(item)),
+                          onTap: () {
+                            controller.markNewRead(item);
+                            pushVideoH(item);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+                if (!controller.isEnd.value)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: .symmetric(vertical: 12),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              const SliverPadding(padding: .only(bottom: 100)),
+                const SliverPadding(padding: .only(bottom: 100)),
+              ],
             ],
-          ],
-        );
-      }),
+          );
+        }),
+      ),
     );
 
     final body = Row(

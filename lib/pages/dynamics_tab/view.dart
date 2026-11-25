@@ -46,23 +46,46 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
     return controller.onRefresh();
   }
 
+  /// 距底部还有 600 像素时触发加载，避免在 itemBuilder 里做副作用
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth == 0 &&
+        notification.metrics.axis == Axis.vertical &&
+        notification.metrics.extentAfter < 600) {
+      controller.onLoadMore();
+    }
+    return false;
+  }
+
+  /// 首屏内容不足一屏时也继续加载下一页
+  void _fillViewport() {
+    if (!mounted) return;
+    final scroll = controller.scrollController;
+    if (scroll.hasClients && scroll.position.extentAfter < 600) {
+      controller.onLoadMore();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fillViewport());
     return refreshIndicator(
       key: controller.refreshKey,
       onRefresh: onRefresh,
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        controller: controller.scrollController,
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 100),
-            sliver: buildPage(
-              Obx(() => _buildBody(controller.loadingState.value)),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: controller.scrollController,
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.only(bottom: 100),
+              sliver: buildPage(
+                Obx(() => _buildBody(controller.loadingState.value)),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -95,9 +118,6 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
   }
 
   Widget _itemBuilder(List<DynamicItemModel> list, int index) {
-    if (index == list.length - 1) {
-      controller.onLoadMore();
-    }
     final item = list[index];
     return DynamicPanel(
       item: item,

@@ -43,27 +43,31 @@ class LocalUpRail extends StatelessWidget {
           return b.addTime.compareTo(a.addTime);
         });
 
+      // 用 builder 懒加载头像，避免关注很多时一次性创建全部 tile
+      final entries = <Widget>[
+        if (liveFollows.isNotEmpty) ...[
+          _RailLabel('直播', color: theme.colorScheme.error),
+          for (final item in liveFollows)
+            _LiveTile(item: item, room: rooms[item.mid]!),
+          const SizedBox(height: 12),
+        ],
+        _RailLabel('关注', color: theme.colorScheme.outline),
+        for (final item in normalFollows)
+          _UpTile(
+            item: item,
+            count: updates[item.mid] ?? 0,
+            selected: selected == item.mid,
+            onTap: () => controller.toggleFilter(item.mid),
+          ),
+      ];
+
       return Column(
         children: [
           Expanded(
-            child: ListView(
+            child: ListView.builder(
               padding: const .only(bottom: 8),
-              children: [
-                if (liveFollows.isNotEmpty) ...[
-                  _RailLabel('直播', color: theme.colorScheme.error),
-                  for (final item in liveFollows)
-                    _LiveTile(item: item, room: rooms[item.mid]!),
-                  const SizedBox(height: 12),
-                ],
-                _RailLabel('关注', color: theme.colorScheme.outline),
-                for (final item in normalFollows)
-                  _UpTile(
-                    item: item,
-                    count: updates[item.mid] ?? 0,
-                    selected: selected == item.mid,
-                    onTap: () => controller.toggleFilter(item.mid),
-                  ),
-              ],
+              itemCount: entries.length,
+              itemBuilder: (context, index) => entries[index],
             ),
           ),
           Divider(

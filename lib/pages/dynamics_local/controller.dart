@@ -61,6 +61,9 @@ class LocalFeedController extends GetxController
   /// 本次运行期间新增的投稿 key（点击播放即移除，退出应用自动清空）
   final newKeys = <String>{}.obs;
 
+  /// 给动态流读取的普通快照：避免刷新时每条新视频都触发整页 Obx 重建
+  final Set<String> newKeysSnapshot = {};
+
   /// 本次运行期间有新增投稿的 UP（关注分组置顶用，不随已读移除）
   final updatedMids = <int>{}.obs;
 
@@ -178,7 +181,12 @@ class LocalFeedController extends GetxController
 
   /// 播放后清除该条目的「新视频」标签
   void markNewRead(VListItemModel item) {
-    newKeys.remove(LocalFeedCache.keyOf(item));
+    final key = LocalFeedCache.keyOf(item);
+    newKeys.remove(key);
+    if (newKeysSnapshot.remove(key)) {
+      // 普通快照不通知 Obx，这里手动刷新一次列表以移除标签
+      items.refresh();
+    }
   }
 
   /// 是否展示该投稿（与当前关注/筛选无关的通用过滤）
@@ -206,6 +214,48 @@ class LocalFeedController extends GetxController
       return _visible(item);
     }).toList()..sort((a, b) => (b.pubdate ?? 0).compareTo(a.pubdate ?? 0));
     items.assignAll(list);
+  }
+
+  /// 翻页时只过滤并合并新投稿，避免每次都对全量缓存重新过滤 / 排序
+  void _appendItems(
+    List<VListItemModel> fresh,
+    List<LocalFollowItem> follows,
+  ) {
+    if (fresh.isEmpty) return;
+    final mids = {for (final e in follows) e.mid};
+    final selected = filteredMid.value;
+    final existing = {for (final e in items) LocalFeedCache.keyOf(e)};
+    final incoming = <VListItemModel>[];
+    for (final item in fresh) {
+      final mid = item.owner.mid;
+      if (mid == null || !mids.contains(mid)) continue;
+      if (selected != null && mid != selected) continue;
+      if (!_visible(item)) continue;
+      final key = LocalFeedCache.keyOf(item);
+      if (!existing.add(key)) continue;
+      incoming.add(item);
+    }
+    if (incoming.isEmpty) return;
+    incoming.sort((a, b) => (b.pubdate ?? 0).compareTo(a.pubdate ?? 0));
+
+    // 与现有已排序列表做一次线性归并
+    final merged = <VListItemModel>[];
+    var i = 0;
+    var j = 0;
+    while (i < items.length && j < incoming.length) {
+      if ((items[i].pubdate ?? 0) >= (incoming[j].pubdate ?? 0)) {
+        merged.add(items[i++]);
+      } else {
+        merged.add(incoming[j++]);
+      }
+    }
+    while (i < items.length) {
+      merged.add(items[i++]);
+    }
+    while (j < incoming.length) {
+      merged.add(incoming[j++]);
+    }
+    items.assignAll(merged);
   }
 
   String _dayLabel(int? pubdate) {
@@ -248,6 +298,7 @@ class LocalFeedController extends GetxController
       _map.clear();
       items.clear();
       newKeys.clear();
+      newKeysSnapshot.clear();
       updatedMids.clear();
       liveRooms.clear();
       loading.value = false;
@@ -275,10 +326,12 @@ class LocalFeedController extends GetxController
         isEnd.value = follows.every(
           (e) => LocalFeedCache.cursorOf(e.mid) == -1,
         );
+        _applyItems();
       } else {
-        await _fetchMore(follows);
+        final fresh = await _fetchMore(follows);
+        // 翻页只增量合并新投稿，避免对全量缓存重新过滤 / 排序
+        _appendItems(fresh, follows);
       }
-      _applyItems();
       unawaited(LocalFeedCache.flush());
     } finally {
       loading.value = false;
@@ -293,10 +346,15 @@ class LocalFeedController extends GetxController
   /// 刷新：每个 UP 从最新一页开始，翻到与旧内容重叠为止
   Future<void> _fetchLatest(List<LocalFollowItem> follows) async {
     final cutoff = LocalFeedCache.cutoffOf(_cacheDays);
+    // 批量收集新视频标记，避免每新增一条都触发一次整页重建
+    final newKeysBatch = <String>{};
+    final updatedMidsBatch = <int>{};
     for (var i = 0; i < follows.length; i += _batchSize) {
       final chunk = follows.skip(i).take(_batchSize).toList();
       final results = await Future.wait(
-        chunk.map((e) => _fetchUpLatest(e.mid)),
+        chunk.map(
+          (e) => _fetchUpLatest(e.mid, newKeysBatch, updatedMidsBatch),
+        ),
       );
       for (final list in results) {
         // 超过保留窗口的投稿不展示也不落盘
@@ -310,10 +368,28 @@ class LocalFeedController extends GetxController
           _map[LocalFeedCache.keyOf(item)] = item;
         }
       }
+      _flushNewItems(newKeysBatch, updatedMidsBatch);
     }
   }
 
-  Future<List<VListItemModel>> _fetchUpLatest(int mid) async {
+  /// 一批 UP 抓取完成后一次性提交通知，减少动态页整页重建次数
+  void _flushNewItems(Set<String> newKeysBatch, Set<int> updatedMidsBatch) {
+    if (newKeysBatch.isNotEmpty) {
+      newKeysSnapshot.addAll(newKeysBatch);
+      newKeys.addAll(newKeysBatch);
+      newKeysBatch.clear();
+    }
+    if (updatedMidsBatch.isNotEmpty) {
+      updatedMids.addAll(updatedMidsBatch);
+      updatedMidsBatch.clear();
+    }
+  }
+
+  Future<List<VListItemModel>> _fetchUpLatest(
+    int mid,
+    Set<String> newKeysBatch,
+    Set<int> updatedMidsBatch,
+  ) async {
     final oldBaseline = LocalFeedCache.baselineOf(mid);
     final fetched = <VListItemModel>[];
     int? aid;
@@ -353,8 +429,8 @@ class LocalFeedController extends GetxController
     if (oldBaseline != null) {
       for (final item in fetched) {
         if ((item.pubdate ?? 0) > oldBaseline) {
-          newKeys.add(LocalFeedCache.keyOf(item));
-          updatedMids.add(mid);
+          newKeysBatch.add(LocalFeedCache.keyOf(item));
+          updatedMidsBatch.add(mid);
         }
       }
     }
@@ -374,16 +450,17 @@ class LocalFeedController extends GetxController
   }
 
   /// 触底：每个 UP 按持久化游标继续取下一页，翻到保留窗口外即视为到底
-  Future<void> _fetchMore(List<LocalFollowItem> follows) async {
+  Future<List<VListItemModel>> _fetchMore(List<LocalFollowItem> follows) async {
     final targets = follows
         .where((e) => LocalFeedCache.cursorOf(e.mid) != -1)
         .toList();
     if (targets.isEmpty) {
       isEnd.value = true;
-      return;
+      return const [];
     }
 
     final cutoff = LocalFeedCache.cutoffOf(_cacheDays);
+    final fetched = <VListItemModel>[];
     var anyNext = false;
     for (var i = 0; i < targets.length; i += _batchSize) {
       final chunk = targets.skip(i).take(_batchSize).toList();
@@ -406,6 +483,7 @@ class LocalFeedController extends GetxController
           ];
           if (fresh.isNotEmpty) {
             LocalFeedCache.merge(fresh);
+            fetched.addAll(fresh);
             for (final item in fresh) {
               _map[LocalFeedCache.keyOf(item)] = item;
             }
@@ -425,6 +503,7 @@ class LocalFeedController extends GetxController
       }
     }
     isEnd.value = !anyNext;
+    return fetched;
   }
 
   /// 下拉刷新 / 进入页面刷新
