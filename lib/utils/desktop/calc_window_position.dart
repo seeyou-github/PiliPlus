@@ -39,20 +39,7 @@ Offset calcWindowPosition(Size windowSize) {
   final double visibleStartX = workArea.left;
   final double visibleStartY = workArea.top;
 
-  final windowPosition = Pref.windowPosition;
-  if (windowPosition != null) {
-    try {
-      final dx = windowPosition[0];
-      final dy = windowPosition[1];
-      if (dx >= visibleStartX &&
-          dy >= visibleStartY &&
-          dx < (visibleWidth - 30) &&
-          dy < (visibleHeight - 30)) {
-        return Offset(dx, dy);
-      }
-    } catch (_) {}
-  }
-
+  // 窗口位置不再持久化：每次启动都按光标所在显示器居中
   return Offset(
     visibleStartX + (visibleWidth / 2) - (windowSize.width / 2),
     visibleStartY + ((visibleHeight / 2) - (windowSize.height / 2)),

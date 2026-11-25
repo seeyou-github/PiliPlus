@@ -23,6 +23,11 @@ class WindowController {
 
   final _setting = GStorage.setting;
   bool _isMaximized = false;
+
+  /// 最小化 / 全屏时系统也会触发尺寸变化，这些状态不写入窗口大小
+  bool _isMinimized = false;
+  bool _isFullScreen = false;
+
   set windowMaximizedPref(bool value) {
     _setting.put(SettingBoxKey.isWindowMaximized, value);
   }
@@ -50,18 +55,23 @@ class WindowController {
       case WindowFocusedEvent():
         // https://github.com/leanflutter/window_manager/issues/571
         _setOpacityOnWindows(1.0);
+        // 兜底：能获得焦点说明窗口已不处于最小化状态
+        _isMinimized = false;
         break;
       case WindowBlurredEvent():
         break;
       case WindowMinimizedEvent():
+        _isMinimized = true;
         break;
       case WindowMaximizedEvent():
         windowMaximizedPref = _isMaximized = true;
+        _isMinimized = false;
         break;
       case WindowRestoredEvent():
         if (_isMaximized) {
           windowMaximizedPref = _isMaximized = false;
         }
+        _isMinimized = false;
         break;
       case WindowMovedEvent():
         _moveTimer?.cancel();
@@ -76,8 +86,10 @@ class WindowController {
       case WindowClosedEvent():
         break;
       case WindowEnteredFullScreenEvent():
+        _isFullScreen = true;
         break;
       case WindowExitedFullScreenEvent():
+        _isFullScreen = false;
         break;
       case WindowCloseRequestedEvent():
         event.request.cancel();
@@ -101,11 +113,9 @@ class WindowController {
   void onWindowMoved() {
     final window = _window;
     if (window == null) return;
-    if (PlPlayerController.instance?.updatePipBounds(window) ?? false) {
-      return;
-    }
-    final position = window.position;
-    _setting.put(SettingBoxKey.windowPosition, [position.x, position.y]);
+    // 只同步画中画窗口的位置，不把窗口位置写进配置
+    // （拖动窗口属于高频操作，落盘会不断触发设置变更与自动备份）
+    PlPlayerController.instance?.updatePipBounds(window);
   }
 
   void onWindowResized() {
@@ -114,11 +124,13 @@ class WindowController {
     if (PlPlayerController.instance?.updatePipBounds(window) ?? false) {
       return;
     }
+    // 最大化 / 最小化 / 全屏由系统改变尺寸，不记录；
+    // 只有用户手动拖动边框调整大小才写入
+    if (_isMaximized || _isMinimized || _isFullScreen || window.isMaximized) {
+      return;
+    }
     final bounds = window.bounds;
-    _setting.putAll({
-      SettingBoxKey.windowSize: [bounds.width, bounds.height],
-      SettingBoxKey.windowPosition: [bounds.x, bounds.y],
-    });
+    _setting.put(SettingBoxKey.windowSize, [bounds.width, bounds.height]);
   }
 
   void _playIfNeeded() {

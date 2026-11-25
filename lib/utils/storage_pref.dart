@@ -1036,9 +1036,6 @@ abstract final class Pref {
     return size == null ? const Size(1180.0, 720.0) : Size(size[0], size[1]);
   }
 
-  static List<double>? get windowPosition =>
-      (_setting.get(SettingBoxKey.windowPosition) as List?)?.fromCast<double>();
-
   static bool get isWindowMaximized =>
       _setting.get(SettingBoxKey.isWindowMaximized, defaultValue: false);
 
