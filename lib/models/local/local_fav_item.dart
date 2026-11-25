@@ -6,7 +6,7 @@ enum LocalFavType implements EnumWithLabel {
   pgc('番剧'),
   article('专栏'),
   topic('话题'),
-  season('合辑'),
+  season('合集'),
   favFolder('播放列表'),
   audio('音频');
 
