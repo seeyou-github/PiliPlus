@@ -1,12 +1,15 @@
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
+import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart'
+    show pushVideoH;
 import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart'
     show NavigationBarType;
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/pages/dynamics_local/widgets/local_up_rail.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/utils/local_feed_cache.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -23,7 +26,7 @@ class LocalFeedPage extends StatefulWidget {
 
 class _LocalFeedPageState extends State<LocalFeedPage>
     with AutomaticKeepAliveClientMixin, VideoCardVCompactGridMixin {
-  final controller = Get.put(LocalFeedController());
+  final controller = Get.putOrFind(LocalFeedController.new);
 
   Worker? _tabWorker;
 
@@ -60,8 +63,9 @@ class _LocalFeedPageState extends State<LocalFeedPage>
     final feed = refreshIndicator(
       key: controller.refreshKey,
       onRefresh: controller.onRefresh,
-      child: Obx(
-        () => CustomScrollView(
+      child: Obx(() {
+        final dayGroups = controller.feedDays;
+        return CustomScrollView(
           controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -70,32 +74,49 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                 padding: const .all(Style.safeSpace),
                 sliver: gridSkeleton,
               )
-            else if (controller.items.isEmpty)
+            else if (dayGroups.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: _Empty(hasFollow: LocalLibrary.follows.isNotEmpty),
+                child: _Empty(
+                  hasFollow: LocalLibrary.follows.isNotEmpty,
+                  filtered: controller.filteredMid.value != null,
+                ),
               )
             else ...[
-              SliverPadding(
-                padding: const .fromLTRB(
-                  Style.safeSpace,
-                  Style.cardSpace,
-                  Style.safeSpace,
-                  Style.cardSpace,
+              for (var i = 0; i < dayGroups.length; i++) ...[
+                SliverToBoxAdapter(
+                  child: _DayHeader(label: dayGroups[i].label),
                 ),
-                sliver: SliverGrid.builder(
-                  gridDelegate: gridDelegate,
-                  itemBuilder: (context, index) {
-                    if (index == controller.items.length - 1) {
-                      controller.onLoadMore();
-                    }
-                    return VideoCardVCompact(
-                      videoItem: controller.items[index],
-                    );
-                  },
-                  itemCount: controller.items.length,
+                SliverPadding(
+                  padding: const .fromLTRB(
+                    Style.safeSpace,
+                    0,
+                    Style.safeSpace,
+                    Style.cardSpace,
+                  ),
+                  sliver: SliverGrid.builder(
+                    gridDelegate: gridDelegate,
+                    itemCount: dayGroups[i].items.length,
+                    itemBuilder: (context, index) {
+                      if (i == dayGroups.length - 1 &&
+                          index == dayGroups[i].items.length - 1) {
+                        controller.onLoadMore();
+                      }
+                      final item = dayGroups[i].items[index];
+                      return VideoCardVCompact(
+                        videoItem: item,
+                        isNew: controller.newKeys.contains(
+                          LocalFeedCache.keyOf(item),
+                        ),
+                        onTap: () {
+                          controller.markNewRead(item);
+                          pushVideoH(item);
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
+              ],
               if (!controller.isEnd.value)
                 const SliverToBoxAdapter(
                   child: Padding(
@@ -112,8 +133,8 @@ class _LocalFeedPageState extends State<LocalFeedPage>
               const SliverPadding(padding: .only(bottom: 100)),
             ],
           ],
-        ),
-      ),
+        );
+      }),
     );
 
     final body = Row(
@@ -150,10 +171,44 @@ class _LocalFeedPageState extends State<LocalFeedPage>
   }
 }
 
+class _DayHeader extends StatelessWidget {
+  final String label;
+
+  const _DayHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const .fromLTRB(Style.safeSpace, 12, Style.safeSpace, 6),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Divider(
+              height: 1,
+              color: colorScheme.outline.withValues(alpha: 0.12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Empty extends StatelessWidget {
   final bool hasFollow;
+  final bool filtered;
 
-  const _Empty({required this.hasFollow});
+  const _Empty({required this.hasFollow, required this.filtered});
 
   @override
   Widget build(BuildContext context) {
@@ -171,11 +226,13 @@ class _Empty extends StatelessWidget {
               color: theme.colorScheme.outline,
             ),
             Text(
-              hasFollow ? '关注的 UP 暂无投稿' : '还没有本地关注',
+              hasFollow ? (filtered ? '该 UP 暂无投稿' : '关注的 UP 暂无投稿') : '还没有本地关注',
               style: TextStyle(color: theme.colorScheme.outline),
             ),
             Text(
-              hasFollow ? '下拉可刷新' : '未登录时在播放页或 UP 主页点击「关注」，这里会汇总他们最新的投稿',
+              hasFollow
+                  ? (filtered ? '再次点击头像可取消筛选' : '下拉可刷新')
+                  : '未登录时在播放页或 UP 主页点击「关注」，这里会汇总他们最新的投稿',
               textAlign: .center,
               style: TextStyle(fontSize: 12, color: theme.colorScheme.outline),
             ),

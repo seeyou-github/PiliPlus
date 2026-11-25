@@ -7,6 +7,7 @@ import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/up_panel.dart';
 import 'package:PiliPlus/pages/dynamics_create/view.dart';
+import 'package:PiliPlus/pages/dynamics_local/view.dart';
 import 'package:PiliPlus/pages/dynamics_tab/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
@@ -122,6 +123,16 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
   Widget _buildScaffold(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
 
+    // 未登录走本地关注模式：隐藏顶部 TabBar 整行，直接展示本地投稿流
+    if (!_dynamicsController.accountService.isLogin.value) {
+      return Scaffold(
+        primary: false,
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Colors.transparent,
+        body: onBuild(const LocalFeedPage()),
+      );
+    }
+
     Widget? drawer;
     Widget? endDrawer;
 
@@ -135,45 +146,39 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
           .toList(),
     );
 
-    // 未登录走本地关注模式，此时没有关注 UP 面板，
-    // 若仍渲染 upPanelPart 会因请求失败而只剩一个刷新图标，白占一整列
-    if (_dynamicsController.accountService.isLogin.value) {
-      switch (upPanelPosition) {
-        case .top:
-          child = Column(
-            children: [
-              upPanelPart(colorScheme),
-              Expanded(child: child),
-            ],
-          );
-          actions = _createDynamicBtn(colorScheme);
-        case .leftFixed:
-          child = Row(
-            children: [
-              upPanelPart(colorScheme),
-              Expanded(child: child),
-            ],
-          );
-          actions = _createDynamicBtn(colorScheme);
-        case .rightFixed:
-          child = Row(
-            children: [
-              Expanded(child: child),
-              upPanelPart(colorScheme),
-            ],
-          );
-          actions = _createDynamicBtn(colorScheme);
-        case .leftDrawer:
-          drawer = upPanelPart(colorScheme);
-          actions = _createDynamicBtn(colorScheme);
-          leading = const DrawerButton();
-        case .rightDrawer:
-          endDrawer = upPanelPart(colorScheme);
-          leading = _createDynamicBtn(colorScheme, isRight: false);
-          actions = const EndDrawerButton();
-      }
-    } else {
-      actions = _createDynamicBtn(colorScheme);
+    switch (upPanelPosition) {
+      case .top:
+        child = Column(
+          children: [
+            upPanelPart(colorScheme),
+            Expanded(child: child),
+          ],
+        );
+        actions = _createDynamicBtn(colorScheme);
+      case .leftFixed:
+        child = Row(
+          children: [
+            upPanelPart(colorScheme),
+            Expanded(child: child),
+          ],
+        );
+        actions = _createDynamicBtn(colorScheme);
+      case .rightFixed:
+        child = Row(
+          children: [
+            Expanded(child: child),
+            upPanelPart(colorScheme),
+          ],
+        );
+        actions = _createDynamicBtn(colorScheme);
+      case .leftDrawer:
+        drawer = upPanelPart(colorScheme);
+        actions = _createDynamicBtn(colorScheme);
+        leading = const DrawerButton();
+      case .rightDrawer:
+        endDrawer = upPanelPart(colorScheme);
+        leading = _createDynamicBtn(colorScheme, isRight: false);
+        actions = const EndDrawerButton();
     }
 
     return Scaffold(

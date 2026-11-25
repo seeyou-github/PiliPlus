@@ -29,12 +29,14 @@ class VideoCardVCompact extends StatelessWidget {
   final HorizontalVideoModel videoItem;
   final VoidCallback? onTap;
   final VoidCallback? onRemove;
+  final bool isNew;
 
   const VideoCardVCompact({
     super.key,
     required this.videoItem,
     this.onTap,
     this.onRemove,
+    this.isNew = false,
   });
 
   void onLongPress() => imageSaveDialog(
@@ -78,11 +80,19 @@ class VideoCardVCompact extends StatelessWidget {
                             PBadge(
                               text: badge,
                               top: 6,
-                              right: 6,
+                              left: isNew ? 6 : null,
+                              right: isNew ? null : 6,
                               type: switch (badge) {
                                 '充电专属' => .error,
                                 _ => .primary,
                               },
+                            ),
+                          if (isNew)
+                            const PBadge(
+                              text: '新视频',
+                              top: 6,
+                              right: 6,
+                              type: .error,
                             ),
                           // 播放量：封面内左下角
                           if (videoItem.isLive != true)

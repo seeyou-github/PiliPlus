@@ -22,19 +22,26 @@ abstract final class LocalFeedApi {
       includeCursor: next == null ? true : null,
     );
     return switch (res) {
-      Success(:final response) => Success(
-        LocalFeedArchiveResult(
-          (response.item ?? const <SpaceArchiveItem>[])
-              .map((e) => e.toVListItemModel(mid))
-              .toList(),
-          response.hasNext == false
-              ? null
-              : response.nextCursor ?? response.next,
-        ),
-      ),
+      Success(:final response) => _toResult(response, mid),
       Error(:final errMsg, :final code) => Error(errMsg, code: code),
       Loading() => LoadingState.loading(),
     };
+  }
+
+  static Success<LocalFeedArchiveResult> _toResult(
+    SpaceArchiveData response,
+    int mid,
+  ) {
+    final items = (response.item ?? const <SpaceArchiveItem>[])
+        .map((e) => e.toVListItemModel(mid))
+        .toList();
+    int? next;
+    if (response.hasNext != false) {
+      next = response.nextCursor ?? response.next;
+      // 个别响应缺少 next_cursor 时，用本页最后一条的 aid 兜底
+      if (next == null && items.isNotEmpty) next = items.last.aid;
+    }
+    return Success(LocalFeedArchiveResult(items, next));
   }
 }
 

@@ -5,11 +5,12 @@ import 'package:PiliPlus/models/member/info.dart' show LiveRoom;
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// 本地关注 UP 左侧竖列：直播分类在上，普通 UP 在下。
-/// 刷新后有新投稿的 UP 按更新数置顶，并在头像上显示红底白字数量。
+/// 本地关注 UP 左侧竖列：直播分类在上，关注列表在下，管理按钮固定在底部。
+/// 正在直播的 UP 会同时出现在直播分组与关注分组中。
 class LocalUpRail extends StatelessWidget {
   final LocalFeedController controller;
 
@@ -19,37 +20,54 @@ class LocalUpRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Obx(() {
-      // 关注数变化后即时刷新列表；角标与置顶顺序由两个 RxMap 驱动
+      // 关注数变化后即时刷新列表；角标与置顶顺序由 Rx 状态驱动
       final count = LocalLibrary.followCount.value;
       final follows = LocalLibrary.follows;
       final rooms = controller.liveRooms.value;
-      final updates = controller.updateCounts.value;
+      final updates = controller.updateCounts;
+      final selected = controller.filteredMid.value;
 
       final liveFollows = follows
           .where((e) => rooms.containsKey(e.mid))
           .toList();
-      final normalFollows =
-          follows.where((e) => !rooms.containsKey(e.mid)).toList()
-            ..sort((a, b) {
-              final byUpdate = (updates[b.mid] ?? 0).compareTo(
-                updates[a.mid] ?? 0,
-              );
-              if (byUpdate != 0) return byUpdate;
-              return b.addTime.compareTo(a.addTime);
-            });
+      final normalFollows = follows.toList()
+        ..sort((a, b) {
+          final byUpdate = (updates[b.mid] ?? 0).compareTo(updates[a.mid] ?? 0);
+          if (byUpdate != 0) return byUpdate;
+          return b.addTime.compareTo(a.addTime);
+        });
 
-      return ListView(
-        padding: const .only(bottom: 80),
+      return Column(
         children: [
-          if (liveFollows.isNotEmpty) ...[
-            _RailLabel('直播', color: theme.colorScheme.error),
-            for (final item in liveFollows)
-              _LiveTile(item: item, room: rooms[item.mid]!),
-          ],
-          _RailLabel('关注', color: theme.colorScheme.outline),
-          for (final item in normalFollows)
-            _UpTile(item: item, count: updates[item.mid] ?? 0),
+          Expanded(
+            child: ListView(
+              padding: const .only(bottom: 8),
+              children: [
+                if (liveFollows.isNotEmpty) ...[
+                  _RailLabel('直播', color: theme.colorScheme.error),
+                  for (final item in liveFollows)
+                    _LiveTile(item: item, room: rooms[item.mid]!),
+                  const SizedBox(height: 12),
+                ],
+                _RailLabel('关注', color: theme.colorScheme.outline),
+                for (final item in normalFollows)
+                  _UpTile(
+                    item: item,
+                    count: updates[item.mid] ?? 0,
+                    selected: selected == item.mid,
+                    onTap: () => controller.toggleFilter(item.mid),
+                  ),
+              ],
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: theme.colorScheme.outline.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
           _ManageTile(count: count),
+          SizedBox(height: PlatformUtils.isMobile ? 80 : 12),
         ],
       );
     });
@@ -78,14 +96,21 @@ class _RailLabel extends StatelessWidget {
 class _UpTile extends StatelessWidget {
   final LocalFollowItem item;
   final int count;
+  final bool selected;
+  final VoidCallback onTap;
 
-  const _UpTile({required this.item, required this.count});
+  const _UpTile({
+    required this.item,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => Get.toNamed('/member?mid=${item.mid}'),
+      onTap: onTap,
       child: SizedBox(
         width: 72,
         child: Column(
@@ -100,6 +125,20 @@ class _UpTile extends StatelessWidget {
                   type: ImageType.avatar,
                   src: item.face,
                 ),
+                if (selected)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (count > 0)
                   Positioned(
                     right: -2,
@@ -134,7 +173,10 @@ class _UpTile extends StatelessWidget {
               overflow: .ellipsis,
               style: TextStyle(
                 fontSize: 11,
-                color: theme.colorScheme.onSurface,
+                fontWeight: selected ? FontWeight.w600 : null,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface,
               ),
             ),
           ],
