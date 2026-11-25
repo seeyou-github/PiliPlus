@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/models/local/local_follow_item.dart';
@@ -470,7 +471,7 @@ class _SyncState {
     for (final entry in map.entries) entry.key: entry.value.toJson(),
   };
 
-  List<int> encode() => utf8.encode(_encodeString());
+  Uint8List encode() => utf8.encoder.convert(_encodeString());
 
   Future<void> save() async {
     await GStorage.localCache.put(
