@@ -6,22 +6,16 @@ import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
-import 'package:PiliPlus/common/widgets/dialog/export_import.dart';
-import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/services/logger.dart';
-import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
-import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
-import 'package:PiliPlus/utils/local_feed_cache.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
-import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/update.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -84,7 +78,6 @@ class _AboutPageState extends State<AboutPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const style = TextStyle(fontSize: 15);
     final outline = theme.colorScheme.outline;
     final subTitleStyle = TextStyle(fontSize: 13, color: outline);
     final showAppBar = widget.showAppBar;
@@ -230,71 +223,6 @@ Commit Hash: ${BuildConfig.commitHash}''',
                 '图片及网络缓存 ${cacheSize.value}',
                 style: subTitleStyle,
               ),
-            ),
-          ),
-          ListTile(
-            title: const Text('导入/导出登录信息'),
-            leading: const Icon(Icons.import_export_outlined),
-            onTap: () => showImportExportDialog<Map<String, dynamic>>(
-              context,
-              title: '登录信息',
-              localFileName: () => 'account',
-              onExport: () =>
-                  Utils.jsonEncoder.convert(Accounts.account.toMap()),
-              onImport: Accounts.importJsonAccount,
-            ),
-          ),
-          ListTile(
-            title: const Text('导入/导出设置'),
-            dense: false,
-            leading: const Icon(Icons.import_export_outlined),
-            onTap: () => showImportExportDialog<Map<String, dynamic>>(
-              context,
-              title: '设置',
-              localFileName: () => 'setting_${DeviceUtils.platformName}',
-              onExport: GStorage.exportAllSettings,
-              onImport: GStorage.importAllJsonSettings,
-            ),
-          ),
-          ListTile(
-            title: const Text('导入/导出所有数据'),
-            dense: false,
-            leading: const Icon(Icons.archive_outlined),
-            onTap: () => showDataImportExportDialog(context),
-          ),
-          ListTile(
-            title: const Text('重置所有设置'),
-            leading: const Icon(Icons.settings_backup_restore_outlined),
-            onTap: () => showDialog(
-              context: context,
-              builder: (context) {
-                return SimpleDialog(
-                  clipBehavior: Clip.hardEdge,
-                  title: const Text('是否重置所有设置？'),
-                  children: [
-                    DialogOption(
-                      onPressed: () async {
-                        Get.back();
-                        await Future.wait([
-                          GStorage.setting.clear(),
-                          GStorage.video.clear(),
-                        ]);
-                        SmartDialog.showToast('重置成功');
-                      },
-                      child: const Text('重置可导出的设置', style: style),
-                    ),
-                    DialogOption(
-                      onPressed: () async {
-                        Get.back();
-                        await GStorage.clear();
-                        await LocalFeedCache.clear();
-                        SmartDialog.showToast('重置成功');
-                      },
-                      child: const Text('重置所有数据（含登录信息）', style: style),
-                    ),
-                  ],
-                );
-              },
             ),
           ),
         ],
