@@ -45,8 +45,8 @@ class LocalFeedController extends GetxController
   /// 刷新时单个 UP 最多续抓的页数
   static const _maxRefreshPages = 5;
 
-  /// 缓存保留天数
-  static const _cacheDays = 30;
+  /// 缓存保留天数（最近 1 年）
+  static const _cacheDays = 365;
 
   /// 触底装载的最小间隔，避免列表重建时链式连发
   static const _loadMoreInterval = Duration(seconds: 1);
