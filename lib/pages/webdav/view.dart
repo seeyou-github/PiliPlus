@@ -79,12 +79,8 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
   Future<void> _setAutoBackup(bool value) async {
     setState(() => _autoBackup = value);
     await GStorage.setting.put(SettingBoxKey.webdavAutoBackup, value);
-    if (value) {
-      if (_uriCtr.text.trim().isEmpty) {
-        SmartDialog.showToast('请先填写并保存 WebDAV 地址');
-      } else {
-        WebDavAutoSync.schedule(force: true);
-      }
+    if (value && _uriCtr.text.trim().isEmpty) {
+      SmartDialog.showToast('请先填写并保存 WebDAV 地址');
     }
   }
 
@@ -92,9 +88,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
     setState(() => _autoSync = value);
     await GStorage.setting.put(SettingBoxKey.webdavAutoSync, value);
     if (!value) return;
-    if (!_autoBackup) {
-      SmartDialog.showToast('请先开启自动备份');
-    } else if (_uriCtr.text.trim().isEmpty) {
+    if (_uriCtr.text.trim().isEmpty) {
       SmartDialog.showToast('请先填写并保存 WebDAV 地址');
     } else {
       WebDavAutoSync.schedule(force: true);
@@ -204,7 +198,7 @@ class _WebDavSettingPageState extends State<WebDavSettingPage> {
               SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 title: const Text('自动同步'),
-                subtitle: const Text('自动备份开启后，在设备间同步本地关注 / 收藏 / 黑名单'),
+                subtitle: const Text('在设备间同步本地关注 / 收藏 / 黑名单'),
                 value: _autoSync,
                 onChanged: _setAutoSync,
               ),

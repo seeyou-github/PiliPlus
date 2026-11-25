@@ -66,8 +66,9 @@ abstract final class WebDavAutoSync {
     _timer = Timer(_appStartDelay, _run);
   }
 
-  static bool get _enabled =>
-      Pref.webdavAutoSync && Pref.webdavAutoBackup && WebDav().isConfigured;
+  /// 自动同步只依赖「自动同步」开关与 WebDAV 地址，
+  /// 不要求开启自动备份，避免备份关闭时同步整体失效
+  static bool get _enabled => Pref.webdavAutoSync && WebDav().isConfigured;
 
   /// 恢复备份期间暂停，避免同步与恢复写回互相覆盖
   static void pause() {
