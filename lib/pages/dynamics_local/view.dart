@@ -66,6 +66,9 @@ class _LocalFeedPageState extends State<LocalFeedPage>
       onRefresh: controller.onRefresh,
       child: Obx(() {
         final dayGroups = controller.feedDays;
+        // 在 Obx 内同步读取 newKeys，列表项的 itemBuilder 在布局阶段执行，
+        // 那时读取不会被追踪，会导致点击播放后「新视频」标签无法及时消失
+        final newKeys = Set<String>.of(controller.newKeys);
         return CustomScrollView(
           controller: controller.scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -106,9 +109,7 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                       final item = dayGroups[i].items[index];
                       return VideoCardVCompact(
                         videoItem: item,
-                        isNew: controller.newKeys.contains(
-                          LocalFeedCache.keyOf(item),
-                        ),
+                        isNew: newKeys.contains(LocalFeedCache.keyOf(item)),
                         onTap: () {
                           controller.markNewRead(item);
                           pushVideoH(item);
