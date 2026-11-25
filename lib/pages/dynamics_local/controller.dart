@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/http/loading_state.dart';
@@ -70,6 +72,9 @@ class LocalFeedController extends GetxController
   final Map<String, VListItemModel> _map = {};
   bool _busy = false;
 
+  /// 刷新期间被丢弃的刷新请求，结束当前批量请求后补跑
+  bool _pendingRefresh = false;
+
   /// 离开顶部超过该距离后显示回顶按钮
   static const _backToTopOffset = 400;
 
@@ -77,12 +82,13 @@ class LocalFeedController extends GetxController
 
   List<LocalFollowItem> get follows => LocalLibrary.follows;
 
-  /// 左侧头像角标：本次新增且当前展示中的投稿数
+  /// 左侧头像角标：本次新增的投稿数（不随 UP 筛选变化）
   Map<int, int> get updateCounts {
     if (newKeys.isEmpty) return const <int, int>{};
     final counts = <int, int>{};
-    for (final item in items) {
+    for (final item in _map.values) {
       if (!newKeys.contains(LocalFeedCache.keyOf(item))) continue;
+      if (!_visible(item)) continue;
       final mid = item.owner.mid;
       if (mid == null) continue;
       counts[mid] = (counts[mid] ?? 0) + 1;
@@ -167,6 +173,16 @@ class LocalFeedController extends GetxController
     newKeys.remove(LocalFeedCache.keyOf(item));
   }
 
+  /// 是否展示该投稿（与当前关注/筛选无关的通用过滤）
+  bool _visible(VListItemModel item) {
+    final mid = item.owner.mid;
+    if (mid == null) return false;
+    if (Pref.hideUpowerExclusiveVideo && item.badge == '充电专属') {
+      return false;
+    }
+    return !LocalBlacklist.blocked(mid: mid, name: item.owner.name);
+  }
+
   void _applyItems() {
     final follows = this.follows;
     if (follows.isEmpty) {
@@ -179,13 +195,7 @@ class LocalFeedController extends GetxController
       final mid = item.owner.mid;
       if (mid == null || !mids.contains(mid)) return false;
       if (selected != null && mid != selected) return false;
-      if (Pref.hideUpowerExclusiveVideo && item.badge == '充电专属') {
-        return false;
-      }
-      if (LocalBlacklist.blocked(mid: mid, name: item.owner.name)) {
-        return false;
-      }
-      return true;
+      return _visible(item);
     }).toList()..sort((a, b) => (b.pubdate ?? 0).compareTo(a.pubdate ?? 0));
     items.assignAll(list);
   }
@@ -220,7 +230,11 @@ class LocalFeedController extends GetxController
 
   /// [refresh] 为 true 时回到最新一页重新抓取，并顺带刷新直播状态
   Future<void> queryData({bool refresh = false}) async {
-    if (_busy) return;
+    if (_busy) {
+      // 关注变化等触发的刷新不能丢，等当前批次结束后补跑
+      if (refresh) _pendingRefresh = true;
+      return;
+    }
     final follows = this.follows;
     if (follows.isEmpty) {
       _map.clear();
@@ -261,6 +275,10 @@ class LocalFeedController extends GetxController
     } finally {
       loading.value = false;
       _busy = false;
+      if (_pendingRefresh) {
+        _pendingRefresh = false;
+        unawaited(queryData(refresh: true));
+      }
     }
   }
 
