@@ -115,6 +115,11 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    // 登录状态变化时重新决定是否展示左侧关注 UP 面板
+    return Obx(() => _buildScaffold(context));
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final colorScheme = ColorScheme.of(context);
 
     Widget? drawer;
@@ -130,39 +135,45 @@ class _DynamicsPageState extends CommonPageState<DynamicsPage>
           .toList(),
     );
 
-    switch (upPanelPosition) {
-      case .top:
-        child = Column(
-          children: [
-            upPanelPart(colorScheme),
-            Expanded(child: child),
-          ],
-        );
-        actions = _createDynamicBtn(colorScheme);
-      case .leftFixed:
-        child = Row(
-          children: [
-            upPanelPart(colorScheme),
-            Expanded(child: child),
-          ],
-        );
-        actions = _createDynamicBtn(colorScheme);
-      case .rightFixed:
-        child = Row(
-          children: [
-            Expanded(child: child),
-            upPanelPart(colorScheme),
-          ],
-        );
-        actions = _createDynamicBtn(colorScheme);
-      case .leftDrawer:
-        drawer = upPanelPart(colorScheme);
-        actions = _createDynamicBtn(colorScheme);
-        leading = const DrawerButton();
-      case .rightDrawer:
-        endDrawer = upPanelPart(colorScheme);
-        leading = _createDynamicBtn(colorScheme, isRight: false);
-        actions = const EndDrawerButton();
+    // 未登录走本地关注模式，此时没有关注 UP 面板，
+    // 若仍渲染 upPanelPart 会因请求失败而只剩一个刷新图标，白占一整列
+    if (_dynamicsController.accountService.isLogin.value) {
+      switch (upPanelPosition) {
+        case .top:
+          child = Column(
+            children: [
+              upPanelPart(colorScheme),
+              Expanded(child: child),
+            ],
+          );
+          actions = _createDynamicBtn(colorScheme);
+        case .leftFixed:
+          child = Row(
+            children: [
+              upPanelPart(colorScheme),
+              Expanded(child: child),
+            ],
+          );
+          actions = _createDynamicBtn(colorScheme);
+        case .rightFixed:
+          child = Row(
+            children: [
+              Expanded(child: child),
+              upPanelPart(colorScheme),
+            ],
+          );
+          actions = _createDynamicBtn(colorScheme);
+        case .leftDrawer:
+          drawer = upPanelPart(colorScheme);
+          actions = _createDynamicBtn(colorScheme);
+          leading = const DrawerButton();
+        case .rightDrawer:
+          endDrawer = upPanelPart(colorScheme);
+          leading = _createDynamicBtn(colorScheme, isRight: false);
+          actions = const EndDrawerButton();
+      }
+    } else {
+      actions = _createDynamicBtn(colorScheme);
     }
 
     return Scaffold(

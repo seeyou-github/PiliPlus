@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/models/common/live/live_contribution_rank_type.dart';
 import 'package:PiliPlus/models/common/live/live_search_type.dart';
+import 'package:PiliPlus/models/member/info.dart' show LiveRoom;
 import 'package:PiliPlus/models_new/live/live_area_list/area_item.dart';
 import 'package:PiliPlus/models_new/live/live_area_list/area_list.dart';
 import 'package:PiliPlus/models_new/live/live_config_plugs/data.dart';
@@ -113,6 +114,45 @@ abstract final class LiveHttp {
     } else {
       return Error(res.data['message']);
     }
+  }
+
+  /// 按 uid 批量查询直播状态，返回 mid -> 直播间(仅包含正在直播的 UP)
+  ///
+  /// 该接口为 Web 端公开接口，未登录也可用，且一次可查多个 uid，
+  /// 比逐个请求 UP 主页接口更省流、更稳定。
+  static Future<LoadingState<Map<int, LiveRoom>>> liveStatusByUids(
+    List<int> uids,
+  ) async {
+    final res = await Request().get(
+      Api.liveStatusByUids,
+      queryParameters: {'uids[]': uids},
+    );
+    if (res.data['code'] == 0) {
+      final rooms = <int, LiveRoom>{};
+      final data = res.data['data'];
+      if (data is Map) {
+        for (final entry in data.entries) {
+          final mid = int.tryParse('${entry.key}');
+          final json = entry.value;
+          if (mid == null || json is! Map) continue;
+          if (json['live_status'] != 1) continue;
+          final roomId = switch (json['room_id']) {
+            final int id => id,
+            final other => int.tryParse('$other'),
+          };
+          if (roomId == null) continue;
+          rooms[mid] = LiveRoom(
+            roomStatus: 1,
+            liveStatus: 1,
+            roomId: roomId,
+            title: json['title'],
+            cover: json['cover_from_user'],
+          );
+        }
+      }
+      return Success(rooms);
+    }
+    return Error(res.data['message']);
   }
 
   static Future<LoadingState<RoomInfoH5Data>> liveRoomInfoH5({

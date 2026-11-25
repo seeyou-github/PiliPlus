@@ -1,7 +1,7 @@
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
+import 'package:PiliPlus/http/live.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/local_feed.dart';
-import 'package:PiliPlus/http/member.dart';
 import 'package:PiliPlus/models/local/local_follow_item.dart';
 import 'package:PiliPlus/models/member/info.dart' show LiveRoom;
 import 'package:PiliPlus/models_new/member/search_archive/vlist.dart';
@@ -15,16 +15,16 @@ import 'package:get/get.dart';
 
 /// 本地关注投稿流（未登录时使用）
 ///
-/// 只拉取本地关注 UP 的投稿（`searchArchive`，按发布时间倒序），
+/// 只拉取本地关注 UP 的投稿（App 端投稿接口，按发布时间倒序），
 /// 多 UP 结果合并去重后按 `pubdate` 倒序展示，逻辑参考 PipePipe 的本地 feed：
-/// 逐订阅抓取 → 合并 → 排序 → 缓存。
+/// 逐订阅抓取 → 合并 → 排序。进入页面与下拉时都会重新抓取，并同时刷新直播状态。
 class LocalFeedController extends GetxController
     with ScrollOrRefreshMixin, RefreshImplMixin {
   /// 每批并发请求的 UP 数量
   static const _batchSize = 5;
 
-  /// 缓存有效期
-  static const _cacheTtl = Duration(minutes: 5);
+  /// 单次查询直播状态的最大 uid 数量
+  static const _liveBatchSize = 50;
 
   @override
   final ScrollController scrollController = ScrollController();
@@ -48,9 +48,6 @@ class LocalFeedController extends GetxController
   /// 每个 UP 的下一页游标，App 投稿接口使用 aid 游标而非页码。
   final Map<int, int?> _cursors = {};
 
-  static DateTime? _cacheTime;
-  static List<VListItemModel>? _cache;
-
   Worker? _followWorker;
 
   List<LocalFollowItem> get follows => LocalLibrary.follows;
@@ -60,7 +57,8 @@ class LocalFeedController extends GetxController
     super.onInit();
     // 首次关注后立即拉取投稿，避免动态页停留在「还没有本地关注」
     _followWorker = ever(LocalLibrary.followCount, (_) => onRefresh());
-    queryData(refresh: true);
+    // 进入本地关注模式即刷新一批投稿，同时刷新 UP 的直播状态
+    onRefresh();
   }
 
   @override
@@ -82,19 +80,12 @@ class LocalFeedController extends GetxController
   Future<void> _queryLiveRooms(List<LocalFollowItem> follows) async {
     final rooms = <int, LiveRoom>{};
     try {
-      for (var i = 0; i < follows.length; i += _batchSize) {
-        final chunk = follows.skip(i).take(_batchSize).toList();
-        final results = await Future.wait(
-          chunk.map((e) => MemberHttp.memberInfo(mid: e.mid)),
-        );
-        for (var j = 0; j < results.length; j++) {
-          final res = results[j];
-          if (res case Success(:final response)) {
-            final room = response.liveRoom;
-            if (room?.liveStatus == 1 && room?.roomId != null) {
-              rooms[chunk[j].mid] = room!;
-            }
-          }
+      final mids = follows.map((e) => e.mid).toList();
+      for (var i = 0; i < mids.length; i += _liveBatchSize) {
+        final chunk = mids.skip(i).take(_liveBatchSize).toList();
+        final res = await LiveHttp.liveStatusByUids(chunk);
+        if (res case Success(:final response)) {
+          rooms.addAll(response);
         }
       }
     } catch (_) {}
@@ -126,7 +117,7 @@ class LocalFeedController extends GetxController
     }
   }
 
-  /// [refresh] 为 true 时回到第一页，并优先使用 5 分钟内的缓存
+  /// [refresh] 为 true 时回到第一页重新抓取，并顺带刷新直播状态
   Future<void> queryData({bool refresh = false}) async {
     if (_busy) return;
     final follows = this.follows;
@@ -140,23 +131,12 @@ class LocalFeedController extends GetxController
       return;
     }
 
-    _queryLiveRooms(follows);
-
     if (refresh) {
       isEnd.value = false;
       _busy = true;
       _cursors.clear();
-      if (_cache != null &&
-          _cacheTime != null &&
-          DateTime.now().difference(_cacheTime!) < _cacheTtl) {
-        _map
-          ..clear()
-          ..addEntries(_cache!.map((e) => MapEntry(_keyOf(e), e)));
-        items.assignAll(_cache!);
-        loading.value = false;
-        _busy = false;
-        return;
-      }
+      // 刷新投稿的同时重新查一次直播状态(翻页时不重复查)
+      _queryLiveRooms(follows);
       loading.value = items.isEmpty;
     } else {
       if (isEnd.value) return;
@@ -205,8 +185,6 @@ class LocalFeedController extends GetxController
     items.assignAll(list);
     loading.value = false;
     _busy = false;
-    _cache = list;
-    _cacheTime = DateTime.now();
 
     if (fetched == 0) {
       isEnd.value = true;
@@ -216,10 +194,8 @@ class LocalFeedController extends GetxController
     }
   }
 
-  /// 下拉刷新（忽略缓存）
+  /// 下拉刷新 / 进入页面刷新
   Future<void> onRefresh() {
-    _cache = null;
-    _cacheTime = null;
     return queryData(refresh: true);
   }
 

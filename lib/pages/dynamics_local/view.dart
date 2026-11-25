@@ -2,8 +2,11 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
+import 'package:PiliPlus/models/common/nav_bar_config.dart'
+    show NavigationBarType;
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/pages/dynamics_local/widgets/local_up_rail.dart';
+import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -21,6 +24,31 @@ class LocalFeedPage extends StatefulWidget {
 class _LocalFeedPageState extends State<LocalFeedPage>
     with AutomaticKeepAliveClientMixin, VideoCardVCompactGridMixin {
   final controller = Get.put(LocalFeedController());
+
+  Worker? _tabWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    // 页面会被 keepAlive，从其它 tab 切回动态页时再刷新一次投稿与直播状态
+    if (Get.isRegistered<MainController>()) {
+      final mainController = Get.find<MainController>();
+      final dynIndex = mainController.navigationBars.indexOf(
+        NavigationBarType.dynamics,
+      );
+      if (dynIndex != -1) {
+        _tabWorker = ever<int>(mainController.selectedIndex, (value) {
+          if (value == dynIndex) controller.onRefresh();
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabWorker?.dispose();
+    super.dispose();
+  }
 
   @override
   bool get wantKeepAlive => true;

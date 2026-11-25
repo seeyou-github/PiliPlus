@@ -327,6 +327,11 @@ abstract final class Api {
   static const String liveRoomDmPrefetch =
       '${HttpString.liveBaseUrl}/xlive/web-room/v1/dM/gethistory';
 
+  // 按 uid 批量查询直播状态(未登录可用)
+  // ?uids[]=1&uids[]=2
+  static const String liveStatusByUids =
+      '${HttpString.liveBaseUrl}/room/v1/Room/get_status_info_by_uids';
+
   //直播间弹幕密钥获取接口
   static const String liveRoomDmToken =
       '${HttpString.liveBaseUrl}/xlive/web-room/v1/index/getDanmuInfo';
