@@ -20,6 +20,7 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:get/get.dart';
 
 class ImportResult {
@@ -85,10 +86,42 @@ abstract final class ConfigArchive {
     return;
   }
 
-  /// WebDAV 备份：与「导入/导出所有数据」内容一致
-  static Uint8List exportAllBytes() {
+  /// 同 [export]，但把 zip 压缩放到后台 isolate，避免主线程掉帧
+  ///
+  /// 盒子只能在主 isolate 读取，所以先在这里把各文件的内容整理成字符串，
+  /// 再只把「压缩 + 字体文件读取」交给后台（字体按路径传递，不复制字节）。
+  static Future<Uint8List> exportAllBytesAsync() {
+    final reply = _exportReply();
+    final files = <String, String>{
+      settingFileName: GStorage.exportAllSettings(),
+      accountFileName: _exportAccount(),
+      blacklistFileName: _exportBlacklist(),
+      localFileName: _exportLocal(),
+      searchFileName: _exportSearch(),
+      metaFileName: _buildMeta(),
+      if (reply != null) replyFileName: reply,
+    };
+    return compute(_buildArchive, <String, Object?>{
+      'files': files,
+      'fontPath': FontUtils.fontFile.existsSync()
+          ? FontUtils.fontFile.path
+          : null,
+    });
+  }
+
+  /// 在后台 isolate 里组装 zip（不访问 Hive / GetX）
+  static Uint8List _buildArchive(Map<String, Object?> payload) {
+    final files = (payload['files'] as Map).cast<String, String>();
+    final fontPath = payload['fontPath'] as String?;
     final out = OutputMemoryStream();
-    export(out);
+    final zip = ZipEncoder()..startEncode(out);
+    for (final entry in files.entries) {
+      zip.add(ArchiveFile.string(entry.key, entry.value));
+    }
+    if (fontPath != null) {
+      zip.add(ArchiveFile.stream(fontFileName, InputFileStream(fontPath)));
+    }
+    zip.endEncode();
     final bytes = out.getBytes();
     out.closeSync();
     return bytes;

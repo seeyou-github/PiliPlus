@@ -82,7 +82,7 @@ abstract final class WebDavAutoBackup {
         WebDavTaskCenter.begin(task);
         // 排队期间可能进入恢复备份流程，拿到锁后再确认一次
         if (_paused || !_enabled) return false;
-        final bytes = ConfigArchive.exportAllBytes();
+        final bytes = await ConfigArchive.exportAllBytesAsync();
         await WebDav().uploadBackup(bytes, WebDav.autoBackupFileName);
         return true;
       });

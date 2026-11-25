@@ -373,10 +373,10 @@ List<SettingsModel> get playSettings => [
   ),
   const SwitchModel(
     title: '观看人数',
-    subtitle: '展示同时在看人数',
+    subtitle: '展示同时在看人数（定时刷新，较耗电）',
     leading: Icon(Icons.people_outlined),
     setKey: SettingBoxKey.enableOnlineTotal,
-    defaultVal: true,
+    defaultVal: false,
   ),
   NormalModel(
     title: '默认全屏方向',

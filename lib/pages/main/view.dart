@@ -80,10 +80,8 @@ class _MainAppState extends PopScopeState<MainApp>
   @override
   void didPopNext() {
     addObserverMobile(this);
-    _mainController
-      ..checkUnreadDynamic()
-      ..checkDefaultSearch(true)
-      ..checkUnread(_mainController.useBottomNav);
+    // 从二级页返回属于用户主动操作，立即刷新（如消息页返回要清红点）
+    _refreshBadges(force: true);
     super.didPopNext();
   }
 
@@ -93,13 +91,30 @@ class _MainAppState extends PopScopeState<MainApp>
     super.didPushNext();
   }
 
+  /// 未读 / 搜索建议 / 消息红点都要发请求，频繁切前后台时按最小间隔节流
+  static const _badgeRefreshInterval = Duration(minutes: 1);
+  DateTime? _lastBadgeRefreshAt;
+
+  /// 刷新角标与未读数；[force] 为 true 时忽略最小间隔
+  void _refreshBadges({bool force = false}) {
+    final now = DateTime.now();
+    final last = _lastBadgeRefreshAt;
+    if (!force &&
+        last != null &&
+        now.difference(last) < _badgeRefreshInterval) {
+      return;
+    }
+    _lastBadgeRefreshAt = now;
+    _mainController
+      ..checkUnreadDynamic()
+      ..checkDefaultSearch(true)
+      ..checkUnread(_mainController.useBottomNav);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _mainController
-        ..checkUnreadDynamic()
-        ..checkDefaultSearch(true)
-        ..checkUnread(_mainController.useBottomNav);
+      _refreshBadges();
     }
   }
 
@@ -334,6 +349,20 @@ class _MainAppState extends PopScopeState<MainApp>
     );
   }
 
+  /// 非当前 tab 关闭 Ticker，避免离屏页面的动画（旋转图标、骨架屏等）持续请求帧
+  List<Widget> get _tabPages {
+    final bars = _mainController.navigationBars;
+    return [
+      for (var i = 0; i < bars.length; i++)
+        Obx(
+          () => TickerMode(
+            enabled: i == _mainController.selectedIndex.value,
+            child: bars[i].page,
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget child;
@@ -342,13 +371,13 @@ class _MainAppState extends PopScopeState<MainApp>
         controller: _mainController.controller,
         physics: const NeverScrollableScrollPhysics(),
         scrollDirection: _mainController.useBottomNav ? .horizontal : .vertical,
-        children: _mainController.navigationBars.map((i) => i.page).toList(),
+        children: _tabPages,
       );
     } else {
       child = PageView(
         controller: _mainController.controller,
         physics: const NeverScrollableScrollPhysics(),
-        children: _mainController.navigationBars.map((i) => i.page).toList(),
+        children: _tabPages,
       );
     }
 

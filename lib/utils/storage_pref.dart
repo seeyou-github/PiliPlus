@@ -917,8 +917,9 @@ abstract final class Pref {
   static bool get enableAi =>
       _setting.get(SettingBoxKey.enableAi, defaultValue: false);
 
+  /// 「同时在看人数」需要 10 秒级轮询，默认关闭以省电
   static bool get enableOnlineTotal =>
-      _setting.get(SettingBoxKey.enableOnlineTotal, defaultValue: true);
+      _setting.get(SettingBoxKey.enableOnlineTotal, defaultValue: false);
 
   static bool get autoEnterFullScreen =>
       _setting.get(SettingBoxKey.enableAutoEnter, defaultValue: false);

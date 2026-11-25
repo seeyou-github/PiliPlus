@@ -38,7 +38,7 @@ class WebDavController extends GetxController {
       // 与自动备份 / 同步串行，避免同时访问远端
       await WebDavTaskLock.run(() async {
         WebDavTaskCenter.begin(task);
-        final bytes = ConfigArchive.exportAllBytes();
+        final bytes = await ConfigArchive.exportAllBytesAsync();
         await WebDav().uploadBackup(bytes, WebDav.buildBackupFileName());
       });
       SmartDialog.showToast('备份成功');
