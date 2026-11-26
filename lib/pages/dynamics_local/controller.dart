@@ -173,9 +173,22 @@ class LocalFeedController extends GetxController
   }
 
   void _onScroll() {
-    final show = scrollController.position.pixels > _backToTopOffset;
+    final pixels = scrollController.position.pixels;
+    final show = pixels > _backToTopOffset;
     if (show != showBackToTop.value) showBackToTop.value = show;
+    // 回到顶部时把浏览期间推迟的条目一次性放出：此时插入不会造成位移
+    if (pixels <= 0 && _hasDeferredItems && !_busy) {
+      _hasDeferredItems = false;
+      _applyItems();
+    }
   }
+
+  /// 视口是否已滚动离开顶部（此时不允许在已有内容上方插入条目，否则会位移）
+  bool get _scrolledIntoList =>
+      scrollController.hasClients && scrollController.position.pixels > 0;
+
+  /// 滚动浏览期间被推迟的「上方插入」条目，回到顶部后再放出
+  bool _hasDeferredItems = false;
 
   @override
   void onClose() {
@@ -259,6 +272,11 @@ class LocalFeedController extends GetxController
     final mids = {for (final e in follows) e.mid};
     final selected = filteredMid.value;
     final current = items.toList();
+    // 已经滚离顶部时只允许「末尾追加」：把条目录入到已有内容上方会让整段内容
+    // 下移，表现为页面自己往上跳（触底加载时较早的分组被补入新行尤其明显）
+    final tailPubdate = _scrolledIntoList && current.isNotEmpty
+        ? (current.last.pubdate ?? 0)
+        : null;
     final indexOf = <String, int>{
       for (var i = 0; i < current.length; i++)
         LocalFeedCache.keyOf(current[i]): i,
@@ -270,6 +288,11 @@ class LocalFeedController extends GetxController
       if (mid == null || !mids.contains(mid)) continue;
       if (selected != null && mid != selected) continue;
       if (!_visible(item)) continue;
+      if (tailPubdate != null && (item.pubdate ?? 0) > tailPubdate) {
+        // 先不显示，等回到顶部再统一放出（避免浏览中列表整体位移）
+        _hasDeferredItems = true;
+        continue;
+      }
       final key = LocalFeedCache.keyOf(item);
       final at = indexOf[key];
       if (at != null) {
@@ -504,9 +527,11 @@ class LocalFeedController extends GetxController
     if (next == null) {
       // 该 UP 的投稿已全部取完
       LocalFeedCache.setCursor(mid, -1);
-    } else if (!reachedBaseline) {
+    } else if (!reachedBaseline || LocalFeedCache.cursorOf(mid) == null) {
       // 没追平缓存（首次抓取 / 命中续抓页数上限 / 中途失败）：
-      // 游标必须停在已抓取区间的末尾，否则中间这段投稿永远取不到
+      // 游标必须停在已抓取区间的末尾，否则中间这段投稿永远取不到。
+      // 已追平但还没有游标（旧数据 / 上次全都失败）时也补写一次，
+      // 否则触底翻页会一直跳过这个 UP。
       LocalFeedCache.setCursor(mid, next);
     }
     // 已追平缓存时保持原游标（含 -1），下次刷新不会重复回扫历史
@@ -515,9 +540,13 @@ class LocalFeedController extends GetxController
 
   /// 触底：每个 UP 按持久化游标继续取下一页，翻到保留窗口外即视为到底
   Future<List<VListItemModel>> _fetchMore(List<LocalFollowItem> follows) async {
-    final targets = follows
-        .where((e) => LocalFeedCache.cursorOf(e.mid) != -1)
-        .toList();
+    // 游标为 null 表示还没建立续页位置：`next: null` 请求拿到的是「最新一页」，
+    // 在触底时抓最新一页只会把新内容插到列表上方，同时白跑请求。
+    // 这类 UP 交给刷新（_fetchUpLatest）去建立游标。
+    final targets = follows.where((e) {
+      final cursor = LocalFeedCache.cursorOf(e.mid);
+      return cursor != null && cursor != -1;
+    }).toList();
     if (targets.isEmpty) {
       isEnd.value = true;
       return const [];
@@ -589,6 +618,9 @@ class LocalFeedController extends GetxController
   }
 
   /// 按天桶放出更早的本地缓存（每次一桶）
+  ///
+  /// 只做末尾方向的增量合并，不重排整张列表：重新过滤 + 排序会把其它来源的
+  /// 条目录入上方，导致正在浏览的视口整体下移。
   void _releaseOlderCache() {
     if (!LocalFeedCache.hasPending) return;
     final older = LocalFeedCache.loadNextBucket();
@@ -596,7 +628,7 @@ class LocalFeedController extends GetxController
     for (final item in older) {
       _map[LocalFeedCache.keyOf(item)] = item;
     }
-    _applyItems();
+    _appendItems(older, follows);
   }
 
   /// 切回动态页时调用：数据还新就只刷新直播状态，避免每次切 tab 都全量请求
