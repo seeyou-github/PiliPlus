@@ -85,6 +85,14 @@ List<SettingsModel> get styleSettings => [
     needReboot: true,
   ),
   const SwitchModel(
+    title: '隐藏底栏文字',
+    subtitle: '底栏只显示图标，MD3 底栏会同时降低高度',
+    leading: Icon(Icons.label_off_outlined),
+    setKey: SettingBoxKey.hideBottomBarLabel,
+    defaultVal: true,
+    needReboot: true,
+  ),
+  const SwitchModel(
     title: '隐藏侧边栏文字',
     subtitle: '仅显示图标，减少侧边栏占用宽度',
     leading: Icon(Icons.label_off_outlined),

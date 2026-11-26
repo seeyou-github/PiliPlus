@@ -33,6 +33,12 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends PopScopeState<MainApp>
     with RouteAware, RouteAwareMixin, WidgetsBindingObserver {
+  /// 隐藏底栏文字后的 MD3 底栏高度（默认 80，含文字行）
+  static const _md3NoLabelHeight = 64.0;
+
+  /// 隐藏底栏文字后的图标尺寸：底栏高度固定 56，图标用 Material 标准尺寸 24
+  static const _noLabelIconSize = 24.0;
+
   final _mainController = Get.put(MainController());
   late EdgeInsets _padding;
   late ColorScheme _colorScheme;
@@ -168,9 +174,12 @@ class _MainAppState extends PopScopeState<MainApp>
   Widget? get _bottomNav {
     Widget? bottomNav;
     if (_mainController.navigationBars.length > 1) {
+      // 隐藏文字后：MD3 底栏降低高度，普通底栏放大图标填满底栏
+      final hideLabel = _mainController.hideBottomBarLabel;
       if (_mainController.floatingNavBar) {
         bottomNav = Obx(
           () => FloatingNavigationBar(
+            labelBehavior: hideLabel ? .alwaysHide : null,
             onDestinationSelected: _mainController.setIndex,
             selectedIndex: _mainController.selectedIndex.value,
             destinations: _mainController.navigationBars
@@ -188,6 +197,8 @@ class _MainAppState extends PopScopeState<MainApp>
         bottomNav = Obx(
           () => NavigationBar(
             maintainBottomViewPadding: true,
+            height: hideLabel ? _md3NoLabelHeight : null,
+            labelBehavior: hideLabel ? .alwaysHide : null,
             onDestinationSelected: _mainController.setIndex,
             selectedIndex: _mainController.selectedIndex.value,
             destinations: _mainController.navigationBars
@@ -206,7 +217,10 @@ class _MainAppState extends PopScopeState<MainApp>
           () => BottomNavigationBar(
             currentIndex: _mainController.selectedIndex.value,
             onTap: _mainController.setIndex,
-            iconSize: 16,
+            // 没有文字时把图标放大，避免底栏只剩一片空白
+            iconSize: hideLabel ? _noLabelIconSize : 16,
+            showSelectedLabels: !hideLabel,
+            showUnselectedLabels: !hideLabel,
             selectedFontSize: 12,
             unselectedFontSize: 12,
             type: .fixed,

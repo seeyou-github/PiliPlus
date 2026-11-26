@@ -61,6 +61,7 @@ class MainController extends GetxController
   final floatingNavBar = Pref.floatingNavBar;
   final useSideBar = Pref.useSideBar;
   final hideSideBarLabel = Pref.hideSideBarLabel;
+  final hideBottomBarLabel = Pref.hideBottomBarLabel;
   final mainTabBarView = Pref.mainTabBarView;
   late final optTabletNav = Pref.optTabletNav;
 
