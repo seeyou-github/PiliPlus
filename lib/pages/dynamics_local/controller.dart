@@ -339,10 +339,17 @@ class LocalFeedController extends GetxController
     final day = LocalFeedCache.dayOf(pubdate);
     if (day == null) return '更早';
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final diff = today.difference(day).inDays;
-    if (diff == 0) return '今天';
+    // 用 UTC 零点做差，避免夏令时导致天数少算一天
+    final diff = DateTime.utc(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime.utc(day.year, day.month, day.day)).inDays;
+    if (diff <= 0) return '今天';
     if (diff == 1) return '昨天';
+    // 两天前 … 七天前
+    if (diff <= 7) return '$diff天前';
+    // 八天前开始显示日期
     if (day.year == now.year) return '${day.month}月${day.day}日';
     return '${day.year}年${day.month}月${day.day}日';
   }
