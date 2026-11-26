@@ -31,12 +31,16 @@ class VideoCardVCompact extends StatelessWidget {
   final VoidCallback? onRemove;
   final bool isNew;
 
+  /// 右上角展示的时间文案（如投稿时间），为空则不显示
+  final String? timeText;
+
   const VideoCardVCompact({
     super.key,
     required this.videoItem,
     this.onTap,
     this.onRemove,
     this.isNew = false,
+    this.timeText,
   });
 
   void onLongPress() => imageSaveDialog(
@@ -80,14 +84,37 @@ class VideoCardVCompact extends StatelessWidget {
                             PBadge(
                               text: badge,
                               top: 6,
-                              left: isNew ? 6 : null,
-                              right: isNew ? null : 6,
+                              // 右上角被时间文案 / 新视频占用时挪到左上角
+                              left: (isNew || timeText != null) ? 6 : null,
+                              right: (isNew || timeText != null) ? null : 6,
                               type: switch (badge) {
                                 '充电专属' => .error,
                                 _ => .primary,
                               },
                             ),
-                          if (isNew)
+                          if (timeText != null)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Column(
+                                crossAxisAlignment: .end,
+                                spacing: 4,
+                                children: [
+                                  PBadge(
+                                    text: timeText,
+                                    type: .gray,
+                                    isStack: false,
+                                  ),
+                                  if (isNew)
+                                    const PBadge(
+                                      text: '新视频',
+                                      type: .error,
+                                      isStack: false,
+                                    ),
+                                ],
+                              ),
+                            )
+                          else if (isNew)
                             const PBadge(
                               text: '新视频',
                               top: 6,

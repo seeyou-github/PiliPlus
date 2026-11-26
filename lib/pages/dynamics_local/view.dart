@@ -6,6 +6,8 @@ import 'package:PiliPlus/common/widgets/video_card/video_card_h.dart'
 import 'package:PiliPlus/common/widgets/video_card/video_card_v_compact.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart'
     show NavigationBarType;
+import 'package:PiliPlus/models_new/member/search_archive/vlist.dart'
+    show VListItemModel;
 import 'package:PiliPlus/pages/common/near_bottom_load_more_mixin.dart';
 import 'package:PiliPlus/pages/dynamics_local/controller.dart';
 import 'package:PiliPlus/pages/dynamics_local/widgets/local_up_rail.dart';
@@ -70,6 +72,29 @@ class _LocalFeedPageState extends State<LocalFeedPage>
   @override
   bool get wantKeepAlive => true;
 
+  Widget _buildCard(VListItemModel item, Set<String> newKeys) =>
+      VideoCardVCompact(
+        videoItem: item,
+        isNew: newKeys.contains(LocalFeedCache.keyOf(item)),
+        timeText: _pubdateText(item.pubdate),
+        onTap: () {
+          controller.markNewRead(item);
+          pushVideoH(item);
+        },
+      );
+
+  /// 投稿时间：月-日 时:分:秒；跨年时带上年份
+  static String? _pubdateText(int? pubdate) {
+    if (pubdate == null || pubdate <= 0) return null;
+    final date = DateTime.fromMillisecondsSinceEpoch(pubdate * 1000);
+    String two(int n) => n.toString().padLeft(2, '0');
+    final md = '${two(date.month)}-${two(date.day)}';
+    final time = '${two(date.hour)}:${two(date.minute)}:${two(date.second)}';
+    return date.year == DateTime.now().year
+        ? '$md $time'
+        : '${date.year}-$md $time';
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -87,6 +112,9 @@ class _LocalFeedPageState extends State<LocalFeedPage>
           // 读取普通快照而不是 newKeys（RxSet）：刷新期间新增标记不会反复触发
           // 整页重建，标签会在 items 更新后的同一次重建中显示
           final newKeys = controller.newKeysSnapshot;
+          // 桌面端筛选单个 UP 时不再按天分组，卡片铺满整个页面
+          final filtering =
+              PlatformUtils.isDesktop && controller.filteredMid.value != null;
           return CustomScrollView(
             controller: controller.scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -105,35 +133,43 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                   ),
                 )
               else ...[
-                for (var i = 0; i < dayGroups.length; i++) ...[
-                  SliverToBoxAdapter(
-                    key: ValueKey('h-${dayGroups[i].key}'),
-                    child: _DayHeader(label: dayGroups[i].label),
-                  ),
+                if (filtering) ...[
                   SliverPadding(
-                    key: ValueKey('g-${dayGroups[i].key}'),
                     padding: const .fromLTRB(
                       Style.safeSpace,
-                      0,
+                      Style.safeSpace,
                       Style.safeSpace,
                       Style.cardSpace,
                     ),
                     sliver: SliverGrid.builder(
                       gridDelegate: gridDelegate,
-                      itemCount: dayGroups[i].items.length,
-                      itemBuilder: (context, index) {
-                        final item = dayGroups[i].items[index];
-                        return VideoCardVCompact(
-                          videoItem: item,
-                          isNew: newKeys.contains(LocalFeedCache.keyOf(item)),
-                          onTap: () {
-                            controller.markNewRead(item);
-                            pushVideoH(item);
-                          },
-                        );
-                      },
+                      itemCount: controller.items.length,
+                      itemBuilder: (context, index) =>
+                          _buildCard(controller.items[index], newKeys),
                     ),
                   ),
+                ] else ...[
+                  for (var i = 0; i < dayGroups.length; i++) ...[
+                    SliverToBoxAdapter(
+                      key: ValueKey('h-${dayGroups[i].key}'),
+                      child: _DayHeader(label: dayGroups[i].label),
+                    ),
+                    SliverPadding(
+                      key: ValueKey('g-${dayGroups[i].key}'),
+                      padding: const .fromLTRB(
+                        Style.safeSpace,
+                        0,
+                        Style.safeSpace,
+                        Style.cardSpace,
+                      ),
+                      sliver: SliverGrid.builder(
+                        gridDelegate: gridDelegate,
+                        itemCount: dayGroups[i].items.length,
+                        itemBuilder: (context, index) =>
+                            _buildCard(dayGroups[i].items[index], newKeys),
+                      ),
+                    ),
+                  ],
                 ],
                 // 只在真正翻页时显示加载图标，避免「还有更多」时图标一直转
                 Obx(
