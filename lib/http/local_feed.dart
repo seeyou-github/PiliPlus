@@ -68,6 +68,11 @@ extension _SpaceArchiveItemExt on SpaceArchiveItem {
       'author': owner.name,
       'is_lesson_video': isPugv == true ? 1 : 0,
     });
+    // 该接口是 App 端的，通常只返回 duration（秒）而没有 length 字符串，
+    // 而 VListItemModel 只从 length 解析时长，这里用 duration 兜底
+    if (item.duration <= 0 && duration > 0) {
+      item.duration = duration;
+    }
     if (isUpowerExclusive) {
       item.badge = '充电专属';
     } else if (isCooperation == true) {
