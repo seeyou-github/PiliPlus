@@ -170,6 +170,14 @@ List<SettingsModel> get styleSettings => [
     onChanged: (value) => PendantAvatar.showDecorate = value,
   ),
   SwitchModel(
+    title: '评论区不网络加载头像',
+    subtitle: '改用用户名首字符，减少头像请求',
+    leading: const Icon(Icons.image_not_supported_outlined),
+    setKey: SettingBoxKey.noReplyAvatar,
+    defaultVal: true,
+    onChanged: (value) => PendantAvatar.noNetworkAvatar = value,
+  ),
+  SwitchModel(
     title: '点击表情显示 Tooltip',
     leading: const Icon(Icons.emoji_emotions_outlined),
     setKey: SettingBoxKey.enableEmoteTooltip,

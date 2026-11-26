@@ -104,6 +104,7 @@ abstract final class SettingBoxKey {
       mainTabBarView = 'mainTabBarView',
       searchSuggestion = 'searchSuggestion',
       showDecorate = 'showDynDecorate',
+      noReplyAvatar = 'noReplyAvatar',
       showMedal = 'showMedal',
       enableLivePhoto = 'enableLivePhoto',
       showSeekPreview = 'showSeekPreview',

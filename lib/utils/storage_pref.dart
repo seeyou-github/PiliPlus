@@ -524,6 +524,10 @@ abstract final class Pref {
   static bool get showDecorate =>
       _setting.get(SettingBoxKey.showDecorate, defaultValue: false);
 
+  /// 评论区是否用「用户名首字符」代替网络头像
+  static bool get noReplyAvatar =>
+      _setting.get(SettingBoxKey.noReplyAvatar, defaultValue: true);
+
   static bool get showMedal =>
       _setting.get(SettingBoxKey.showMedal, defaultValue: false);
 

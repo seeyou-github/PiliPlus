@@ -554,6 +554,8 @@ class ReplyItemGrpc extends StatelessWidget {
         member.face,
         size: 34,
         badgeSize: 14,
+        // 开启「评论区不网络加载头像」时用用户名首字符代替头像
+        letterName: member.name,
         vipStatus: member.vipStatus.toInt(),
         officialType: member.hasOfficialVerifyType()
             ? member.officialVerifyType.toInt()

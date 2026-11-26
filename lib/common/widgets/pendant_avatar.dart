@@ -1,6 +1,7 @@
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/extra_hittest_stack.dart';
+import 'package:PiliPlus/common/widgets/image/letter_avatar.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/models/common/avatar_badge_type.dart';
 import 'package:PiliPlus/models/common/image_type.dart';
@@ -23,6 +24,7 @@ class PendantAvatar extends StatelessWidget {
     this.liveBottom,
     this.liveFontSize,
     this.onTap,
+    this.letterName,
   }) : preferredSize = size,
        badgeSize = badgeSize ?? size / 3,
        badgeType = officialType == null || officialType < 0
@@ -37,6 +39,9 @@ class PendantAvatar extends StatelessWidget {
 
   static bool showDecorate = Pref.showDecorate;
 
+  /// 评论区是否用「用户名首字符」代替网络头像（外观设置可切换，立即生效）
+  static bool noNetworkAvatar = Pref.noReplyAvatar;
+
   final BadgeType badgeType;
   final String? url;
   final double preferredSize;
@@ -47,6 +52,10 @@ class PendantAvatar extends StatelessWidget {
   final double? liveBottom;
   final double? liveFontSize;
   final VoidCallback? onTap;
+
+  /// 传入用户名时，若开启了 [noNetworkAvatar] 则不再加载网络头像，
+  /// 改用 [LetterAvatar] 显示用户名首字符；为 null 时行为与之前一致
+  final String? letterName;
 
   @override
   Widget build(BuildContext context) {
@@ -70,12 +79,15 @@ class PendantAvatar extends StatelessWidget {
         ),
       );
     }
-    Widget avatar = NetworkImgLayer(
-      src: url,
-      width: size,
-      height: size,
-      type: ImageType.avatar,
-    );
+    final letter = letterName;
+    Widget avatar = letter != null && noNetworkAvatar
+        ? LetterAvatar(name: letter, size: size)
+        : NetworkImgLayer(
+            src: url,
+            width: size,
+            height: size,
+            type: ImageType.avatar,
+          );
     if (onTap != null) {
       avatar = GestureDetector(
         behavior: .opaque,
