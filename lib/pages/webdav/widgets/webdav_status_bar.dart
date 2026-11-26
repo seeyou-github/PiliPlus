@@ -3,9 +3,10 @@ import 'package:material_ui/material_ui.dart';
 
 /// WebDAV 后台任务进行中的底部提示条
 ///
-/// 由 [WebDavTaskCenter] 驱动：同步 / 备份任务开始真正执行时从底部展开并显示
-/// 进度动画，任务结束后收起。提示条挂在 App 根部（占位而非浮层），
-/// 切换页面不会消失，也不会遮住底部导航栏或弹层。
+/// 由 [WebDavTaskCenter] 驱动：同步 / 备份任务开始真正执行时展开并显示进度动画，
+/// 任务结束后收起。提示条挂在主页 `MainLayout` 的 `statusBar` 槽位：
+/// 移动端贴在底栏上方，桌面端从侧栏右侧开始、只占内容区宽度，
+/// 出现时不会把底栏或侧栏顶起来。
 class WebDavStatusBar extends StatelessWidget {
   const WebDavStatusBar({super.key});
 

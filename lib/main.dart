@@ -12,7 +12,6 @@ import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
 import 'package:PiliPlus/pages/webdav/auto_backup.dart';
 import 'package:PiliPlus/pages/webdav/auto_sync.dart';
 import 'package:PiliPlus/pages/webdav/webdav.dart';
-import 'package:PiliPlus/pages/webdav/widgets/webdav_status_bar.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -382,22 +381,15 @@ class MyApp extends StatelessWidget {
         child: child!,
       );
     }
-    // 全局挂载自动同步 / 自动备份的底部进度条，任何页面都能看到；
-    // 用 Column 占位而不是 Stack 叠加，避免遮住底部导航栏 / 迷你播放器 / 弹层
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: child),
-        const WebDavStatusBar(),
-      ],
-    );
+    // WebDAV 同步 / 备份的底部提示条挂在主页的 MainLayout 里（贴在底栏上方、
+    // 桌面端只占侧栏右侧内容区），这里不再包一层 Column 顶起整个 App
     if (PlatformUtils.isDesktop) {
       return BackDetector(
         onBack: _onBack,
-        child: content,
+        child: child!,
       );
     }
-    return content;
+    return child!;
   }
 
   /// from [DynamicColorBuilderState.initPlatformState]

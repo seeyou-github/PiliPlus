@@ -10,6 +10,7 @@ import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/main/widgets/desktop_side_bar.dart';
+import 'package:PiliPlus/pages/webdav/widgets/webdav_status_bar.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/desktop/tray_controller.dart';
@@ -408,10 +409,21 @@ class _MainAppState extends PopScopeState<MainApp>
       padding = .only(top: _padding.top, right: _padding.right);
     }
 
+    // WebDAV 同步 / 备份的底部提示条：贴在底栏上方，桌面端只占侧栏右侧的内容区，
+    // 不再把底栏与侧栏一起顶起；有底栏时系统安全区内边距已由底栏消化
+    final statusBar = bottomNav == null
+        ? const WebDavStatusBar()
+        : MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: const WebDavStatusBar(),
+          );
+
     child = Material(
       child: MainLayout(
         sideBar: sideBar,
         bottomNav: bottomNav,
+        statusBar: IgnorePointer(child: statusBar),
         body: Padding(padding: padding, child: child),
       ),
     );
