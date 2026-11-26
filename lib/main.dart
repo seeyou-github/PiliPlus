@@ -27,6 +27,7 @@ import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/font_utils.dart';
 import 'package:PiliPlus/utils/ios/pip_helper.dart';
 import 'package:PiliPlus/utils/json_file_handler.dart';
+import 'package:PiliPlus/utils/local_history.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/max_screen_size.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
@@ -130,6 +131,8 @@ void main() async {
   ScaledWidgetsFlutterBinding.instance.scaleFactor = Pref.uiScale;
   // 预加载本地关注 / 本地收藏，保证「我的」页计数正确
   LocalLibrary.ensureLoaded();
+  // 预加载本地观看记录，保证未登录时「观看记录」入口计数正确
+  LocalHistory.ensureLoaded();
   // 迁移旧版 WebDAV「地址 + 路径」配置（须在自动备份监听启动前完成）
   await WebDav.migrateLegacyConfig();
   // 历史明文的 WebDAV 地址 / 用户名 / 密码改为加密保存

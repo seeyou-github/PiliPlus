@@ -41,6 +41,7 @@ import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/local_fav_action.dart';
 import 'package:PiliPlus/utils/local_follow_action.dart';
+import 'package:PiliPlus/utils/local_history.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/share_utils.dart';
@@ -140,6 +141,18 @@ class UgcIntroController extends CommonIntroController with ReloadMixin {
       }
       videoDetail.value = response;
       updateIndex(data: response);
+      // 未登录时把观看记录留在本机（独立 box，不写入设置、不参与备份 / 同步 / 导出）
+      if (LocalLibrary.isGuest) {
+        LocalHistory.record(
+          bvid: response.bvid ?? bvid,
+          cid: response.cid ?? cid.value,
+          title: response.title ?? '',
+          cover: response.pic,
+          ownerName: response.owner?.name,
+          ownerMid: response.owner?.mid,
+          duration: response.duration ?? 0,
+        );
+      }
       try {
         if (videoDetailCtr.cover.value.isEmpty ||
             (videoDetailCtr.videoUrl.isNullOrEmpty &&

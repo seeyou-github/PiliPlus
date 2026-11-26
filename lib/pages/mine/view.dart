@@ -23,6 +23,7 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/utils/local_history.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -104,6 +105,14 @@ class _MediaPageState extends CommonPageState<MinePage>
                         .later => Obx(_buildLater),
                         .sub => Obx(_buildSub),
                       },
+                    // 没有勾选「观看记录」时也保留入口：
+                    // 未登录指向本地观看记录，登录后切换为登录模式的观看记录
+                    if (!controller.mineTabs.contains(MineTabType.history))
+                      Obx(
+                        () => controller.isLogin
+                            ? _buildOnlineHistoryEntry()
+                            : _buildLocalHistory(),
+                      ),
                   ],
                 ),
               ),
@@ -537,6 +546,9 @@ class _MediaPageState extends CommonPageState<MinePage>
   }
 
   Widget _buildHistory() {
+    if (!controller.isLogin) {
+      return _buildLocalHistory();
+    }
     return _buildTab(
       .history,
       controller.historyCtr!,
@@ -547,6 +559,98 @@ class _MediaPageState extends CommonPageState<MinePage>
       onPushDetail: () => Get.toNamed(
         '/history',
       )?.whenComplete(() => _autoRefresh(controller.historyCtr!)),
+    );
+  }
+
+  /// 未登录时的本地观看记录入口：记录只保存在本机，不上传、不同步
+  Widget _buildLocalHistory() {
+    final secondary = theme.colorScheme.secondary;
+    return Column(
+      children: [
+        Divider(
+          height: 20,
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+        ListTile(
+          dense: true,
+          onTap: () => Get.toNamed('/localHistory'),
+          title: Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: '观看记录  ',
+                    style: TextStyle(fontSize: 16, fontWeight: .bold),
+                  ),
+                  TextSpan(
+                    text: '${LocalHistory.count.value}  ',
+                    style: TextStyle(color: secondary),
+                  ),
+                  WidgetSpan(
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                      color: secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 30, bottom: 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '未登录 · 记录只保存在本机，不上传、不同步',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.outline,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 已登录时的观看记录入口：指向账号的在线记录，不再使用本地记录
+  Widget _buildOnlineHistoryEntry() {
+    final secondary = theme.colorScheme.secondary;
+    return Column(
+      children: [
+        Divider(
+          height: 20,
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
+        ListTile(
+          dense: true,
+          onTap: () => Get.toNamed('/history'),
+          title: Padding(
+            padding: const EdgeInsets.only(left: 10),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: '观看记录  ',
+                    style: TextStyle(fontSize: 16, fontWeight: .bold),
+                  ),
+                  WidgetSpan(
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                      color: secondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+      ],
     );
   }
 

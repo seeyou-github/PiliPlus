@@ -56,6 +56,8 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
 import 'package:PiliPlus/utils/extension/nested_scroll_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
+import 'package:PiliPlus/utils/local_history.dart';
+import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
@@ -1295,6 +1297,15 @@ class VideoDetailController extends GetxController
 
   @override
   void onClose() {
+    // 未登录时回写本机观看记录的播放进度（要在 cid 关闭前读）
+    if (LocalLibrary.isGuest) {
+      LocalHistory.updateProgress(
+        bvid: bvid,
+        cid: cid.value,
+        // 用 Rx 里维护的进度，避免播放器已释放时再取播放器状态
+        progress: plPlayerController.position.value,
+      );
+    }
     cid.close();
     if (isFileSource) {
       cacheLocalProgress();

@@ -36,6 +36,9 @@ abstract final class GStorage {
   /// 本地关注投稿缓存（未登录时使用）
   static late final Box<dynamic> localFeed;
 
+  /// 本地观看记录（未登录时使用），**不参与备份 / 同步 / 导出**
+  static late final Box<dynamic> localHistory;
+
   static Future<void> init() async {
     Hive.init(path.join(appSupportDirPath, 'hive'));
     regAdapter();
@@ -83,6 +86,12 @@ abstract final class GStorage {
         compactionStrategy: (int entries, int deletedEntries) =>
             deletedEntries > 20,
       ).then((res) => localFeed = res),
+      // 本地观看记录（未登录）：只存本机，不进设置、不参与备份
+      Hive.openBox(
+        'localHistory',
+        compactionStrategy: (int entries, int deletedEntries) =>
+            deletedEntries > 10,
+      ).then((res) => localHistory = res),
       Accounts.init(),
       Hive.openBox<int>(
         'watchProgress',
@@ -180,6 +189,7 @@ abstract final class GStorage {
       localFollow.compact(),
       localFav.compact(),
       localFeed.compact(),
+      localHistory.compact(),
     ]);
   }
 
@@ -196,6 +206,7 @@ abstract final class GStorage {
       localFollow.close(),
       localFav.close(),
       localFeed.close(),
+      localHistory.close(),
     ]);
   }
 
@@ -212,6 +223,7 @@ abstract final class GStorage {
       localFollow.clear(),
       localFav.clear(),
       localFeed.clear(),
+      localHistory.clear(),
     ]);
   }
 
