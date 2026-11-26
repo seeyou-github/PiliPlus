@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
@@ -126,10 +127,20 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget _buildActions(Color primary) {
     return Obx(() {
       final isLogin = controller.accountService.isLogin.value;
+      // 未登录时只保留「离线缓存」，并在原「我的订阅」的位置放「本地收藏」
+      final actions = <({IconData icon, String title, VoidCallback onTap})>[];
+      for (final e in controller.list) {
+        if (isLogin) {
+          actions.add(e);
+        } else if (e.title == '离线缓存') {
+          actions.add(e);
+        } else if (e.title == '我的订阅') {
+          actions.add(_localFavAction);
+        }
+      }
       return Row(
         mainAxisAlignment: .spaceEvenly,
-        children: controller.list
-            .where((e) => isLogin || e.title == '离线缓存')
+        children: actions
             .map(
               (e) => Flexible(
                 child: InkWell(
@@ -160,6 +171,13 @@ class _MediaPageState extends CommonPageState<MinePage>
       );
     });
   }
+
+  /// 未登录时的「本地收藏」入口：与登录态下「我的订阅」同位置、同样式的按钮
+  ({IconData icon, String title, VoidCallback onTap}) get _localFavAction => (
+    icon: CustomIcons.star_favorite_line,
+    title: '本地收藏',
+    onTap: () => Get.toNamed('/localFav'),
+  );
 
   Widget get _buildHeaderActions {
     const iconSize = 22.0;
@@ -475,8 +493,9 @@ class _MediaPageState extends CommonPageState<MinePage>
   );
 
   Widget _buildFav() {
+    // 未登录时本地收藏入口已移到上方功能按钮区（原「我的订阅」位置）
     if (!controller.isLogin) {
-      return _buildLocalFav();
+      return const SizedBox.shrink();
     }
     return _buildTab(
       .favorite,
@@ -488,60 +507,6 @@ class _MediaPageState extends CommonPageState<MinePage>
       onPushDetail: () => Get.toNamed(
         '/fav',
       )?.whenComplete(() => _autoRefresh(controller.favCtr!)),
-    );
-  }
-
-  /// 未登录时的本地收藏入口
-  Widget _buildLocalFav() {
-    final secondary = theme.colorScheme.secondary;
-    return Column(
-      children: [
-        Divider(
-          height: 20,
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-        ),
-        ListTile(
-          dense: true,
-          onTap: () => Get.toNamed('/localFav'),
-          title: Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: '本地收藏  ',
-                    style: TextStyle(fontSize: 16, fontWeight: .bold),
-                  ),
-                  TextSpan(
-                    text: '${LocalLibrary.favCount.value}  ',
-                    style: TextStyle(color: secondary),
-                  ),
-                  WidgetSpan(
-                    child: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 18,
-                      color: secondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 30, bottom: 10),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '未登录 · 收藏会保存在本地',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.outline,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
