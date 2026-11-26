@@ -24,8 +24,6 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
-import 'package:PiliPlus/utils/local_history.dart';
-import 'package:PiliPlus/utils/local_later.dart';
 import 'package:PiliPlus/utils/local_library.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -33,6 +31,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
+
+/// 「我的」页顶部功能按钮
+typedef _MineAction = ({IconData icon, String title, VoidCallback onTap});
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key, this.showBackBtn = false});
@@ -107,20 +108,6 @@ class _MediaPageState extends CommonPageState<MinePage>
                         .later => Obx(_buildLater),
                         .sub => Obx(_buildSub),
                       },
-                    // 没有勾选「观看记录」/「稍后再看」时也保留入口：
-                    // 未登录指向本地数据，登录后切换为登录模式的在线数据
-                    if (!controller.mineTabs.contains(MineTabType.history))
-                      Obx(
-                        () => controller.isLogin
-                            ? _buildOnlineHistoryEntry()
-                            : _buildLocalHistory(),
-                      ),
-                    if (!controller.mineTabs.contains(MineTabType.later))
-                      Obx(
-                        () => controller.isLogin
-                            ? _buildOnlineLaterEntry()
-                            : _buildLocalLater(),
-                      ),
                   ],
                 ),
               ),
@@ -134,16 +121,20 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget _buildActions(Color primary) {
     return Obx(() {
       final isLogin = controller.accountService.isLogin.value;
-      // 未登录时只保留「离线缓存」，并在原「我的订阅」的位置放「本地收藏」
-      final actions = <({IconData icon, String title, VoidCallback onTap})>[];
+      // 未登录时把「观看记录 / 我的订阅 / 稍后再看」换成对应的本地入口，
+      // 位置、图标按钮样式与登录态完全一致
+      final actions = <_MineAction>[];
       for (final e in controller.list) {
-        if (isLogin) {
-          actions.add(e);
-        } else if (e.title == '离线缓存') {
-          actions.add(e);
-        } else if (e.title == '我的订阅') {
-          actions.add(_localFavAction);
-        }
+        actions.add(
+          isLogin
+              ? e
+              : switch (e.title) {
+                  '观看记录' => _localHistoryAction,
+                  '我的订阅' => _localFavAction,
+                  '稍后再看' => _localLaterAction,
+                  _ => e,
+                },
+        );
       }
       return Row(
         mainAxisAlignment: .spaceEvenly,
@@ -179,12 +170,21 @@ class _MediaPageState extends CommonPageState<MinePage>
     });
   }
 
-  /// 未登录时的「本地收藏」入口：与登录态下「我的订阅」同位置、同样式的按钮
-  ({IconData icon, String title, VoidCallback onTap}) get _localFavAction => (
-    icon: CustomIcons.star_favorite_line,
-    title: '本地收藏',
-    onTap: () => Get.toNamed('/localFav'),
-  );
+  /// 未登录时替换登录态按钮的本地入口
+  _MineAction _localAction(IconData icon, String title, String route) =>
+      (icon: icon, title: title, onTap: () => Get.toNamed(route));
+
+  /// 本地收藏：占登录态「我的订阅」的位置
+  _MineAction get _localFavAction =>
+      _localAction(CustomIcons.star_favorite_line, '本地收藏', '/localFav');
+
+  /// 本地观看记录：占登录态「观看记录」的位置
+  _MineAction get _localHistoryAction =>
+      _localAction(CustomIcons.history, '观看记录', '/localHistory');
+
+  /// 本地稍后再看：占登录态「稍后再看」的位置
+  _MineAction get _localLaterAction =>
+      _localAction(CustomIcons.watch_later_outlined, '稍后再看', '/localLater');
 
   Widget get _buildHeaderActions {
     const iconSize = 22.0;
@@ -518,8 +518,9 @@ class _MediaPageState extends CommonPageState<MinePage>
   }
 
   Widget _buildHistory() {
+    // 未登录时「观看记录」入口已移到上方功能按钮区
     if (!controller.isLogin) {
-      return _buildLocalHistory();
+      return const SizedBox.shrink();
     }
     return _buildTab(
       .history,
@@ -534,101 +535,10 @@ class _MediaPageState extends CommonPageState<MinePage>
     );
   }
 
-  /// 区块入口：标题 + 可选条数 + 箭头，可带一行说明
-  ///
-  /// 未登录时指向本地数据（带条数与「只保存在本机」说明），
-  /// 登录后指向账号的在线页面。
-  Widget _buildSectionEntry({
-    required String title,
-    required String route,
-    int? count,
-    String? subtitle,
-  }) {
-    final colorScheme = theme.colorScheme;
-    final secondary = colorScheme.secondary;
-    return Column(
-      children: [
-        Divider(
-          height: 20,
-          color: colorScheme.outline.withValues(alpha: 0.1),
-        ),
-        ListTile(
-          dense: true,
-          onTap: () => Get.toNamed(route),
-          title: Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$title  ',
-                    style: const TextStyle(fontSize: 16, fontWeight: .bold),
-                  ),
-                  if (count != null)
-                    TextSpan(
-                      text: '$count  ',
-                      style: TextStyle(color: secondary),
-                    ),
-                  WidgetSpan(
-                    child: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 18,
-                      color: secondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (subtitle == null)
-          const SizedBox(height: 10)
-        else
-          Padding(
-            padding: const EdgeInsets.only(left: 30, bottom: 10),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: colorScheme.outline,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// 未登录时的本地观看记录入口：记录只保存在本机，不上传、不同步
-  Widget _buildLocalHistory() => _buildSectionEntry(
-    title: '观看记录',
-    route: '/localHistory',
-    count: LocalHistory.count.value,
-    subtitle: '未登录 · 记录只保存在本机，不上传、不同步',
-  );
-
-  /// 已登录时的观看记录入口：指向账号的在线记录，不再使用本地记录
-  Widget _buildOnlineHistoryEntry() =>
-      _buildSectionEntry(title: '观看记录', route: '/history');
-
-  /// 未登录时的本地稍后再看入口：列表只保存在本机，不上传、不同步
-  Widget _buildLocalLater() => _buildSectionEntry(
-    title: '稍后再看',
-    route: '/localLater',
-    count: LocalLater.count.value,
-    subtitle: '未登录 · 列表只保存在本机，不上传、不同步',
-  );
-
-  /// 已登录时的稍后再看入口：指向账号的在线稍后再看
-  Widget _buildOnlineLaterEntry() =>
-      _buildSectionEntry(title: '稍后再看', route: '/later');
-
   Widget _buildLater() {
-    // 未登录时使用本机稍后再看，入口在下方列出
+    // 未登录时「稍后再看」入口已移到上方功能按钮区
     if (!controller.isLogin) {
-      return _buildLocalLater();
+      return const SizedBox.shrink();
     }
     return _buildTab(
       .later,
