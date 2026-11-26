@@ -950,7 +950,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.enableSearchRcmd, defaultValue: true);
 
   static bool get enableSaveLastData =>
-      _setting.get(SettingBoxKey.enableSaveLastData, defaultValue: true);
+      _setting.get(SettingBoxKey.enableSaveLastData, defaultValue: false);
 
   static double get defaultToastOp =>
       _setting.get(SettingBoxKey.defaultToastOp, defaultValue: 1.0);
