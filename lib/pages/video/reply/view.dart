@@ -13,6 +13,7 @@ import 'package:PiliPlus/pages/common/reply/reply_footer_mixin.dart';
 import 'package:PiliPlus/pages/common/reply/vote/reply_vote_item.dart';
 import 'package:PiliPlus/pages/video/reply/controller.dart';
 import 'package:PiliPlus/pages/video/reply/widgets/reply_item_grpc.dart';
+import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -116,29 +117,34 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
               Obx(() => _buildBody(controller.loadingState.value)),
             ],
           ),
-          fab: SlideTransition(
-            position: fabAnimation,
-            child: Padding(
-              padding: .only(
-                right: kFloatingActionButtonMargin,
-                bottom: kFloatingActionButtonMargin + padding.bottom,
+          fab: Obx(() {
+            if (!Get.find<AccountService>().isLogin.value) {
+              return const SizedBox.shrink();
+            }
+            return SlideTransition(
+              position: fabAnimation,
+              child: Padding(
+                padding: .only(
+                  right: kFloatingActionButtonMargin,
+                  bottom: kFloatingActionButtonMargin + padding.bottom,
+                ),
+                child: FloatingActionButton(
+                  heroTag: null,
+                  onPressed: () {
+                    feedBack();
+                    controller.onReply(
+                      null,
+                      oid: controller.videoCtr.aid,
+                      replyType: controller.replyType,
+                      mentionItem: controller.mentionItem,
+                    );
+                  },
+                  tooltip: '发表评论',
+                  child: const Icon(Icons.reply),
+                ),
               ),
-              child: FloatingActionButton(
-                heroTag: null,
-                onPressed: () {
-                  feedBack();
-                  controller.onReply(
-                    null,
-                    oid: controller.videoCtr.aid,
-                    replyType: controller.replyType,
-                    mentionItem: controller.mentionItem,
-                  );
-                },
-                tooltip: '发表评论',
-                child: const Icon(Icons.reply),
-              ),
-            ),
-          ),
+            );
+          }),
         ),
       ),
     );
