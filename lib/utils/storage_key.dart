@@ -180,6 +180,7 @@ abstract final class SettingBoxKey {
   static const String minimizeOnExit = 'minimizeOnExit',
       windowSize = 'windowSize',
       windowPosition = 'windowPosition',
+      // 已不再读写，仅保留用于导入导出时剔除历史字段
       isWindowMaximized = 'isWindowMaximized',
       showWindowTitleBar = 'showWindowTitleBar',
       desktopVolume = 'desktopVolume',

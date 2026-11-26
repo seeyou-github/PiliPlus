@@ -108,8 +108,10 @@ abstract final class GStorage {
 
   static String exportAllSettings() {
     return Utils.jsonEncoder.convert({
-      // 窗口位置不参与导出：它和设备分辨率绑定，换设备后没有意义
-      setting.name: setting.toMap()..remove(SettingBoxKey.windowPosition),
+      // 窗口位置 / 最大化状态不参与导出：和设备绑定，换设备后没有意义
+      setting.name: setting.toMap()
+        ..remove(SettingBoxKey.windowPosition)
+        ..remove(SettingBoxKey.isWindowMaximized),
       video.name: video.toMap(),
     });
   }
@@ -126,8 +128,9 @@ abstract final class GStorage {
         ? FilterSettingsMerge.mergeSettings(settingData, setting.toMap())
         : settingData;
     if (mergedSetting is Map) {
-      // 窗口位置不参与导入：不把其它设备的位置写回本机配置
+      // 窗口位置 / 最大化状态不参与导入：不把其它设备的状态写回本机配置
       mergedSetting.remove(SettingBoxKey.windowPosition);
+      mergedSetting.remove(SettingBoxKey.isWindowMaximized);
       // 旧备份 / 外部导入可能带明文 WebDAV 配置，落盘前统一加密
       _sealWebDavSecrets(mergedSetting);
     }

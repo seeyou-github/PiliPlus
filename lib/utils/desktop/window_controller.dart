@@ -22,15 +22,13 @@ class WindowController {
   double? _opacity;
 
   final _setting = GStorage.setting;
+
+  /// 窗口是否处于最大化：只用于判断「当前尺寸要不要记成 windowSize」，不落盘
   bool _isMaximized = false;
 
   /// 最小化 / 全屏时系统也会触发尺寸变化，这些状态不写入窗口大小
   bool _isMinimized = false;
   bool _isFullScreen = false;
-
-  set windowMaximizedPref(bool value) {
-    _setting.put(SettingBoxKey.isWindowMaximized, value);
-  }
 
   Timer? _moveTimer;
   Timer? _resizeTimer;
@@ -64,13 +62,11 @@ class WindowController {
         _isMinimized = true;
         break;
       case WindowMaximizedEvent():
-        windowMaximizedPref = _isMaximized = true;
+        _isMaximized = true;
         _isMinimized = false;
         break;
       case WindowRestoredEvent():
-        if (_isMaximized) {
-          windowMaximizedPref = _isMaximized = false;
-        }
+        _isMaximized = false;
         _isMinimized = false;
         break;
       case WindowMovedEvent():

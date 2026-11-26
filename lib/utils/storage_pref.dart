@@ -1043,9 +1043,6 @@ abstract final class Pref {
     return size == null ? const Size(1180.0, 720.0) : Size(size[0], size[1]);
   }
 
-  static bool get isWindowMaximized =>
-      _setting.get(SettingBoxKey.isWindowMaximized, defaultValue: false);
-
   static bool get keyboardControl =>
       _setting.get(SettingBoxKey.keyboardControl, defaultValue: true);
 

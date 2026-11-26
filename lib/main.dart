@@ -118,6 +118,10 @@ void main() async {
   await _initAppPath();
   try {
     await GStorage.init();
+    // 历史字段：不再记录窗口最大化状态，清掉旧版本留下的值
+    if (GStorage.setting.containsKey(SettingBoxKey.isWindowMaximized)) {
+      await GStorage.setting.delete(SettingBoxKey.isWindowMaximized);
+    }
   } catch (e) {
     await Utils.copyText(e.toString(), needToast: false);
     if (kDebugMode) debugPrint('GStorage init error: $e');
@@ -244,7 +248,7 @@ void main() async {
         ..title = Constants.appName;
       window.centerOnWorkArea();
       if (useContentUnderTitleBar) window.setContentUnderTitleBar(true);
-      if (Pref.isWindowMaximized) window.maximize();
+      // 不再恢复「上次是否最大化」，重启后按已保存的 windowSize 显示
       void show([_]) => window
         ..focus()
         ..show();
