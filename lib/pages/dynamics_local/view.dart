@@ -191,7 +191,8 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                     ? const SizedBox.shrink()
                     : Padding(
                         padding: const .only(bottom: 12),
-                        child: FloatingActionButton.small(
+                        // 尺寸、配色与下方刷新按钮保持一致
+                        child: FloatingActionButton(
                           heroTag: null,
                           tooltip: '回到顶部',
                           onPressed: controller.animateToTop,
