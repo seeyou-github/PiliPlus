@@ -21,27 +21,26 @@ class LocalUpRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Obx(() {
-      // 关注数变化后即时刷新列表；角标与置顶顺序由 Rx 状态驱动
+      // 关注数变化后即时刷新列表；角标与排序由 Rx 状态驱动
       final count = LocalLibrary.followCount.value;
       final follows = LocalLibrary.follows;
       final rooms = controller.liveRooms.value;
       final updates = controller.updateCounts;
-      final pinned = controller.updatedMids;
+      final latest = controller.latestPubdates;
       final selected = controller.filteredMid.value;
 
-      final liveFollows = follows
-          .where((e) => rooms.containsKey(e.mid))
-          .toList();
-      final normalFollows = follows.toList()
-        ..sort((a, b) {
-          // 有新增投稿的 UP 置顶，其余按未读数量、关注时间排序
-          final byPinned = (pinned.contains(b.mid) ? 1 : 0)
-              .compareTo(pinned.contains(a.mid) ? 1 : 0);
-          if (byPinned != 0) return byPinned;
-          final byUpdate = (updates[b.mid] ?? 0).compareTo(updates[a.mid] ?? 0);
-          if (byUpdate != 0) return byUpdate;
-          return b.addTime.compareTo(a.addTime);
-        });
+      // 按 UP 最近一条投稿的时间倒序：投稿越早越靠下，
+      // 刷新后有新投稿的 UP 会排到前面；都没有投稿时按关注时间兜底
+      int byLatestPubdate(LocalFollowItem a, LocalFollowItem b) {
+        final byLatest = (latest[b.mid] ?? 0).compareTo(latest[a.mid] ?? 0);
+        if (byLatest != 0) return byLatest;
+        return b.addTime.compareTo(a.addTime);
+      }
+
+      final liveFollows =
+          follows.where((e) => rooms.containsKey(e.mid)).toList()
+            ..sort(byLatestPubdate);
+      final normalFollows = follows.toList()..sort(byLatestPubdate);
 
       // 分段索引：直播分组（标题 + 头像 + 间隔）→ 关注标题 → 关注头像
       final liveCount = liveFollows.length;

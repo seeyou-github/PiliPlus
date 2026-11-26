@@ -98,6 +98,11 @@ class LocalFeedController extends GetxController
   int _daysCacheRev = -1;
   int _daysCacheCount = -1;
 
+  /// 关注竖列排序用：每个 UP 最近一条投稿的发布时间，同样按 items 版本缓存
+  Map<int, int>? _latestCache;
+  int _latestCacheRev = -1;
+  int _latestCacheCount = -1;
+
   /// 离开顶部超过该距离后显示回顶按钮
   static const _backToTopOffset = 400;
 
@@ -117,6 +122,32 @@ class LocalFeedController extends GetxController
       counts[mid] = (counts[mid] ?? 0) + 1;
     }
     return counts;
+  }
+
+  /// 每个 UP 最近一条投稿的发布时间，用于关注竖列按「最新投稿」排序
+  ///
+  /// 命中缓存时也会读一次 `items.length`，保持 Obx 对列表的订阅，
+  /// 刷新拿到新投稿后竖列顺序能跟着变。
+  Map<int, int> get latestPubdates {
+    final count = items.length;
+    final cached = _latestCache;
+    if (cached != null &&
+        _latestCacheRev == _itemsRev &&
+        _latestCacheCount == count) {
+      return cached;
+    }
+    final latest = <int, int>{};
+    for (final item in _map.values) {
+      final mid = item.owner.mid;
+      if (mid == null) continue;
+      final pubdate = item.pubdate ?? 0;
+      final old = latest[mid];
+      if (old == null || pubdate > old) latest[mid] = pubdate;
+    }
+    _latestCache = latest;
+    _latestCacheRev = _itemsRev;
+    _latestCacheCount = count;
+    return latest;
   }
 
   /// 按天分组后的时间线（items 已按 pubdate 倒序）
