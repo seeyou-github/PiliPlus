@@ -40,7 +40,8 @@ class _LocalFeedPageState extends State<LocalFeedPage>
       controller.scrollController;
 
   @override
-  void loadMore() => controller.onLoadMore();
+  bool loadMore({bool byUser = false}) =>
+      controller.fillViewport(byUser: byUser);
 
   @override
   void initState() {
@@ -80,6 +81,8 @@ class _LocalFeedPageState extends State<LocalFeedPage>
         key: controller.refreshKey,
         onRefresh: controller.onRefresh,
         child: Obx(() {
+          // 列表变化后（含翻页完成）再检查一次视口是否被填满
+          scheduleFillViewport();
           final dayGroups = controller.feedDays;
           // 读取普通快照而不是 newKeys（RxSet）：刷新期间新增标记不会反复触发
           // 整页重建，标签会在 items 更新后的同一次重建中显示
@@ -132,11 +135,10 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                     ),
                   ),
                 ],
-                // 只订阅 isEnd：翻页状态切换时不重建整片网格
+                // 只在真正翻页时显示加载图标，避免「还有更多」时图标一直转
                 Obx(
-                  () => controller.isEnd.value
-                      ? const SliverToBoxAdapter(child: SizedBox.shrink())
-                      : const SliverToBoxAdapter(
+                  () => controller.loadingMore.value
+                      ? const SliverToBoxAdapter(
                           child: Padding(
                             padding: .symmetric(vertical: 12),
                             child: Center(
@@ -149,7 +151,8 @@ class _LocalFeedPageState extends State<LocalFeedPage>
                               ),
                             ),
                           ),
-                        ),
+                        )
+                      : const SliverToBoxAdapter(child: SizedBox.shrink()),
                 ),
                 const SliverPadding(padding: .only(bottom: 100)),
               ],

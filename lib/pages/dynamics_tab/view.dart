@@ -41,7 +41,10 @@ class _DynamicsTabPageState extends State<DynamicsTabPage>
       controller.scrollController;
 
   @override
-  void loadMore() => controller.onLoadMore();
+  bool loadMore({bool byUser = false}) {
+    controller.onLoadMore();
+    return false;
+  }
 
   @override
   void initState() {

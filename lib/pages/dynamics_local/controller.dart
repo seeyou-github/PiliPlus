@@ -89,8 +89,8 @@ class LocalFeedController extends GetxController
   static const _refreshInterval = Duration(minutes: 5);
   DateTime? _lastRefreshAt;
 
-  /// 网络是否已翻到底（本地可能仍有没放出来的更早缓存）
-  bool _netEnd = false;
+  /// 触底翻页进行中（列表末尾的进度提示据此显示，避免常亮）
+  final loadingMore = false.obs;
 
   /// feedDays 的分组缓存：items 结构每次变化时递增版本号
   int _itemsRev = 0;
@@ -357,13 +357,13 @@ class LocalFeedController extends GetxController
       updatedMids.clear();
       liveRooms.clear();
       loading.value = false;
-      _netEnd = true;
       await LocalFeedCache.clear();
-      _updateEnd();
+      isEnd.value = true;
       return;
     }
 
     _busy = true;
+    if (!refresh) loadingMore.value = true;
     try {
       if (refresh) {
         LocalFeedCache.prune(
@@ -375,24 +375,22 @@ class LocalFeedController extends GetxController
           ..addAll(LocalFeedCache.itemsMap);
         _applyItems();
         loading.value = _map.isEmpty;
-        _netEnd = false;
-        _updateEnd();
+        isEnd.value = false;
         // 刷新投稿的同时重新查一次直播状态（翻页时不重复查）
         _queryLiveRooms(follows);
         final fresh = await _fetchLatest(follows);
         // 增量合并新抓到的投稿，避免再对全量缓存做一次过滤 + 排序
         _appendItems(fresh, follows);
-        _netEnd = follows.every((e) => LocalFeedCache.cursorOf(e.mid) == -1);
-        _updateEnd();
+        // isEnd 只表示网络是否到底，本地更早的缓存由 fillViewport 放出
+        isEnd.value = follows.every((e) => LocalFeedCache.cursorOf(e.mid) == -1);
       } else {
         final fresh = await _fetchMore(follows);
         _appendItems(fresh, follows);
-        // 网络翻到底后，继续放出更早的本地缓存
-        _releaseOlderCache();
       }
       unawaited(LocalFeedCache.flush());
     } finally {
       loading.value = false;
+      loadingMore.value = false;
       _busy = false;
       if (refresh) _lastRefreshAt = DateTime.now();
       if (_pendingRefresh) {
@@ -521,8 +519,7 @@ class LocalFeedController extends GetxController
         .where((e) => LocalFeedCache.cursorOf(e.mid) != -1)
         .toList();
     if (targets.isEmpty) {
-      _netEnd = true;
-      _updateEnd();
+      isEnd.value = true;
       return const [];
     }
 
@@ -569,28 +566,37 @@ class LocalFeedController extends GetxController
         }
       }
     }
-    _netEnd = !anyNext;
-    _updateEnd();
+    isEnd.value = !anyNext;
     return fetched;
   }
 
-  /// 只有「网络翻到底」且「本地没有未放出的更早缓存」才算真正到底
-  void _updateEnd() => isEnd.value = _netEnd && !LocalFeedCache.hasPending;
-
-  /// 网络翻到底后，按天桶放出更早的本地缓存（每次触底放一桶）
-  void _releaseOlderCache() {
-    if (!_netEnd || !LocalFeedCache.hasPending) return;
-    final older = LocalFeedCache.loadNextBucket();
-    if (older.isEmpty) {
-      // 桶是空的（数据异常），继续看下一个，避免卡住
-      _updateEnd();
-      return;
+  /// 内容不足一屏 / 用户滑到底时补内容
+  ///
+  /// - 用户主动滑到底且网络还有页：正常网络翻页（异步）
+  /// - 其余情况只放出更早的本地缓存（同步，不发网络请求）
+  ///
+  /// 返回 true 表示本次同步加入了内容，调用方可以再检查一次视口。
+  bool fillViewport({bool byUser = false}) {
+    if (_busy) return false;
+    if (byUser && !isEnd.value) {
+      onLoadMore();
+      return false;
     }
+    if (!LocalFeedCache.hasPending) return false;
+    final before = items.length;
+    _releaseOlderCache();
+    return items.length > before;
+  }
+
+  /// 按天桶放出更早的本地缓存（每次一桶）
+  void _releaseOlderCache() {
+    if (!LocalFeedCache.hasPending) return;
+    final older = LocalFeedCache.loadNextBucket();
+    if (older.isEmpty) return;
     for (final item in older) {
       _map[LocalFeedCache.keyOf(item)] = item;
     }
     _applyItems();
-    _updateEnd();
   }
 
   /// 切回动态页时调用：数据还新就只刷新直播状态，避免每次切 tab 都全量请求
