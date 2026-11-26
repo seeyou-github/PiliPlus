@@ -201,7 +201,7 @@ abstract final class Pref {
   );
 
   static int get previewQ =>
-      _setting.get(SettingBoxKey.previewQuality, defaultValue: 100);
+      _setting.get(SettingBoxKey.previewQuality, defaultValue: 50);
 
   static double get smallCardWidth =>
       _setting.get(SettingBoxKey.smallCardWidth, defaultValue: 280.0);
@@ -745,7 +745,7 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.hideTopBar, defaultValue: true);
 
   static bool get hideBottomBar =>
-      _setting.get(SettingBoxKey.hideBottomBar, defaultValue: true);
+      _setting.get(SettingBoxKey.hideBottomBar, defaultValue: false);
 
   static BarHideType get barHideType =>
       BarHideType.values[_setting.get(
@@ -842,13 +842,13 @@ abstract final class Pref {
   );
 
   static int get danmakuWeight =>
-      _setting.get(SettingBoxKey.danmakuWeight, defaultValue: 0);
+      _setting.get(SettingBoxKey.danmakuWeight, defaultValue: 6);
 
   static double get danmakuShowArea =>
-      _setting.get(SettingBoxKey.danmakuShowArea, defaultValue: 0.5);
+      _setting.get(SettingBoxKey.danmakuShowArea, defaultValue: 0.3);
 
   static double get danmakuOpacity =>
-      _setting.get(SettingBoxKey.danmakuOpacity, defaultValue: 1.0);
+      _setting.get(SettingBoxKey.danmakuOpacity, defaultValue: 0.9);
 
   static double get danmakuFontScale => _setting.get(
     SettingBoxKey.danmakuFontScale,
@@ -856,19 +856,19 @@ abstract final class Pref {
   );
 
   static double get danmakuDuration =>
-      _setting.get(SettingBoxKey.danmakuDuration, defaultValue: 7.0);
+      _setting.get(SettingBoxKey.danmakuDuration, defaultValue: 14.0);
 
   static double get danmakuStaticDuration =>
-      _setting.get(SettingBoxKey.danmakuStaticDuration, defaultValue: 4.0);
+      _setting.get(SettingBoxKey.danmakuStaticDuration, defaultValue: 3.0);
 
   static double get danmakuStrokeWidth => _setting.get(
     SettingBoxKey.danmakuStrokeWidth,
-    defaultValue: PlatformUtils.isMobile ? 1.5 : 2.5,
+    defaultValue: 2.0,
   );
 
   static int get danmakuFontWeight => _setting.get(
     SettingBoxKey.danmakuFontWeight,
-    defaultValue: PlatformUtils.isMobile ? 5 : 6,
+    defaultValue: 4,
   );
 
   static bool get enableLongShowControl =>

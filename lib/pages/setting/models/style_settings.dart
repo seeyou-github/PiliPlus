@@ -296,7 +296,7 @@ List<SettingsModel> get styleSettings => [
     subtitle: '首页列表滑动时，收起底栏',
     leading: const Icon(Icons.vertical_align_bottom_outlined),
     setKey: SettingBoxKey.hideBottomBar,
-    defaultVal: true,
+    defaultVal: false,
     needReboot: true,
   ),
   NormalModel(
