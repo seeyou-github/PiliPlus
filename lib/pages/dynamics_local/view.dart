@@ -83,16 +83,13 @@ class _LocalFeedPageState extends State<LocalFeedPage>
         },
       );
 
-  /// 投稿时间：月-日 时:分:秒；跨年时带上年份
+  /// 投稿日期：月-日；跨年时带上年份
   static String? _pubdateText(int? pubdate) {
     if (pubdate == null || pubdate <= 0) return null;
     final date = DateTime.fromMillisecondsSinceEpoch(pubdate * 1000);
     String two(int n) => n.toString().padLeft(2, '0');
     final md = '${two(date.month)}-${two(date.day)}';
-    final time = '${two(date.hour)}:${two(date.minute)}:${two(date.second)}';
-    return date.year == DateTime.now().year
-        ? '$md $time'
-        : '${date.year}-$md $time';
+    return date.year == DateTime.now().year ? md : '${date.year}-$md';
   }
 
   @override
