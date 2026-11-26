@@ -21,6 +21,7 @@ import 'package:PiliPlus/pages/follow/view.dart';
 import 'package:PiliPlus/pages/local_fav/view.dart';
 import 'package:PiliPlus/pages/local_follow/view.dart';
 import 'package:PiliPlus/pages/local_history/view.dart';
+import 'package:PiliPlus/pages/local_later/view.dart';
 import 'package:PiliPlus/pages/follow_search/view.dart';
 import 'package:PiliPlus/pages/follow_type/follow_same/view.dart';
 import 'package:PiliPlus/pages/follow_type/followed/view.dart';
@@ -118,8 +119,9 @@ class Routes {
     // 本地关注 / 本地收藏（未登录）
     GetPage(name: '/localFollow', page: () => const LocalFollowPage()),
     GetPage(name: '/localFav', page: () => const LocalFavPage()),
-    // 本地观看记录（未登录）
+    // 本地观看记录 / 本地稍后再看（未登录）
     GetPage(name: '/localHistory', page: () => const LocalHistoryPage()),
+    GetPage(name: '/localLater', page: () => const LocalLaterPage()),
     GetPage(name: '/colorSetting', page: () => const ColorSelectPage()),
     GetPage(name: '/fontSetting', page: () => const FontSettingPage()),
     // 屏幕帧率

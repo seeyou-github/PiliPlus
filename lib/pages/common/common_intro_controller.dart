@@ -17,6 +17,7 @@ import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/models/local/local_fav_item.dart';
 import 'package:PiliPlus/utils/local_fav_action.dart';
+import 'package:PiliPlus/utils/local_later.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -81,7 +82,10 @@ abstract class CommonIntroController extends GetxController
     final args = Get.arguments;
     heroTag = args['heroTag'];
     hasLater = RxBool(
-      args['viewLater'] ?? args['sourceType'] == SourceType.watchLater,
+      args['viewLater'] ??
+          (args['sourceType'] == SourceType.watchLater ||
+              // 未登录时按本机稍后再看列表恢复「再看」按钮状态
+              (!Accounts.main.isLogin && LocalLater.contains(bvid))),
     );
 
     queryVideoIntro();
@@ -154,6 +158,26 @@ abstract class CommonIntroController extends GetxController
   }
 
   Future<void> viewLater() async {
+    // 未登录：只在本机维护稍后再看列表，不发起任何网络请求
+    if (!Accounts.main.isLogin) {
+      final detail = videoDetail.value;
+      final added = LocalLater.toggle(
+        bvid: bvid,
+        cid: detail.cid ?? cid.value,
+        title: detail.title ?? '',
+        cover: detail.pic,
+        ownerName: detail.owner?.name,
+        ownerMid: detail.owner?.mid,
+        duration: detail.duration ?? 0,
+      );
+      if (added == null) {
+        SmartDialog.showToast('登录后可添加到稍后再看');
+        return;
+      }
+      hasLater.value = added;
+      SmartDialog.showToast(added ? '已加入本地稍后再看' : '已移出本地稍后再看');
+      return;
+    }
     final res = await (hasLater.value
         ? UserHttp.toViewDel(aids: aid)
         : UserHttp.toViewLater(bvid: bvid));
